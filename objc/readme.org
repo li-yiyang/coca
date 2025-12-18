@@ -1,0 +1,20 @@
+#+title: Coca/ObjC
+#+author: 凉凉
+* About
+This is =coca/objc= subsystem as Objective-C runtime binding for Common Lisp.
+
+#+begin_src lisp
+(defsystem #:coca/objc/test
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.0"                      ; should match coca/objc
+  :description "Test for MLX-CL core API"
+  :depends-on (:coca/objc :fiveam)
+  :pathname "test/objc"
+  :components
+  ((:file "package")
+   (:file "utils"     :depends-on ("package"))
+   (:file "encoding"  :depends-on ("package"))
+   (:file "method"    :depends-on ("package")))
+  :perform (test-op (op c) (symbol-call :coca.objc.test :run-tests)))
+#+end_src
