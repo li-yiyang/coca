@@ -10,23 +10,23 @@
    ;; ObjC class
    #:objc-class
    #:coerce-to-objc-class
+   #:doc-objc-class
 
    ;; ObjC sel
    #:sel
    #:coerce-to-selector
 
-   ;; ObjC method
-   #:define-objc-method
-   #:define-objc-protocol
+   ;; ObjC struct
    #:define-objc-struct
-   #:description
-   #:ensure-objc-initialized
+
+   ;; ObjC enum
+   #:define-objc-enum
+
+   ;; ObjC method
+   ;; #:define-objc-method
+   ;; #:define-objc-protocol
    #:invoke
-   #:alloc-init-object
-
-   ;; ObjC object
-
-   ))
+   #:can-invoke-p))
 
 (in-package :coca.objc)
 

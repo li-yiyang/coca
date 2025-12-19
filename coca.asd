@@ -52,9 +52,6 @@ Class:
 Every ObjC class is instance of meta class `objc-class'.
 
 Use `coerce-to-objc-class' to intern ObjC class as lisp class.
-
-Memory Management:
-
 "
   :depends-on (:str
                :cffi
@@ -171,6 +168,7 @@ Use `define-objc-struct' to define a new lisp structure representation of ObjC s
 Currently implemented ObjC structures are:
 
     ObjC Structure         Lisp Structure
+    --------------------------------------
     CGSize                 ns-size
     CGPoint                ns-point
     CGRect                 ns-rect
@@ -179,8 +177,23 @@ Note that internally `coca.objc' use `coca.objc::struct-aref' to support `simple
 to be passed in as foreign ObjC structure, so
 
 Dev Note:
+Use `coca.objc::objc-struct-name' to get lisp struct name symbol from given
+ObjC struct name string.
+
 Use `coca.objc::objc-struct-info' to store meta data to generate `cffi:foreign-funcall'
-as ObjC structure.
+as ObjC structure. The `coca.objc::objc-struct-info' is a struct with slots:
+
+    Slot        Notes
+    -----------------------------------------------------------
+    name        ObjC struct name, used in type encoding parsing
+    len         Number of struct slots
+    slots       A list of struct slot accessor function
+    types       A list of struct slot CFFI type
+
+The `coca.objc::struct-aref' is used to provide slot picking functionalities.
+See objc/method.lisp for how it is used to get the struct elements.
+
+Use `coca.objc::case-struct-aref' for manual definition of `coca.objc::struct-aref'.
 
 TODO: better and cleaner implementation.
 ")
@@ -191,10 +204,23 @@ TODO: better and cleaner implementation.
                  "struct")
     :description "Implement ObjC method wrapper"
     :long-description
-    "
+    "Use `invoke' to call ObjC method.
+
+Dev Note:
 Use `coca.objc::objc-method-calling-lambda-form' to generate lambda calling form
 from type encoding.
 
-TODO: better and cleaner implementation. ")))
+The compiled lambda expression are cached by type encoding string in `coca.objc::*methods*'.
+
+The instance methods and class methods are seperately stored under `objc-class'
+`coca.objc::class-instance-method' and `coca.objc::class-class-method'.
+
+TODO: better and cleaner implementation. ")
+   (:file        "enum"
+    :depends-on ("package")
+    :description "Wrapper of ObjC enum"
+    :long-description
+    "Use `define-objc-enum' to define enum wrapper function. ")))
+
 
 ;;;; coca.asd ends here

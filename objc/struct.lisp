@@ -79,7 +79,23 @@ This is slow but workable. "
 
 (defmacro case-struct-aref ((struct idx) &body cases)
   "Case IDX by index to select STRUCT parts.
-See also `coca.objc::struct-aref'. "
+See also `coca.objc::struct-aref'.
+
+Syntax:
+
+    (case-struct-aref (struct idx)
+      (expression)
+      ...)
+
+Example:
+
+    (case-struct-aref (ns-rect idx)
+      (ns-rect-x ns-rect)
+      (ns-rect-y ns-rect)
+      (ns-rect-w ns-rect)
+      (ns-rect-h ns-rect))
+
+"
   `(case ,idx
      ,@(loop :for offset :from 0
              :for case :in cases
@@ -126,7 +142,7 @@ Example:
         slot-names slot-types)
     (loop :for (slot encoding . options) :in slots
           :collect (intern (str:concat (symbol-name name) "-" (symbol-name slot))) :into names
-          :collect (the objc-encoding encoding)                                    :into types
+          :collect (if (getf options :type) (cons :coerce encoding) encoding)      :into types
           :finally (setf slot-names names
                          slot-types types))
     `(progn
@@ -158,20 +174,5 @@ Example:
                                     :len       ,(length (the list slots))
                                     :slots    ',slot-names
                                     :types    ',slot-types)))))
-
-(define-objc-struct (ns-size "CGSize")
-  (w :double)
-  (h :double))
-
-(define-objc-struct (ns-point "CGPoint")
-  (x :double)
-  (y :double))
-
-(define-objc-struct (ns-rect "CGRect")
-  (x :double :type real)
-  (y :double :type real)
-  (w :double :type real)
-  (h :double :type real))
-
 
 ;;;; struct.lisp ends here

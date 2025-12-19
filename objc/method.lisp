@@ -4,93 +4,93 @@
 
 (defparameter *methods* (make-hash-table :test 'equal))
 
+;; Dev Note:
+;; An ObjC method calling lambda should be like
+;;
+;;     (lambda (#:object0 #:sel1 #:struct2 #:type3)
+;;       (declare (type ... ...))
+;;       ({coerce-to-objc-object | coerce-to-objc-class | ... }
+;;        (cffi:foreign-funcall \"objc_msgSend\"
+;;          :pointer (objc-object-pointer #:object0) ;; objc-method-calling-arg-form
+;;          :pointer (objc-object-pointer #:sel1)
+;;          :double  (struct-aref #:struct0 0)
+;;          :double  (struct-aref #:struct0 1)
+;;          ...      ...
+;;          <return>)))
+
 (defun compile-objc-method-calling (encoding)
   "Coerce ENCODING to a FFI calling function.
 Return the compiled function. "
   (declare (type string encoding))
   (with-cached (encoding *methods*)
-    (eval (objc-method-calling-lambda-form encoding))))
+    (multiple-value-bind (args-encodings ret)
+        (decode-objc-type-encoding encoding)
+      (compile nil (objc-method-calling-lambda-form args-encodings ret)))))
+
+(defun objc-method-calling-arg-form (encoding arg)
+  "Return values of list as `cffi:foreign-funcall' avaliable arguments,
+type hint declaration. "
+  (case (atomize encoding)
+    ((:union :bits)
+     (error "Unknown how to put ~S to funcall. " encoding))
+    (:struct
+     (values (loop :with info     := (objc-struct-info (second encoding))
+                   :for idx :from 0
+                   :for slot  :in (objc-struct-info-slots info)
+                   :for type* :in (objc-struct-info-types info)
+                   :for coerce := (eql (atomize type*) :coerce)
+                   :for type   := (if coerce (cdr type*) type*)
+                   :collect (objc-encoding-cffi-type type)
+                   :collect (if coerce
+                                `(coerce (struct-aref ,arg ,idx) ',(objc-encoding-lisp-type type))
+                                `(struct-aref ,arg ,idx)))
+             `(or ,(second encoding) simple-vector)))
+    (:object
+     (values `(:pointer (objc-object-pointer ,arg))
+             '(or standard-objc-object foreign-pointer)))
+    (:class
+     (values `(:pointer (objc-object-pointer ,arg))
+             '(or objc-class foreign-pointer)))
+    (:sel
+     (values `(:pointer (objc-object-pointer ,arg))
+             '(or sel foreign-pointer)))
+    (:coerce
+     (let ((encoding (cdr encoding)))
+       (case (atomize encoding)
+         ;; ignore `:coerce'
+         ((:object :class :sel :string :pointer :char :unsigned-char)
+          (objc-method-calling-arg-form encoding arg))
+         (otherwise
+          (values `(,(objc-encoding-cffi-type encoding)
+                    (coerce ,arg ',(objc-encoding-lisp-type encoding)))
+                  t)))))
+    (otherwise
+     (values (list (objc-encoding-cffi-type encoding) arg)
+             (objc-encoding-lisp-type encoding)))))
 
 ;; TODO: need a cleaner code
-(defun objc-method-calling-lambda-form (encoding)
-  "Generate lambda expression to call foreign function of ENCODING.
-
-Dev Note:
-An ObjC method calling lambda should be like
-
-    (lambda (#:object0 #:sel1 #:struct2 #:type3)
-      \"SEL-NAME\"
-      ({coerce-to-objc-object | coerce-to-objc-class | ... }
-       (cffi:foreign-funcall \"objc_msgSend\"
-         :pointer (objc-object-pointer #:object0)
-         :pointer (objc-object-pointer #:sel1)
-         :double  (struct-aref #:struct0 0)
-         :double  (struct-aref #:struct0 1)
-         ...      ...
-         <return>)))
-
-Struct would be expanded by `coca.objc::struct-len', `coca.objc::struct-aref'. "
-  (multiple-value-bind (args-encodings ret)
-      (decode-objc-type-encoding encoding)
-    (let ((*gensym-counter* 0)
-          (arg-plist        ())
-          (vars             ())
-          (declarations     ()))
-      (labels ((put-arg-plist (type var &optional coerce-p (type-hint t))
-                 "Push TYPE VAR to ARG-PLIST. "
-                 (case (atomize type)
-                  ((:union :bits)
-                   (error "Unknown how to put ~S to funcall. " type))
-                  (:struct
-                   (push `(type (or ,(second type) simple-vector) ,var) declarations)
-                   (loop :with info := (objc-struct-info (second type))
-                         :for i :from 0
-                         :for slot   :in (objc-struct-info-slots    info)
-                         :for type   :in (objc-struct-info-types    info)
-                         :do (put-arg-plist type `(struct-aref ,var ,i) t nil)))
-                  (:object
-                   (when type-hint
-                     (push `(type (or standard-objc-object foreign-pointer) ,var) declarations))
-                   (push (objc-encoding-cffi-type type)                         arg-plist)
-                   (push `(objc-object-pointer ,var)                            arg-plist))
-                  (:class
-                   (when type-hint
-                     (push `(type (or objc-class foreign-pointer) ,var) declarations))
-                   (push (objc-encoding-cffi-type type)               arg-plist)
-                   (push `(objc-object-pointer ,var)                  arg-plist))
-                  (:sel
-                   (when type-hint
-                     (push `(type (or sel foreign-pointer) ,var) declarations))
-                   (push (objc-encoding-cffi-type type)        arg-plist)
-                   (push `(objc-object-pointer ,var)           arg-plist))
-                  ((:string :pointer :char :unsigned-char) ; not effected by coerce
-                   (when type-hint
-                     (push `(type ,(objc-encoding-lisp-type type) ,var)  declarations))
-                   (push (objc-encoding-cffi-type type)                arg-plist)
-                   (push var                                           arg-plist))
-                  (otherwise
-                   ;; TODO: need a better coerce mechanics
-                   (when type-hint
-                     (push `(type ,(if coerce-p 'real (objc-encoding-lisp-type type)) ,var)  declarations))
-                   (push (objc-encoding-cffi-type type)                                    arg-plist)
-                   (push (if coerce-p `(coerce ,var ',(objc-encoding-lisp-type type)) var) arg-plist)))))
-        (loop :for encoding :in args-encodings
-              :for var  := (gensym (symbol-name (atomize encoding)))
-              :do (put-arg-plist encoding var)
-                  (push var vars)
-              :finally (setf vars         (reverse vars)
-                             arg-plist    (reverse arg-plist)
-                             declarations (reverse declarations)))
-        `(lambda ,vars
-           (declare ,@declarations)
-           (,(case (atomize ret)
-               (:object   'coerce-to-objc-object)
-               (:class    'coerce-to-objc-class)
-               (:sel      'coerce-to-selector)
-               ((:union :struct :bits)
-                (error "Unknown how to wrap return type ~S. " ret))
-               (otherwise 'progn))
-            (foreign-funcall "objc_msgSend" ,@arg-plist ,(objc-encoding-cffi-type ret))))))))
+(defun objc-method-calling-lambda-form (args-encodings ret)
+  "Generate lambda expression to call foreign function of ARGS-ENCODINGS and RET."
+  (loop :with *gensym-counter* := 0
+        :for enc :in args-encodings
+        :for var := (gensym (symbol-name (atomize enc)))
+        :for (arg hint) := (multiple-value-list (objc-method-calling-arg-form enc var))
+        :collect var                :into vars
+        :collect arg                :into args
+        :collect `(type ,hint ,var) :into hints
+        :finally (return
+                   `(lambda ,vars
+                      (declare ,@hints)
+                      (,(case (atomize ret)
+                          ((:union :struct :bits)
+                           (error "Unknown how to wrap return type ~S. " ret))
+                          (:object   'coerce-to-objc-object)
+                          (:class    'coerce-to-objc-class)
+                          (:sel      'coerce-to-selector)
+                          (otherwise 'progn))
+                       (foreign-funcall "objc_msgSend"
+                                        ,@(apply #'append args)
+                                        ,(objc-encoding-cffi-type ret)))))))
 
 (defun objc-class-class-method (class sel)
   "Get function to call CLASS and SEL. "
@@ -150,6 +150,30 @@ Struct would be expanded by `coca.objc::struct-len', `coca.objc::struct-aref'. "
                       (coerce-to-objc-class (object_getClassName object)))))
        (objc-class-method-signature class method)))))
 
+(defun can-invoke-p (object method)
+  "Test if OBJECT can invoke METHOD or not. "
+  (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
+           (type (or string sel) method))
+  (etypecase object
+    ((or symbol string objc-class)
+     (let* ((class  (coerce-to-objc-class object))
+            (class* (objc-object-pointer  class))
+            (sel    (coerce-to-selector   method))
+            (sel*   (objc-object-pointer  sel))
+            (method (class_getClassMethod class* sel*)))
+       (not (null-pointer-p method))))
+    (standard-objc-object
+     (let* ((class  (class-of            object))
+            (sel    (coerce-to-selector  method))
+            (class* (objc-object-pointer class))
+            (sel*   (objc-object-pointer sel))
+            (method (class_getInstanceMethod class* sel*)))
+       (not (null-pointer-p method))))
+    (foreign-pointer
+     (if (object_isClass object)
+         (can-invoke-p (coerce-to-objc-class  object) method)
+         (can-invoke-p (coerce-to-objc-object object) method)))))
+
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
 
@@ -162,26 +186,23 @@ Parameters:
     ((or symbol string objc-class)
      (let ((class  (coerce-to-objc-class object))
            (sel    (coerce-to-selector   method)))
-       (apply (objc-class-class-method class sel)
-              (cons (objc-object-pointer class)
-                    (cons (objc-object-pointer sel) args)))))
+       (apply (the function (objc-class-class-method class sel))
+              (cons class (cons sel args)))))
     (foreign-pointer
      (if (object_isClass object)
          (let ((class (coerce-to-objc-class object))
                (sel   (coerce-to-selector   method)))
-           (apply (objc-class-class-method class sel)
-                  (cons (objc-object-pointer class)
-                        (cons (objc-object-pointer sel) args))))
+           (apply (the function (objc-class-class-method class sel))
+                  (cons class (cons sel args))))
          (let ((class (coerce-to-objc-class (objc_getClass object)))
                (sel   (coerce-to-selector   method)))
-           (apply (objc-class-instance-method class sel)
-                  (cons object (cons (objc-object-pointer sel) args))))))
+           (apply (the function (objc-class-instance-method class sel))
+                  (cons object (cons sel args))))))
     (standard-objc-object
      (let ((class (class-of object))
            (sel   (coerce-to-selector method)))
-       (apply (objc-class-instance-method class sel)
-              (cons (objc-object-pointer object)
-                    (cons (objc-object-pointer sel) args)))))))
+       (apply (the function (objc-class-instance-method class sel))
+              (cons object (cons sel args)))))))
 
 ;;; Trivial test
 

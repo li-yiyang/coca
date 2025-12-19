@@ -45,7 +45,7 @@ All the ObjC class should be cached within `coca.objc::*classes*'.
             (slot-value class 'objc-class-name)
             (pointer-address (objc-object-pointer class)))))
 
-(defun coerce-to-objc-class (class &optional class-name)
+(defun coerce-to-objc-class (class)
   "Coerces its argument to an Objective-C class pointer.
 Return the lisp class of CLASS.
 
@@ -69,8 +69,7 @@ Parameters:
     the CLASS-NAME would be used to set the lisp class name if needed
     (see above as string CLASS input)
 + CLASS-NAME: if given, will setting the target lisp class name, see above"
-  (declare (type (or string symbol objc-class foreign-pointer) class)
-           (type symbol class-name))
+  (declare (type (or string symbol objc-class foreign-pointer) class))
   (flet ((wrap-ptr-as-objc-class (ptr name class-name)
            (declare (type foreign-pointer ptr)
                     (type string          name)
@@ -95,12 +94,10 @@ Parameters:
            class))
         (string
          (with-cached (class *classes*)
-           (let ((ptr  (objc_getClass class))
-                 (name (or class-name
-                           (intern (string-upcase (str:param-case class))))))
+           (let ((ptr (objc_getClass class)))
              (when (null-pointer-p ptr)
                (error "Unknown ObjC class `~A' within current ObjC Runtime. " class))
-             (wrap-ptr-as-objc-class ptr class name))))
+             (wrap-ptr-as-objc-class ptr class (objc-intern class)))))
         (foreign-pointer
          (when (null-pointer-p class)
            (error "NULL pointer is not a pointer of ObjC class"))
@@ -108,9 +105,17 @@ Parameters:
            (error "~S is not a pointer of ObjC class. " class))
          (let ((name (class_getName class)))
            (with-cached (name *classes*)
-             (let ((class-name (or class-name
-                                   (intern (string-upcase (str:param-case name))))))
+             (let ((class-name (objc-intern name)))
                (wrap-ptr-as-objc-class class name class-name)))))))))
+
+(defmacro doc-objc-class (name &body documentations)
+  "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
+
+Parameters:
++ NAME: string of ObjC class name
++ DOCUMENTATIONS: documentation strings (joined by new line)"
+  `(setf (documentation (coerce-to-objc-class ,name) t)
+         (format nil "~{~A~^~%~%~}" (list ,@documentations))))
 
 ;;; Foundamental Classes
 

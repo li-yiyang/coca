@@ -68,9 +68,10 @@ Rules:
 2. name would be transformed using `str:param-case';
 "
   (declare (type string name))
-  (let ((sym (str:upcase (str:param-case name))))
-    (if (str:starts-with? "_" name)
-        (intern (str:concat "%" sym) package)
-        (intern sym package))))
+  (str:match name
+    (("NS" name) (intern (str:concat "NS-" (str:upcase (str:param-case name))) package))
+    (("CG" name) (intern (str:concat "CG-" (str:upcase (str:param-case name))) package))
+    (("_"  name) (objc-intern (str:concat "%" name) package))
+    (t           (intern (str:upcase (str:param-case name))                    package))))
 
 ;;;; utils.lisp ends here
