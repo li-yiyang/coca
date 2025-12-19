@@ -3,6 +3,9 @@
 (uiop:define-package #:coca.objc
   (:use :cl :cffi)
   (:export
+   ;; Utils
+   #:objc-error
+   
    ;; CFFI
    #:objc-object-pointer
    #:standard-objc-object

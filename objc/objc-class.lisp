@@ -114,8 +114,10 @@ Parameters:
 Parameters:
 + NAME: string of ObjC class name
 + DOCUMENTATIONS: documentation strings (joined by new line)"
-  `(setf (documentation (coerce-to-objc-class ,name) t)
-         (format nil "~{~A~^~%~%~}" (list ,@documentations))))
+  `(progn
+     (setf (documentation (coerce-to-objc-class ,name) t)
+           (format nil "~{~A~^~%~%~}" (list ,@documentations)))
+     (class-name (coerce-to-objc-class ,name))))
 
 ;;; Foundamental Classes
 

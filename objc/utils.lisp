@@ -2,6 +2,9 @@
 
 (in-package :coca.objc)
 
+(define-condition objc-error (error) ()
+  (:documentation "Base class of ObjC conditions. "))
+
 (defmacro with-cached ((key cache) &body body)
   "Cached BODY return value in CACHE by KEY. "
   (let ((k (gensym "KEY")))
@@ -71,6 +74,8 @@ Rules:
   (str:match name
     (("NS" name) (intern (str:concat "NS-" (str:upcase (str:param-case name))) package))
     (("CG" name) (intern (str:concat "CG-" (str:upcase (str:param-case name))) package))
+    ;; FIX: frameworks/webkit.lisp
+    (("WK" name) (intern (str:concat "WK-" (str:upcase (str:param-case name))) package))
     (("_"  name) (objc-intern (str:concat "%" name) package))
     (t           (intern (str:upcase (str:param-case name))                    package))))
 
