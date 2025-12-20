@@ -5,7 +5,7 @@
   (:export
    ;; Utils
    #:objc-error
-   
+
    ;; CFFI
    #:objc-object-pointer
    #:standard-objc-object
@@ -19,11 +19,17 @@
    #:sel
    #:coerce-to-selector
 
+   ;; ObjC encoding
+   #:objc-encoding
+
    ;; ObjC struct
    #:define-objc-struct
 
    ;; ObjC enum
    #:define-objc-enum
+
+   ;; ObjC const
+   #:define-objc-const
 
    ;; ObjC method
    ;; #:define-objc-method

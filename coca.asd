@@ -216,10 +216,15 @@ The instance methods and class methods are seperately stored under `objc-class'
 
 TODO: better and cleaner implementation. ")
    (:file        "enum"
-    :depends-on ("package")
+    :depends-on ("encoding")
     :description "Wrapper of ObjC enum"
     :long-description
-    "Use `define-objc-enum' to define enum wrapper function. ")))
+    "Use `define-objc-enum' to define enum wrapper function. ")
+   (:file        "const"
+    :depends-on ("encoding")
+    :description "Define ObjC global variable as lisp const. "
+    :long-description
+    "Use `define-objc-const' to define ObjC global const. ")))
 
 (defsystem #:coca/frameworks
   :author ("凉凉")

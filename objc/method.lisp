@@ -82,7 +82,7 @@ type hint declaration. "
                    `(lambda ,vars
                       (declare ,@hints)
                       (,(case (atomize ret)
-                          ((:union :struct :bits)
+                          ((:union :bits)
                            (error "Unknown how to wrap return type ~S. " ret))
                           (:object   'coerce-to-objc-object)
                           (:class    'coerce-to-objc-class)
