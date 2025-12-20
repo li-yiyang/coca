@@ -67,6 +67,23 @@ See https://developer.apple.com/documentation/objectivec/objc_getclasslist(_:_:)
   (buffer       :pointer)
   (buffer-count :int))
 
+(defcfun (objc_autoreleasePoolPush "objc_autoreleasePoolPush") :pointer
+  "Creates a new autorelease pool that is enclosed by the current pool,
+makes that the current pool, and returns an opaque “handle” to it.
+
+see https://clang.llvm.org/docs/AutomaticReferenceCounting.html#void-objc-autoreleasepoolpush-void")
+
+(defcfun (objc_autoreleasePoolPop "objc_autoreleasePoolPop") :void
+  "Releases all the objects added to the given autorelease pool and
+any autorelease pools it encloses, then sets the current autorelease pool to
+the pool directly enclosing pool.
+
+Parameters:
++ POOL: pointer of previous `objc_autoreleasePoolPush' returned pointer.
+
+see https://clang.llvm.org/docs/AutomaticReferenceCounting.html#void-objc-autoreleasepoolpop-void-pool"
+  (pool :pointer))
+
 ;;; Class
 
 (defcfun (class_getName "class_getName") :string
