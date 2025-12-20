@@ -17,7 +17,7 @@ Syntax:
       (push docstring bindings)
       (setf docstring (format nil "ObjC enum of ~A. " name)))
     `(progn
-       (defun ,name (&rest flags)
+       (deftype ,name ()
          ,(with-output-to-string (doc)
             (write-line docstring doc)
             (format doc "~&~%")
@@ -27,11 +27,20 @@ Syntax:
                   (destructuring-bind (keyword val . docs) binding
                     (format doc "+ ~S (~D)~%" keyword (eval val))
                     (format doc "~{  ~A~%~}" docs))))
-            (format doc "
-Dev Note:
-the `~S' also provides a compiler macro function to literally
-compile enum expression as literal values. "
-                    name))
+            (format doc
+                    "~&Use functions `~S' to convert ~S flags into enum numbers. "
+                    name name))
+         '(member ,@(loop :for binding :in bindings
+                          :if (listp binding)
+                            :collect (car binding))))
+       (defun ,name (&rest flags)
+         ,(format nil
+                  "Convert FLAGS into ObjC enum numbers.
+Return `unsigned-byte' as enum numbers.
+
+Parameters:
++ FLAGS: every flag should be of type `~S'. "
+                  name)
          (the unsigned-byte
            (reduce (lambda (res flag)
                      (logior (the unsigned-byte res)
@@ -46,5 +55,16 @@ compile enum expression as literal values. "
          (if (every #'keywordp flags)
              (eval expr)
              expr)))))
+
+(defmacro with-objc-enum-flags (val &body body)
+  (let ((value (gensym "VAL"))
+        (flags (gensym "FLAGS")))
+    `(let ((,value ,val)
+           (,flags ()))
+       ,@(loop :for (flag v) :in body
+               :for mask := (eval v)
+               :collect `(when (= ,mask (logand ,value ,mask))
+                           (push ,flag ,flags)))
+       ,flags)))
 
 ;;;; enum.lisp ends here

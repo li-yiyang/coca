@@ -136,8 +136,14 @@
    ;; Supporting Continuity Camera in Your Mac App
 
    ;; Mouse, Keyboard, and Trackpad
+   #:ns-event-type
+   #:ns-event-subtype
+   #:ns-event-modifier-flags
    #:ns-event-mask
    #:ns-event
+   #:event-type
+   #:event-subtype
+   #:modifier-flags
 
    ;; Menus, Cursors, and the Dock
    #:ns-menu
@@ -1193,46 +1199,47 @@ letting the user preview them and change the font used to display text. "
 from the stream of incoming events.
 see https://developer.apple.com/documentation/appkit/nsevent/eventtypemask?language=objc"
   "Getting Any Event"
-  (:any                     #xFFFFFFFFFFFFFFFF "A mask that matches any type of event.")
+  (:any                  18446744073709551615 "A mask that matches any type of event.")
   "Getting Mouse-Related Events"
-  (:left-mouse-down         2                  "A mask for left mouse-down events.")
-  (:left-mouse-dragged      64                 "A mask for left mouse-dragged events.")
-  (:left-mouse-up           4                  "A mask for left mouse-up events.")
-  (:right-mouse-down        8                  "A mask for right mouse-down events.")
-  (:right-mouse-dragged     128                "A mask for right mouse-dragged events.")
-  (:right-mouse-up          16                 "A mask for right mouse-up events.")
-  (:other-mouse-down        #x8000000          "A mask for tertiary mouse-dragged events.")
-  (:other-mouse-up          #x4000000          "A mask for tertiary mouse-up events.")
-  (:mouse-entered           256                "A mask for mouse-entered events.")
-  (:mouse-moved             32                 "A mask for mouse-moved events.")
-  (:mouse-exited            512                "A mask for mouse-exited events.")
+  (:left-mouse-down                         2 "A mask for left mouse-down events.")
+  (:left-mouse-dragged                     64 "A mask for left mouse-dragged events.")
+  (:left-mouse-up                           4 "A mask for left mouse-up events.")
+  (:right-mouse-down                        8 "A mask for right mouse-down events.")
+  (:right-mouse-dragged                   128 "A mask for right mouse-dragged events.")
+  (:right-mouse-up                         16 "A mask for right mouse-up events.")
+  (:other-mouse-down                 33554432 "A mask for tertiary mouse-down events.")
+  (:other-mouse-dragged             134217728 "A mask for tertiary mouse-dragged events.")
+  (:other-mouse-up                   67108864 "A mask for tertiary mouse-up events.")
+  (:mouse-entered                         256 "A mask for mouse-entered events.")
+  (:mouse-moved                            32 "A mask for mouse-moved events.")
+  (:mouse-exited                          512 "A mask for mouse-exited events.")
   "Getting Keyboard Events"
-  (:keydown                 1024               "A mask for key-down events.")
-  (:keyup                   2048               "A mask for key-up events.")
+  (:key-down                             1024 "A mask for key-down events.")
+  (:key-up                               2048 "A mask for key-up events.")
   "Getting Touch Events"
-  (:begin-gesture           #x80000            "A mask for begin-gesture events.")
-  (:end-gesture             #x100000           "A mask for end-gesture events.")
-  (:magnify                 #x40000000         "A mask for magnify-gesture events.")
-  (:smart-magnify           #x100000000        "A mask for smart-zoom gesture events.")
-  (:swipe                   #x80000000         "A mask for swipe-gesture events.")
-  (:rotate                  #x40000            "A mask for rotate-gesture events.")
-  (:gesture                 #x20000000         "A mask for generic gesture events.")
-  (:direct-touch            #x2000000000       "A mask for touch events.")
-  (:tablet-point            #x800000           "A mask for tablet-point events.")
-  (:tablet-proximity        #x1000000          "A mask for tablet-proximity events.")
-  (:pressure                #x400000000        "A mask for pressure-change events.")
+  (:begin-gesture                      524288 "A mask for begin-gesture events.")
+  (:end-gesture                       1048576 "A mask for end-gesture events.")
+  (:magnify                        1073741824 "A mask for magnify-gesture events.")
+  (:smart-magnify                  4294967296 "A mask for smart-zoom gesture events.")
+  (:swipe                          2147483648 "A mask for swipe-gesture events.")
+  (:rotate                             262144 "A mask for rotate-gesture events.")
+  (:gesture                         536870912 "A mask for generic gesture events.")
+  (:direct-touch                 137438953472 "A mask for touch events.")
+  (:tablet-point                      8388608 "A mask for tablet-point events.")
+  (:tablet-proximity                 16777216 "A mask for tablet-proximity events.")
+  (:pressure                      17179869184 "A mask for pressure-change events.")
   "Getting Input Events"
-  (:scroll-wheel            #x400000           "A mask for scroll-wheel events.")
-  (:change-mode             #x4000000000       "A mask for change-mode events.")
+  (:scroll-wheel                      4194304 "A mask for scroll-wheel events.")
+  (:change-mode                  274877906944 "A mask for change-mode events.")
   "Getting System Events"
-  (:appkit-defined          #x2000             "A mask for AppKit–defined events.")
-  (:application-defined     #x8000             "A mask for app-defined events.")
-  (:cursor-update           #x20000            "A mask for cursor-update events.")
-  (:flags-changed           #x1000             "A mask for flags-changed events.")
-  (:periodic                #x10000            "A mask for periodic events.")
-  (:system-defined          #x4000             "A mask for system-defined events.")
+  (:appkit-defined                       8192 "A mask for AppKit–defined events.")
+  (:application-defined                 32768 "A mask for app-defined events.")
+  (:cursor-update                      131072 "A mask for cursor-update events.")
+  (:flags-changed                        4096 "A mask for flags-changed events.")
+  (:periodic                            65536 "A mask for periodic events.")
+  (:system-defined                      16384 "A mask for system-defined events.")
   "Creating an Event Mask"
-  (:from-type               #x100540CC8        "Returns the event mask for the specified type."))
+  (:from-type                      4342827560 "Returns the event mask for the specified type."))
 
 (doc-objc-class "NSEvent"               ; ns-event
   "An object that contains information about an input action,
@@ -1268,6 +1275,177 @@ them. Install a global monitor using the
 addGlobalMonitorForEventsMatchingMask:handler: method to monitor
 events systemwide, although without the ability to modify them."
   "see https://developer.apple.com/documentation/appkit/nsevent?language=objc")
+
+(define-objc-enum ns-event-type
+  "Constants for the types of events that responder objects can handle.
+see https://developer.apple.com/documentation/appkit/nsevent/eventtype?language=objc"
+  "Getting Mouse-Related Event Types"
+  (:left-mouse-down      1 "The user pressed the left mouse button.")
+  (:left-mouse-dragged   6 "The user moved the mouse while holding down the left mouse button.")
+  (:left-mouse-up        2 "The user released the left mouse button.")
+  (:right-mouse-down     3 "The user pressed the right mouse button.")
+  (:right-mouse-up       4 "The user released the right mouse button.")
+  (:right-mouse-dragged  7 "The user moved the mouse while holding down the right mouse button.")
+  (:other-mouse-down    25 "The user pressed a tertiary mouse button.")
+  (:other-mouse-dragged 27 "The user moved the mouse while holding down a tertiary mouse button.")
+  (:other-mouse-up      26 "The user released a tertiary mouse button.")
+  (:mouse-moved          5 "The user moved the mouse in a way that caused the cursor to move onscreen.")
+  (:mouse-entered        8 "The cursor entered a well-defined area, such as a view.")
+  (:mouse-exited         9 "The cursor exited a well-defined area, such as a view.")
+  "Getting Keyboard Event Types"
+  (:key-down            10 "The user pressed a key on the keyboard.")
+  (:key-up              11 "The user released a key on the keyboard.")
+  (:begin-gesture       19 "An event marking the beginning of a gesture.")
+  (:end-gesture         20 "An event that marks the end of a gesture.")
+  (:magnify             30 "The user performed a pinch-open or pinch-close gesture.")
+  (:smart-magnify       32 "The user performed a smart-zoom gesture.")
+  (:swipe               31 "The user performed a swipe gesture.")
+  (:rotate              18 "The user performed a rotate gesture.")
+  (:gesture             29 "The user performed a nonspecific type of gesture.")
+  (:direct-touch        37 "The user touched a portion of the touch bar.")
+  (:tablet-point        23 "The user touched a point on a tablet.")
+  (:tablet-proximity    24 "A pointing device is near, but not touching, the associated tablet.")
+  (:pressure            34 "An event that reports a change in pressure on a pressure-sensitive device.")
+  "Getting Other Input Types"
+  (:scroll-wheel        22 "The scroll wheel position changed.")
+  (:change-mode         38 "The user changed the mode of a connected device.")
+  "Getting System Event Types"
+  (:appkit-defined      13 "An AppKit-related event occurred.")
+  (:application-defined 15 "An app-defined event occurred.")
+  (:cursor-update       17 "An event that updates the cursor.")
+  (:flags-changed       12 "The event flags changed.")
+  (:periodic            16 "An event that provides execution time to periodic tasks.")
+  (:quick-look          33 "An event that initiates a Quick Look request.")
+  (:system-defined      14 "A system-related event occurred."))
+
+(defgeneric event-type (ns-event)
+  (:documentation "Get EVENT's type.
+Return `ns-event-type'.
+
+Invokes ObjC method type.
+see https://developer.apple.com/documentation/appkit/nsevent/type?language=objc")
+  (:method ((event ns-event))
+    (let ((type (invoke event "type")))
+      (case type
+        (1  :left-mouse-down)
+        (6  :left-mouse-dragged)
+        (2  :left-mouse-up)
+        (3  :right-mouse-down)
+        (4  :right-mouse-up)
+        (7  :right-mouse-dragged)
+        (25 :other-mouse-down)
+        (27 :other-mouse-dragged)
+        (26 :other-mouse-up)
+        (5  :mouse-moved)
+        (8  :mouse-entered)
+        (9  :mouse-exited)
+        (10 :key-down)
+        (11 :key-up)
+        (19 :begin-gesture)
+        (20 :end-gesture)
+        (30 :magnify)
+        (32 :smart-magnify)
+        (31 :swipe)
+        (18 :rotate)
+        (29 :gesture)
+        (37 :direct-touch)
+        (23 :tablet-point)
+        (24 :tablet-proximity)
+        (34 :pressure)
+        (22 :scroll-wheel)
+        (38 :change-mode)
+        (13 :app-kit-defined)
+        (15 :application-defined)
+        (17 :cursor-update)
+        (12 :flags-changed)
+        (16 :periodic)
+        (33 :quick-look)
+        (14 :system-defined)
+        (otherwise type)))))
+
+(define-objc-enum ns-event-subtype
+  "Subtypes for various types of events.
+see https://developer.apple.com/documentation/appkit/nsevent/eventsubtype?language=objc"
+  "Getting AppKit Event Subtypes
+These subtypes apply when the event type is `:appkit-defined'. "
+  (:application-activated     1 "An app-activation event occurred.")
+  (:application-deactivated   2 "An app-deactivation event occurred.")
+  (:screen-changed            8 "An event that indicates a window changed screens.")
+  (:window-exposed            0 "An event that indicates a window’s contents are visible again.")
+  "Getting System Event Subtypes
+These subtypes apply when the event type is `:system-defined'. "
+  (:window-moved              4 "An event that indicates a window moved.")
+  (:power-off                 1 "An event that indicates a system shutdown"
+                              "or restart operation is in progress.")
+  (:mouse-event               0 "A mouse event occurred.")
+  "Getting Other Subtypes"
+  (:tablet-point              1 "A tablet-pointer event occurred.")
+  (:tablet-proximity          2 "A tablet-proximity event occurred.")
+  (:touch                     3 "A touch event occurred."))
+
+(defgeneric event-subtype (ns-event)
+  (:documentation "Get EVENT's subtype.
+
+Invoke ObjC method subtype.
+see https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc")
+  (:method ((event ns-event))
+    (let ((type    (get-type event))
+          (subtype (invoke event "subtype")))
+      (flet ((other (subtype)
+               (case subtype
+                 (1 :tablet-point)
+                 (2 :tablet-proximity)
+                 (3 :touch)
+                 (otherwise subtype))))
+        (case type
+          (:appkit-defined
+           (case subtype
+             (1 :application-activated)
+             (2 :application-deactivated)
+             (8 :screen-changed)
+             (0 :window-exposed)
+             (otherwise (other subtype))))
+          (:system-defined
+           (case subtype
+             (4 :window-moved)
+             (1 :power-off)
+             (0 :mouse-event)
+             (otherwise (other subtype))))
+          (otherwise
+           (other subtype)))))))
+
+(define-objc-enum ns-event-modifier-flags
+  "Flags that represent key states in an event object.
+see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.struct?language=objc"
+  "Event Modifer Flags. "
+  (:caps-lock                          65536 "The Caps Lock key has been pressed.")
+  (:shift                             131072 "The Shift key has been pressed.")
+  (:control                           262144 "The Control key has been pressed.")
+  (:option                            524288 "The Option or Alt key has been pressed.")
+  (:command                          1048576 "The Command key has been pressed.")
+  (:numeric-pad                      2097152 "A key in the numeric keypad"
+                                     "or an arrow key has been pressed.")
+  (:help                             4194304 "The Help key has been pressed.")
+  (:function                         8388608 "A function key has been pressed.")
+  (:device-independent-flags-mask 4294901760 "Device-independent modifier flags are masked."))
+
+(defgeneric modifier-flags (ns-event)
+  (:documentation "Get EVENT's modifierFlags.
+Return a list of `ns-event-modifier-flags'.
+
+Invoke ObjC method modifierFlags.
+see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc")
+  (:method ((event ns-event))
+    (coca.objc::with-objc-enum-flags (invoke event "modifierFlags")
+      (:caps-lock                          65536)
+      (:shift                             131072)
+      (:control                           262144)
+      (:option                            524288)
+      (:command                          1048576)
+      (:numeric-pad                      2097152)
+      (:help                             4194304)
+      (:function                         8388608)
+      (:device-independent-flags-mask 4294901760))))
 
 
 ;;;; Menus, Cursors, and the Dock

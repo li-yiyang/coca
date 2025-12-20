@@ -14,6 +14,37 @@
 (uiop:define-package #:coca.foundation
   (:use :cl :coca.objc)
   (:export
+   ;; Object Runtime
+   #:ns-object
+   #:description
+   #:ns-number
+   #:ns-value
+   #:ns-value-transformer
+   #:ns-invocation
+   #:ns-method-signature
+   #:ns-proxy
+   #:ns-autorelease-pool
+   #:release
+   #:drain
+   #:retain
+   #:retain-count
+   #:autorelease
+   #:alloc-init
+   #:alloc
+   #:make-autorelease-pool
+   #:with-autorelease-pool
+   #:+ns-foundation-version-number+
+
+   ;; Numbers, Data, and Basic Values
+   #:ns-decimal-number
+   #:ns-number
+   #:ns-number-formatter
+   #:ns-data
+   #:ns-mutable-data
+   #:ns-url
+   #:ns-url-components
+   #:ns-url-query-item
+   #:ns-uuid
    #:ns-rect
    #:ns-rect-p
    #:make-ns-rect
@@ -31,46 +62,14 @@
    #:make-ns-size
    #:ns-size-x
    #:ns-size-y
-
-   #:string-to-ns-string
-   #:ns-string-to-string
-   #:description
-
-   #:release
-   #:drain
-   #:retain
-   #:retain-count
-   #:autorelease
-   #:alloc-init
-   #:make-autorelease-pool
-   #:with-autorelease-pool
-
-
-   ;; Object Runtime
-   #:ns-object
-   #:ns-number
-   #:ns-value
-   #:ns-value-transformer
-   #:ns-invocation
-   #:ns-method-signature
-   #:ns-proxy
-   #:ns-autorelease-pool
-
-   ;; Numbers, Data, and Basic Values
-   #:ns-decimal-number
-   #:ns-number
-   #:ns-number-formatter
-   #:ns-data
-   #:ns-mutable-data
-   #:ns-url
-   #:ns-url-components
-   #:ns-url-query-item
-   #:ns-uuid
    #:ns-affine-transform
 
    ;; Strings and Text
    #:ns-string
    #:ns-mutable-string
+   #:string-to-ns-string
+   #:ns-string-to-string
+   #:invoke-into-string
 
    ;; Collections
    #:ns-array
@@ -197,6 +196,8 @@
    #:ns-error
    #:ns-assertion-handler
    #:ns-exception
+   #:objc-exception
+   #:ns-log
 
    ;; Scripting Support
    #:ns-apple-script
@@ -296,6 +297,8 @@
 
    ;; Processes and Threads
    #:ns-run-loop
+   #:+ns-run-loop-common-modes+
+   #:+ns-default-run-loop-mode+
    #:ns-timer
    #:ns-process-info
    #:ns-thread
@@ -353,10 +356,10 @@ See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/de
   (ns-string-to-string (invoke ns-object "description")))
 
 (defmethod print-object ((obj ns-object) stream)
+  "When printing `ns-object', print `description' of OBJ. "
   (write-string (description obj) stream))
 
 ;;; Copying
-
 
 ;;; Value Wrappers and Transformations
 
@@ -560,6 +563,10 @@ Return reference count of OBJECT. "
 Return OBJECT self. "
   (declare (type ns-object object))
   (invoke object "autorelease"))
+
+(defun alloc (class)
+  "Returns a new instance of the receiving CLASS. "
+  (the ns-object (invoke class "alloc")))
 
 (defun alloc-init (object)
   "Invoke "
@@ -1875,6 +1882,14 @@ of your app running on a person’s devices."
 (doc-objc-class "NSRunLoop"             ; ns-run-loop
   "The programmatic interface to objects that manage input sources."
   "see https://developer.apple.com/documentation/foundation/runloop?language=objc")
+
+(define-objc-const +ns-run-loop-common-modes+
+    ("NSRunLoopCommonModes" :object coca.objc::foundation)
+  "A pseudo-mode that includes one or more other run loop modes. ")
+
+(define-objc-const +ns-default-run-loop-mode+
+    ("NSDefaultRunLoopMode" :object coca.objc::foundation)
+  "The mode set to handle input sources other than connection objects.")
 
 (doc-objc-class "NSTimer"               ; ns-timer
   "A timer that fires after a certain time interval has elapsed,
