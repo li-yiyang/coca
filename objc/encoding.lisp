@@ -2,6 +2,12 @@
 
 (in-package :coca.objc)
 
+(defparameter *objc-encoding-aliases* (make-hash-table)
+  "Aliases of ObjC encoding.
+
+KEY: symbol of ObjC encoding
+VAL: `objc-encoding'. ")
+
 (deftype objc-encoding ()
   "Type of ObjC encoding representation in lisp.
 
@@ -23,58 +29,110 @@ Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
        (cons (eql :array) t)
        (cons (eql :bits)  (cons number null))))
 
-(defun objc-encoding-init-value (type)
-  "Initial value of ObjC type encoding in TYPE.
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun objc-encoding-init-value (type)
+    "Initial value of ObjC type encoding in TYPE.
 Return initial type (unevaled). "
-  (declare (type objc-encoding type))
-  (etypecase type
-    (keyword (ecase type
-               (:float   0.0f0)
-               (:double  0.0d0)
-               (:bool    nil)
-               (:string  "")
-               ((:pointer :unknown)    '(null-pointer))
-               ((:char  :unsigned-char) #\L)
-               ((:class :sel :object)   nil)
-               ((:int       :unsigned-int
-                 :short     :unsigned-short
-                 :long      :unsigned-long
-                 :long-long :unsigned-long-long)
-                0)))
-    (list    (ecase (car type)
-               (:bits   0)
-               (:struct `(,(intern (str:concat "MAKE-" (symbol-name (second type))))))))))
+    (declare (type objc-encoding type))
+    (etypecase type
+      (keyword (ecase type
+                 (:float   0.0f0)
+                 (:double  0.0d0)
+                 (:bool    nil)
+                 (:string  "")
+                 ((:pointer :unknown)    '(null-pointer))
+                 ((:char  :unsigned-char) #\L)
+                 ((:class :sel :object)   nil)
+                 ((:int       :unsigned-int
+                   :short     :unsigned-short
+                   :long      :unsigned-long
+                   :long-long :unsigned-long-long)
+                  0)))
+      (list    (ecase (car type)
+                 (:bits   0)
+                 (:struct `(,(intern (str:concat "MAKE-" (symbol-name (second type))))))))))
 
-(defun objc-encoding-cffi-type (type)
-  "CFFI type for ObjC type encoding TYPE.
+  (defun objc-encoding-cffi-type (type)
+    "CFFI type for ObjC type encoding TYPE.
 Return CFFI type. "
-  (declare (type objc-encoding type))
-  (etypecase type
-    (keyword (case type
-               ((:unknown :class :sel :object :pointer) :pointer)
-               (otherwise type)))
-    (list    (ecase (car type)
-               (:struct type)))))
+    (declare (type objc-encoding type))
+    (etypecase type
+      (keyword (case type
+                 ((:unknown :class :sel :object :pointer) :pointer)
+                 (otherwise type)))
+      (list    (ecase (car type)
+                 (:struct type)))))
 
-(defun objc-encoding-lisp-type (type)
-  "Lisp type for ObjC type encoding TYPE.
+  (defun as-objc-encoding (type)
+    "Convert TYPE into `objc-encoding'.
+Return `objc-encoding'. "
+    (declare (type (or symbol objc-encoding) type))
+    (the objc-encoding
+      (etypecase type
+        (objc-encoding type)
+        (symbol
+         (cond ((subtypep type 'sel)                   :sel)
+               ((subtypep type 'standard-objc-object)  :object)
+               ((subtypep type 'objc-class)            :class)
+               ((subtypep type 'objc-pointer)          :pointer)
+               ((gethash type *objc-encoding-aliases*) (gethash type *objc-encoding-aliases*))
+               (t (error "Unknown ObjC encoding ~S. "  type)))))))
+
+  (defun objc-encoding-lisp-type (type)
+    "Lisp type for ObjC type encoding TYPE.
 Return lisp type. "
-  (declare (type objc-encoding type))
-  (etypecase type
-    (keyword (ecase type
-               ((:char :unsigned-char)                  'character)
-               ((:int :short)                           '(signed-byte   32))
-               ((:unsigned-int :unsigned-short)         '(unsigned-byte 32))
-               ((:long :long-long)                      '(signed-byte   64))
-               ((:unsigned-long :unsigned-long-long)    '(unsigned-byte 64))
-               (:float                                  'single-float)
-               (:double                                 'double-float)
-               (:bool                                   'boolean)
-               ((:unknown :pointer)                     'foreign-pointer)
-               (:class                                  'objc-class)
-               (:object                                 'standard-objc-object)
-               (:string                                 'string)
-               (:sel                                    'sel)))))
+    (declare (type objc-encoding type))
+    (etypecase type
+      (keyword (ecase type
+                 ((:char :unsigned-char)                  'character)
+                 ((:int :short)                           '(signed-byte   32))
+                 ((:unsigned-int :unsigned-short)         '(unsigned-byte 32))
+                 ((:long :long-long)                      '(signed-byte   64))
+                 ((:unsigned-long :unsigned-long-long)    '(unsigned-byte 64))
+                 (:float                                  'single-float)
+                 (:double                                 'double-float)
+                 (:bool                                   'boolean)
+                 ((:unknown :pointer)                     'foreign-pointer)
+                 (:class                                  'objc-class)
+                 (:object                                 'standard-objc-object)
+                 (:string                                 'string)
+                 (:sel                                    'sel))))))
+
+(defmacro define-objc-typedef (name objc-encoding &body docstring?-type)
+  "Define ObjC type alias of NAME for OBJC-ENCODING.
+
+Example:
+
+    (define-objc-typedef ns-uinteger :unsigned-long
+      \"NSUInteger in lisp. \")
+
+Syntax:
+
+    (define-objc-typedef NAME OBJC-ENCODING &optional TYPE)
+
+Parameters:
++ NAME: symbol as lisp type alias
++ OBJC-ENCODING: `objc-encoding'
++ TYPE: if given, would generate additional TYPE declaration for NAME
+"
+  (let* ((body      docstring?-type)
+         (docstring (pop body))
+         (encoding  (gensym "ENCODING"))
+         (type      (gensym "TYPE")))
+    (unless (stringp docstring)
+      (push docstring body)
+      (setf docstring nil))
+    `(progn
+       (deftype ,name ()
+         ,(or docstring
+              (format nil "ObjC type encoding alias of ~S. " objc-encoding))
+         ,(if (endp body)
+              `',(objc-encoding-lisp-type objc-encoding)
+              `(let ((,encoding ',(objc-encoding-lisp-type objc-encoding))
+                     (,type     (progn ,@body)))
+                 (list 'and ,encoding ,type))))
+       (setf (gethash ',name *objc-encoding-aliases*)
+             (as-objc-encoding ',objc-encoding)))))
 
 (defparameter *encodings* (make-hash-table :test 'equal)
   "Cache of ObjC parsed type encoding.
@@ -256,42 +314,44 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCR
                       :while (< pos len)))))))
     (values (rest encodings) (first encodings) encoding)))
 
-;; TODO:
-;; (defun encode-objc-type-encoding (type-list)
-;;   "Encode TYPE-LIST as OBJC type encoding string. "
-;;   (with-output-to-string (enc)
-;;     (labels ((fmt (type)
-;;                (ecase (atomize type)
-;;                  (:char               (write-char #\c enc))
-;;                  (:unsigned-char      (write-char #\C enc))
-;;                  (:int                (write-char #\i enc))
-;;                  (:unsigned-int       (write-char #\I enc))
-;;                  (:short              (write-char #\s enc))
-;;                  (:unsigned-short     (write-char #\s enc))
-;;                  (:long               (write-char #\l enc))
-;;                  (:unsigned-long      (write-char #\L enc))
-;;                  (:long-long          (write-char #\q enc))
-;;                  (:unsigned-long-long (write-char #\Q enc))
-;;                  (:float              (write-char #\f enc))
-;;                  (:double             (write-char #\d enc))
-;;                  (:bool               (write-char #\B enc))
-;;                  (:void               (write-char #\v enc))
-;;                  (:string             (write-char #\* enc))
-;;                  (:object             (write-char #\@ enc))
-;;                  (:class              (write-char #\# enc))
-;;                  (:sel                (write-char #\: enc))
-;;                  (:unknown            (write-char #\? enc))
-;;                  (:union              (format enc "(~A)" (second type)))
-;;                  (:bits               (format enc "b~D"  (second type)))
-;;                  (:pointer            (write-char #\^ enc)
-;;                   (let ((type (second (listfy type))))
-;;                     (if type (fmt type) (write-char #\? enc))))
-;;                  (:struct
-;;                   (format enc "{~A}"
-;;                           (or (car (gethash (second type) *lisp-structs*))
-;;                               (error "Unknown Lisp struct `~S' in ObjC runtime. "
-;;                                      (second type))))))))
-;;       (dolist (type type-list)
-;;         (fmt type)))))
+(defun encode-objc-type-encoding (type-list)
+  "Encode TYPE-LIST as OBJC type encoding string.
+Return ObjC type encoding string.
+
+Example:
+
+    (encode-objc-type-encoding '(:void :object :sel)) ;; => \"v@:\"
+"
+  (with-output-to-string (enc)
+    (labels ((fmt (type)
+               (ecase (atomize type)
+                 (:char               (write-char #\c enc))
+                 (:unsigned-char      (write-char #\C enc))
+                 (:int                (write-char #\i enc))
+                 (:unsigned-int       (write-char #\I enc))
+                 (:short              (write-char #\s enc))
+                 (:unsigned-short     (write-char #\s enc))
+                 (:long               (write-char #\l enc))
+                 (:unsigned-long      (write-char #\L enc))
+                 (:long-long          (write-char #\q enc))
+                 (:unsigned-long-long (write-char #\Q enc))
+                 (:float              (write-char #\f enc))
+                 (:double             (write-char #\d enc))
+                 (:bool               (write-char #\B enc))
+                 (:void               (write-char #\v enc))
+                 (:string             (write-char #\* enc))
+                 (:object             (write-char #\@ enc))
+                 (:class              (write-char #\# enc))
+                 (:sel                (write-char #\: enc))
+                 (:unknown            (write-char #\? enc))
+                 (:union              (format enc "(~A)" (second type)))
+                 (:bits               (format enc "b~D"  (second type)))
+                 (:pointer            (write-char #\^ enc)
+                  (let ((type (second (listfy type))))
+                    (if type (fmt type) (write-char #\? enc))))
+                 (:struct
+                  (format enc "{~A}" (objc-struct-info-name (objc-struct-info (second type))))))))
+      (dolist (type type-list)
+        (fmt (as-objc-encoding type))))))
 
 ;;;; encoding.lisp ends here

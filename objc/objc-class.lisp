@@ -68,7 +68,7 @@ Parameters:
     the name of class would be fetched by `coca.objc::class_getName',
     the CLASS-NAME would be used to set the lisp class name if needed
     (see above as string CLASS input)
-+ CLASS-NAME: if given, will setting the target lisp class name, see above"
+"
   (declare (type (or string symbol objc-class foreign-pointer) class))
   (flet ((wrap-ptr-as-objc-class (ptr name class-name)
            (declare (type foreign-pointer ptr)

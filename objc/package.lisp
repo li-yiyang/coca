@@ -21,6 +21,7 @@
 
    ;; ObjC encoding
    #:objc-encoding
+   #:define-objc-typedef
 
    ;; ObjC struct
    #:define-objc-struct
