@@ -208,6 +208,88 @@ Parameters:
        (apply (the function (objc-class-instance-method class sel))
               (cons object (cons sel args)))))))
 
+;; TODO: implement protocol or not?
+(trivial-indent:define-indentation declare-objc-method (4 &lambda &body))
+(defmacro declare-objc-method ((name* result-type &key) objc-lambda-list &body options)
+  "Defines an Objective-C instance method for a specified class.
+
+Syntax:
+
+    (define-objc-method ({ SEL | (SEL NAME) } RESULT-TYPE &key PROTOCOL)
+        OBJC-LAMBDA-LIST
+      (:documentation \"\")
+      (:invoke    self ...)
+      (:method :around (self . LAMBDA-LIST)
+        ...))
+
+Parameters:
++ NAME: string of ObjC method SEL
++ LISP-NAME: symbol of lisp ObjC method name
++ RESULT-TYPE: `objc-encoding'
++ OBJC-LAMBDA-LIST: like normal lambda list
+
+  Example:
+
+      ((self ns-window)
+       (rect ns-rect)
+       (...))
+
+  Note: the first should be the specific objc-class.
+  So this will add method implementation for the OBJC-CLASS.
++ OPTION:
+  + INVOKE: this will define the method like:
+
+        (defmethod ... (SELF ...)
+          (invoke SELF SEL ...))
+"
+  (destructuring-bind (sel &optional (name (objc-intern (the string sel)))) (listfy name*)
+    (let ((ret       (as-objc-encoding result-type))
+          (invoke    (cdr (assoc :invoke    options)))
+          (options*  (remove-alist options :invoke :implement)))
+      (multiple-value-bind (required optional rest keys allow-other-keys)
+          (parse-objc-lambda-list objc-lambda-list)
+        ;; CALL:        a list of calling form example: (invoke ,@call) or (,name ,@call)
+        ;; ENCODING:    ObjC type encoding
+        ;; LAMBDA-LIST: lisp defmethod lambda list
+        (let* ((call         (cond (invoke
+                                    `(,(first invoke) ,sel ,@(rest invoke)))
+                                   (t
+                                    (when (or (null rest)
+                                              (null keys)
+                                              (null allow-other-keys))
+                                      (error "Unknown how to invoke with OBJC-LAMBDA-LIST: ~%~S. "
+                                             objc-lambda-list))
+                                    `(,(car (first required))
+                                      ,sel
+                                      ,@(mapcar #'car (rest required))
+                                      ,@(mapcar #'car optional)))))
+               (encoding    `(:object
+                              :sel
+                              ,@(loop :for var :in (cddr call)
+                                      :for enc := (second (or (assoc var required)
+                                                              (assoc var optional)
+                                                              (assoc var keys)))
+                                      :if (null enc)
+                                        :do (error "Unknown ~A type, check OBJC-LAMBDA-LIST: ~S. "
+                                                   var objc-lambda-list)
+                                      :collect enc)))
+               (lambda-list `(,@(loop :for (var objc-encoding lisp-type) :in required
+                                      :collect (list var lisp-type))
+                              ,@(when optional `(&optional ,@(mapcar #'car optional)))
+                              ,@(when rest     `(&rest     ,rest))
+                              ,@(when keys     `(&key      ,@(mapcar #'car keys)))
+                              ,@(when allow-other-keys `(&allow-other-keys)))))
+          `(defgeneric ,name ,(mapcar #'car lambda-list)
+             (:method ,lambda-list (invoke ,@call))
+             ,@options*))))))
+
+;; (defun %class-replace-method (class sel method-name type-encoding)
+;;   "Wrapper function of `class_replaceMethod'. "
+;;   (class_replaceMethod (objc-object-pointer (coerce-to-objc-class class))
+;;                        (objc-object-pointer (coerce-to-selector   sel))
+;;                        (get-callback method-name)
+;;                        (encode-objc-type-encoding type-encoding)))
+
 ;;; Trivial test
 
 ;; (trivial-main-thread:with-body-in-main-thread ()

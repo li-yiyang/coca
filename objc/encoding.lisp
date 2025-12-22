@@ -55,11 +55,18 @@ Return initial type (unevaled). "
   (defun objc-encoding-cffi-type (type)
     "CFFI type for ObjC type encoding TYPE.
 Return CFFI type. "
-    (declare (type objc-encoding type))
+    (declare (type (or objc-encoding symbol) type))
     (etypecase type
       (keyword (case type
                  ((:unknown :class :sel :object :pointer) :pointer)
                  (otherwise type)))
+      (symbol  (cond ((subtypep type 'sel)                   'sel)
+                     ((subtypep type 'standard-objc-object)  type)
+                     ((subtypep type 'objc-class)            'objc-class)
+                     ((subtypep type 'objc-pointer)          'foreign-pointer)
+                     ((gethash type *objc-encoding-aliases*)
+                      (objc-encoding-lisp-type (gethash type *objc-encoding-aliases*)))
+                     (t (error "Unknown ObjC encoding ~S. "  type))))
       (list    (ecase (car type)
                  (:struct type)))))
 
@@ -76,12 +83,13 @@ Return `objc-encoding'. "
                ((subtypep type 'objc-class)            :class)
                ((subtypep type 'objc-pointer)          :pointer)
                ((gethash type *objc-encoding-aliases*) (gethash type *objc-encoding-aliases*))
+               ((objc-struct-info type)                (list :struct type))
                (t (error "Unknown ObjC encoding ~S. "  type)))))))
 
   (defun objc-encoding-lisp-type (type)
     "Lisp type for ObjC type encoding TYPE.
 Return lisp type. "
-    (declare (type objc-encoding type))
+    (declare (type (or objc-encoding symbol) type))
     (etypecase type
       (keyword (ecase type
                  ((:char :unsigned-char)                  'character)
@@ -96,7 +104,17 @@ Return lisp type. "
                  (:class                                  'objc-class)
                  (:object                                 'standard-objc-object)
                  (:string                                 'string)
-                 (:sel                                    'sel))))))
+                 (:sel                                    'sel)))
+      (symbol (cond ((subtypep type 'standard-objc-object)  type)
+                    ((subtypep type 'objc-class)           'objc-class)
+                    ((subtypep type 'sel)                  'sel)
+                    (t (objc-encoding-lisp-type (as-objc-encoding type)))))
+      (list   (destructuring-bind (type data) type
+                (ecase type
+                  (:struct (if (objc-struct-info data)
+                               data
+                               (error "Unknown ObjC structure ~S. " data)))
+                  (:pointer 'foreign-pointer)))))))
 
 (defmacro define-objc-typedef (name objc-encoding &body docstring?-type)
   "Define ObjC type alias of NAME for OBJC-ENCODING.
@@ -353,5 +371,83 @@ Example:
                   (format enc "{~A}" (objc-struct-info-name (objc-struct-info (second type))))))))
       (dolist (type type-list)
         (fmt (as-objc-encoding type))))))
+
+(defun parse-objc-lambda-list (objc-lambda-list)
+  "Parse ObjC lambda list OBJC-LAMBDA-LIST.
+Return values are: required, optional, rest, key, allow-other-keys.
+
++ required, optional, key are list of (VAR OBJC-ENCODING TYPE).
++ rest is symbol as rest variable
++ allow-other-keys is t or nil
+
+Definition:
+
+    OBJC-LAMBDA-LIST:
+    (required-args... { &optional | &key | &rest | &allow-other-keys })
+
+    ARG-TYPES:
+    (ARG . OBJC-ENCODING)
+    sequence same as argument shows in OBJC-LAMBDA-LIST
+
+Dev Note:
+this is a trivial state machine implementation for ObjC lambda list
+parsing:
+
+
+     +---+                 +---+                  +--+
+     |   V     &optional   |   V       &key       |  V  &allow-other-keys
+    REQUIRED -----------> OPTIONAL  ----------+--> KEY --------------------> ALLOW-OTHER-KEYS
+           \               |                 /
+            \  &rest       V &rest          /
+             +----------> REST      -------+
+"
+  (flet ((gen (arg-type)
+           (destructuring-bind (var type) arg-type
+             (let ((encoding (as-objc-encoding type))
+                   (class    (let ((type (objc-encoding-lisp-type type)))
+                               (cond ((subtypep type 'integer) 'integer)
+                                     (t                         type)))))
+               (list var encoding class)))))
+    (macrolet ((push-arg* (arg target) `(push (gen ,arg) ,target)))
+      (loop :with env              := :required
+            :with required         := ()
+            :with optional         := ()
+            :with rest             := nil
+            :with keys             := ()
+            :with allow-other-keys := nil
+            :for arg :in objc-lambda-list
+            :do (ecase env
+                  (:required
+                   (cond ((eql arg '&optional) (setf env :optional))
+                         ((eql arg '&rest)     (setf env :rest))
+                         ((listp arg)          (push-arg* arg required))
+                         (t (error "Expecting (VAR TYPE) for OBJC-LAMBDA-LIST, but got ~S. " arg))))
+                  (:optional
+                   (cond ((eql arg '&key)      (setf env :key))
+                         ((eql arg '&rest)     (setf env :rest))
+                         ((listp arg)          (push-arg* arg optional))
+                         (t (error "Expecting (VAR TYPE) for OBJC-LAMBDA-LIST, but got ~S. " arg))))
+                  (:rest
+                   (if (and (symbolp arg) (not (str:starts-with? "&" (symbol-name arg))))
+                       (setf rest arg)
+                       (error "Expecting &rest VAR, but got &rest ~S. " arg))
+                   (setf env :after-rest))
+                  (:after-rest
+                   (if (eql arg '&key)
+                       (setf env :key)
+                       (error "Unexpected ~S. " arg)))
+                  (:key
+                   (cond ((eql arg '&allow-other-keys)
+                          (setf env              :allow-other-keys
+                                allow-other-keys t))
+                         ((listp arg) (push-arg* arg required))
+                         (t (error "Expecting (VAR TYPE) for OBJC-LAMBDA-LIST, but got ~S. " arg))))
+                  (:allow-other-keys
+                   (error "Unexpected ~S. " arg)))
+            :finally (return (values (reverse required)
+                                     (reverse optional)
+                                     rest
+                                     (reverse keys)
+                                     allow-other-keys))))))
 
 ;;;; encoding.lisp ends here

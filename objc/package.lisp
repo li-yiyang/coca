@@ -35,6 +35,7 @@
    ;; ObjC method
    ;; #:define-objc-method
    ;; #:define-objc-protocol
+   #:declare-objc-method
    #:invoke
    #:can-invoke-p))
 
