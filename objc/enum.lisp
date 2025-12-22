@@ -76,7 +76,7 @@ See type documentation `~S'. "
                         (reduce (lambda (res flag)
                                   (logior (the unsigned-byte res)
                                           (the unsigned-byte (decode flag))))
-                                (cons flag flags)
+                                list
                                 :initial-value (the unsigned-byte 0)))))
              (the unsigned-byte
                (if (endp flags)

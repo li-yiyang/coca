@@ -1,16 +1,43 @@
 ;;;; appkit.lisp --- ObjC bindings for AppKit Framework
-;; Construct and manage a graphical, event-driven user interface for your macOS app.
-;; https://developer.apple.com/documentation/appkit?language=objc
 
 (uiop:define-package #:coca.appkit
   (:use :cl :coca.objc :coca.foundation)
+  (:documentation
+   "Construct and manage a graphical, event-driven user interface for your macOS app.
+
+AppKit contains the objects you need to build the user interface for a
+macOS app. In addition to drawing windows, buttons, panels, and text
+fields, it handles all the event management and interaction between
+your app, people, and macOS.
+
+Aside from drawing and managing interactions, AppKit handles printing,
+animating, as well as creating documents with large amounts of data
+efficiently. The framework also contains built-in support for
+localization and accessibility to ensure that your app reaches as many
+people as possible.
+
+AppKit also works with SwiftUI, so you can implement parts of your
+AppKit app in SwiftUI or mix interface elements between the two
+frameworks. For example, you can place AppKit views and view
+controllers inside SwiftUI views, and vice versa.
+
+Note:
+For information about bringing your iPad app to Mac, see Mac
+Catalyst. To build an iOS app, you can use SwiftUI to create an app
+that works across all of Apple’s platforms, or use UIKit to create an
+app for iOS only.
+
+see https://developer.apple.com/documentation/appkit?language=objc")
   (:export
-   #:*ns-app*
-   #:ns-application-shared-application
-
-
    ;; App and Environment
    #:ns-application
+   #:ns-app
+   #:+ns-event-tracking-run-loop-mode+
+   #:+ns-modal-panel-run-loop-mode+
+   #:next-event
+   #:is-running
+   #:run
+   #:current-event
    #:ns-running-application
    #:ns-workspace
    #:ns-workspace-open-configuration
@@ -110,7 +137,20 @@
    ;; Windows, Panels, and Screens
    #:ns-window
    #:ns-window-style-mask
+   #:ns-window-style-mask-p
+   #:decode-ns-window-style-mask
    #:ns-backing-store-type
+   #:ns-backing-store-type-p
+   #:decode-backing-store-type
+   #:ns-window-init
+   #:content-view-controller
+   #:content-view
+   #:style
+   #:main-window-p
+   #:can-become-main-window-p
+   #:make-main-window
+   #:toolbar
+   #:visible-p
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -137,9 +177,17 @@
 
    ;; Mouse, Keyboard, and Trackpad
    #:ns-event-type
+   #:ns-event-type-p
+   #:decode-ns-event-type
    #:ns-event-subtype
+   #:ns-event-subtype-p
+   #:decode-ns-event-subtype
    #:ns-event-modifier-flags
+   #:ns-event-modifier-flags-p
+   #:decode-ns-event-modifier-flags
    #:ns-event-mask
+   #:ns-event-mask-p
+   #:decode-ns-event-mask
    #:ns-event
    #:event-type
    #:event-subtype
@@ -303,7 +351,7 @@
 ;;; Life Cycle
 
 (doc-objc-class "NSApplication"         ; ns-application
-  "An object that manages an app’s main event loop and resources used by all of that app’s objects."
+  "An object that manages an app’s main event loop and resources used by all of that app's objects."
   "Every app uses a single instance of `ns-application' to control the main
 event loop, keep track of the app’s windows and menus, distribute
 events to the appropriate objects (that’s, itself or one of its windows),
@@ -477,6 +525,75 @@ object without being closely tied to the global app object."
 (defmethod initialize-instance :after ((ns-app ns-application) &key)
   "After [NSApplication sharedApplication], set global `*ns-app*'. "
   (setf *ns-app* ns-app))
+
+(defun ns-app ()
+  "Returns the shared `ns-application'. "
+  (or *ns-app* (invoke 'ns-application "sharedApplication")))
+
+;; Managing the event loop
+
+(define-objc-const +ns-event-tracking-run-loop-mode+
+    ("NSEventTrackingRunLoopMode" :object appkit)
+  "The mode set when tracking events modally, such as a mouse-dragging loop.
+see https://developer.apple.com/documentation/appkit/nseventtrackingrunloopmode?language=objc")
+
+(define-objc-const +ns-modal-panel-run-loop-mode+
+    ("NSModalPanelRunLoopMode" :object appkit)
+  "The mode set when waiting for input from a modal panel, such as a save or open panel.
+see https://developer.apple.com/documentation/appkit/nsmodalpanelrunloopmode?language=objc")
+
+(defmethod next-event ((app ns-application)
+                       &key
+                         (mask  :any)
+                         (util  nil)
+                         (mode  +ns-default-run-loop-mode+)
+                         (deque t)
+                       &allow-other-keys)
+  "Returns the next event matching a given mask,
+or nil if no such event is found before a specified expiration date.
+
+Parameters:
++ MASK: `ns-event-mask'
++ UTIL: The expiration date for the current event request (default `ns-date-distant-future')
++ MODE: The run loop mode in which to run while looking for events.
+  could be:
+  + `+ns-default-run-loop-mode+'
+  + `+ns-run-loop-common-modes+'
+  + `+ns-event-tracking-run-loop-mode+'
+  + `+ns-modal-panel-run-loop-mode+'
+  + `+ns-connnection-reply-mode+'
++ DEQUEUE: Specify `t' (default) if you want the event removed from the queue.
+
+Dev Note:
+Invokes ObjC method nextEventMatchingMask:untilDate:inMode:dequeue:
+
+see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(matching:until:inmode:dequeue:)?language=objc"
+  (declare (type (or list ns-event-mask) mask)
+           (type (or null ns-date)       util)
+           (type (or ns-string string)   mode))
+  (invoke app
+          "nextEventMatchingMask:untilDate:inMode:dequeue:"
+          (apply #'ns-event-mask (coca.objc::listfy mask))
+          (or util (ns-date-distant-future))
+          mode
+          (and deque t)))
+
+(defmethod is-running ((app ns-application))
+  "Test if the main event loop of APP is running.
+Invoke ObjC method running.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc"
+  (invoke app "isRunning"))
+
+(defmethod run ((app ns-application))
+  "Starts the main event loop. "
+  (invoke app "run"))
+
+(defmethod current-event ((app ns-application))
+  "Return the last event object that the app retrieved from the event queue.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc"
+  (invoke app "currentEvent"))
 
 (doc-objc-class "NSRunningApplication"  ; ns-running-application
   "An object that can manipulate and provide information for a single instance of an app."
@@ -1051,7 +1168,8 @@ See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.st
                               "A fullscreen window does not draw its title bar, "
                               "and may have special handling for its toolbar. "
                               "(This mask is automatically toggled when toggleFullScreen: is called.)")
-  (:full-size-content-view    (ash 1 15) "When set, the window's contentView consumes the full size of the window."
+  (:full-size-content-view    (ash 1 15)
+                              "When set, the window's contentView consumes the full size of the window."
                               "Although you can combine this constant with other window style masks, "
                               "it is respected only for windows with a title bar. "
                               "Note that using this mask opts in to layer-backing. "
@@ -1066,10 +1184,286 @@ See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.st
 (define-objc-enum ns-backing-store-type
   (:retained    0 "Deprecated"
                 "The window uses a buffer"
-                "but draws directly to the screen where possible and to the buffer for obscured portions.")
+                "but draws directly to the screen where possible and "
+                "to the buffer for obscured portions.")
   (:nonretained 1 "Deprecated"
                 "The window draws directly to the screen without using any buffer.")
-  (:buffered    2 "The window renders all drawing into a display buffer and then flushes it to the screen."))
+  (:buffered    2
+                "The window renders all drawing into a display buffer"
+                "and then flushes it to the screen."))
+
+(declaim (type (satisfies ns-window-style-mask-p) *ns-window-style*))
+(defparameter *ns-window-style* '(:titled :closable :miniaturizable :resizable)
+  "Default `ns-window-style-mask'.
+see `ns-window-init'. ")
+
+(declaim (type (and keyword (satisfies ns-backing-store-type-p)) *ns-backing-store*))
+(defparameter *ns-backing-store* :buffered
+  "Default `ns-backing-store-type'.
+see `ns-window-init'. ")
+
+(defun ns-window-init (ns-rect &key
+                                 (style   *ns-window-style*)
+                                 (backing *ns-backing-store*)
+                                 (defer   t)
+                                 screen
+                       &allow-other-keys)
+  "Initializes the window with the specified values.
+Return the initialized `ns-window'.
+
+Parameters:
++ NS-RECT: `ns-rect'
+  Origin and size of the window’s content area in screen
+  coordinates. Note that the window server limits window position
+  coordinates to ±16,000 and sizes to 10,000.
++ STYLE: see `ns-window-style-mask' (default `*ns-window-style*')
+  The window’s style. It can be NSBorderlessWindowMask, or it can
+  contain any of the options described in NSWindowStyleMask, combined
+  using the C bitwise OR operator. Borderless windows display none of
+  the usual peripheral elements and are generally useful only for
+  display or caching purposes; you should normally not need to create
+  them. Also, note that a window’s style mask should include
+  NSTitledWindowMask if it includes any of the others.
++ BACKING: see `ns-backing-store-type' (default `*ns-backing-store*')
+  Specifies how the drawing done in the window is buffered by the
+  window device, and possible values are described in
+  NSBackingStoreType.
++ DEFER:
+  Specifies whether the window server creates a window device for the
+  window immediately. When true, the window server defers creating the
+  window device until the window is moved onscreen. All display
+  messages sent to the window or its views are postponed until the
+  window is created, just before it’s moved onscreen.
++ SCREEN: `ns-screen'
+  Specifies the screen on which the window is positioned. The content
+  rectangle is positioned relative to the bottom-left corner of
+  screen. When nil, the content rectangle is positioned relative to
+  (0, 0), which is the origin of the primary screen.
+
+Dev Note:
+this invokes
++ initWithContentRect:styleMask:backing:defer:screen:
++ initWithContentRect:styleMask:backing:defer:
+
+see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:)?language=objc
+see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:screen:)?language=objc"
+  (declare (type ns-rect ns-rect)
+           (type (satisfies ns-window-style-mask-p)  style)
+           (type (satisfies ns-backing-store-type-p) backing)
+           (type (or null ns-screen)                 screen))
+  (if screen
+      (invoke (alloc 'ns-window)
+              "initWithContentRect:styleMask:backing:defer:screen:"
+              ns-rect
+              (ns-window-style-mask style)
+              backing
+              (and defer t)
+              screen)
+      (invoke (alloc 'ns-window)
+              "initWithContentRect:styleMask:backing:defer:"
+              ns-rect
+              (ns-window-style-mask style)
+              backing
+              (and defer t))))
+
+;; Managing the Window's Behavior
+
+;; Configuring the Window's Content
+
+(defmethod content-view-controller ((window ns-window))
+  "Return the main content view controller for the window.
+
+The value of this property provides the content view of the
+window. Setting this value removes the existing value of contentView
+and makes the contentViewController.view the main content view for the
+window. By default, the value of this property is nil.
+
+The content view controller controls only the contentView object, and
+not the title of the window. The window title can easily be bound to
+the contentViewController object using code such as:
+
+    [window bind:NSTitleBinding
+        toObject:contentViewController
+     withKeyPath:@\"title\"
+         options:nil]
+
+    (invoke window
+            \"bind:toObject:withKeyPath:options:\"
+            +ns-title-binding+
+            content-view-controller
+            (string-to-ns-string \"title\")
+            nil)
+
+Setting contentViewController causes the window to resize based on the
+current size of the contentViewController; to restrict the size of the
+window, use Auto Layout (note that the value of this property is
+encoded in the NIB). Directly assigning a contentView value clears out
+the root view controller.
+
+Parameters:
++ WINDOW: `ns-window'
+
+see https://developer.apple.com/documentation/appkit/nswindow/contentviewcontroller?language=objc
+"
+  (invoke window "contentViewController"))
+
+(defmethod content-view ((window ns-window))
+  "Return the WINDOW's content view,
+the highest accessible view object in the WINDOW's view hierarchy.
+
+The window retains the new content view and owns it thereafter. The
+view object is resized to fit precisely within the content area of the
+window. You can modify the content view’s coordinate system through
+its bounds rectangle, but you can’t alter its frame rectangle (its
+size or location) directly.
+
+Setting this property releases the old content view. If you plan to
+reuse it, be sure to retain it before changing the property value and
+to release it as appropriate when adding it to another NSWindow or
+NSView object.
+
+Parameters:
++ WINDOW: `ns-window'
+
+see https://developer.apple.com/documentation/appkit/nswindow/contentview?language=objc"
+  (invoke window "contentView"))
+
+;; Configuring the Window's Appearance
+
+(defmethod style ((window ns-window))
+  "Get `ns-window-style-mask' flags that describe the WINDOW's current style. "
+  (invoke window "styleMask"))
+
+(defmethod style :around ((window ns-window))
+  (decode-ns-window-style-mask (call-next-method)))
+
+;; Accessing Window Information
+
+;; Getting Layout Information
+
+;; Managing Windows
+
+;; Managing Sheets
+
+;; Sizing Windows
+
+;; Sizing Content
+
+;; Managing Window Layers
+
+;; Managing Window Visibility and Occlusion State
+
+(defmethod visible-p ((window ns-window))
+  "Test if WINDOW is visible onscreen. "
+  (invoke window "visible"))
+
+(defmethod (setf visible-p) (visible (window ns-window))
+  "Sets the WINDOW's visible state to the VISIBLE. "
+  (invoke window "setIsVisible:" (and visible t)))
+
+;; Managing Window Frames in User Defaults
+
+;; Managing Key Status
+
+;; Managing Main Status
+
+(defmethod main-window-p ((window ns-window))
+  "Test if WINDOW is application's main window.
+see https://developer.apple.com/documentation/appkit/nswindow/ismainwindow?language=objc"
+  (invoke window "mainWindow"))
+
+(defmethod can-become-main-window-p ((window ns-window))
+  "Test if WINDOW can become the application's main window.
+see https://developer.apple.com/documentation/appkit/nswindow/canbecomemain?language=objc"
+  (invoke window "canBecomeMainWindow"))
+
+(defmethod make-main-window ((window ns-window))
+  "Makes the window the main window.
+see https://developer.apple.com/documentation/appkit/nswindow/makemain()?language=objc"
+  (invoke window "makeMainWindow"))
+
+;; Managing Toolbars
+
+(defmethod toolbar ((window ns-window))
+  "Get the WINDOW's toolbar
+see https://developer.apple.com/documentation/appkit/nswindow/toolbar?language=objc"
+  (invoke window "toolbar"))
+
+;; Managing Attached Windows
+
+;; Managing Default Buttons
+
+;; Managing Field Editors
+
+;; Managing the Window Menu
+
+;; Managing Cursor Rectangles
+
+;; Managing Title Bars
+
+;; Managing Title Bar Accessories
+
+;; Managing Window Tabs
+
+;; Managing Tooltips
+
+;; Handling Events
+
+;; Managing Responders
+
+;; Managing the Key View Loop
+
+;; Managing Window Sharing
+
+;; Handling Mouse Events
+
+;; Handling Window Restoration
+
+;; Drawing Windows
+
+;; Window Animation
+
+;; Updating Windows
+
+;; Dragging Items
+
+;; Accessing Edited Status
+
+;; Converting Coordinates
+
+;; Managing Titles
+
+;; Accessing Screen Information
+
+;; Moving Windows
+
+;; Closing Windows
+
+;; Minimizing Windows
+
+;; Getting the Dock Tile
+
+;; Printing Windows
+
+;; Providing Services
+
+;; Triggering Constraint-Based Layout
+
+;; Debugging Constraint-Based Layout
+
+;; Constraint-Based Layouts
+
+;; Working with Window Depths
+
+;; Getting Information About Scripting Attributes
+
+;; Setting Scripting Attributes
+
+;; Handling Script Commands
+
+;; Constants
+
+;; Notifications
 
 (doc-objc-class "NSPanel"               ; ns-panel
   "A special kind of window that typically performs a function that is auxiliary to the main window. "
@@ -1078,13 +1472,31 @@ especially to find out how their behavior differs from window behavior, see How 
 https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPanel/Concepts/UsingPanels.html#//apple_ref/doc/uid/20000224"
   "see https://developer.apple.com/documentation/appkit/nspanel?language=objc")
 
+;; Configuring Panels
+
+;; Constants
+
 (doc-objc-class "NSWindowTab"           ; ns-window-tab
   "A tab associated with a window that is part of a tabbing group. "
   "see https://developer.apple.com/documentation/appkit/nswindowtab?language=objc")
 
+;; Customizing the Title
+
+;; Customizing the Tooltip
+
+;; Adding an Accessory View
+
+;; Relationships
+
 (doc-objc-class "NSWindowTabGroup"      ; ns-window-tab-group
   "A group of windows that display together as a single tabbed window."
   "see https://developer.apple.com/documentation/appkit/nswindowtabgroup?language=objc")
+
+;; Checking the Group Identifier
+
+;; Configuring the Tab User Interface
+
+;; Managing Tabbed Windows
 
 ;;; Window Restoration
 
@@ -1092,13 +1504,85 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPa
 
 (doc-objc-class "NSScreen"              ; ns-screen
   "An object that describes the attributes of a computer’s monitor or screen. "
+  "An app may use an NSScreen object to retrieve information about a
+screen and use this information to decide what to display on that
+screen. For example, an app may use the deepestScreen method to find
+out which of the available screens can best represent color and then
+might choose to display all of its windows on that screen."
+  "Create the application object before you use the methods in this
+class, so that the application object can make the necessary
+connection to the window system. You can make sure the application
+object exists by invoking the sharedApplication method of
+NSApplication. If you created your app with Xcode, the application
+object is automatically created for you during initialization."
+  "Note
+The NSScreen class is only for getting information about the available
+displays. If you need additional information or want to change the
+attributes relating to a display, you must use Quartz Services. For
+more information, see Quartz Display Services."
   "see https://developer.apple.com/documentation/appkit/nsscreen?language=objc")
+
+;; Getting Screen Objects
+
+;; Getting Screen Information
+
+;; Converting Between Screen and Backing Coordinates
+
+;; Getting the Visible Portion of the Screen
+
+;; Getting Extended Dynamic Range Details
+
+;; Getting Variable Refresh Rate Details
+
+;; Receiving Screen-Related Notifications
+
+;; Synchronizing with the display's refresh rate
+
+;; Instance Properties
 
 ;;; Popovers
 
 (doc-objc-class "NSPopover"             ; ns-popover
   "A means to display additional content related to existing content on the screen. "
+  "The popover is positioned relative to the existing content and an
+anchor is used to express the relation between these two units of
+content. A popover has an appearance that specifies its visual
+characteristics, as well as a behavior that determines which user
+interactions will cause the popover to close. A transient popover is
+closed in response to most user interactions, whereas a
+semi-transient popover is closed when the user interacts with the
+window containing the popover’s positioning view. Popovers with
+application-defined behavior are not usually closed on the
+developer’s behalf.
+
+The system automatically positions each popover relative to its
+positioning view and moves the popover whenever its positioning view
+moves. A positioning rectangle within the positioning view can be
+specified for additional granularity.
+
+Popovers can be detached to become a separate window when they are
+dragged by implementing the appropriate delegate method."
   "see https://developer.apple.com/documentation/appkit/nspopover?language=objc")
+
+;; Accessing a Popover's Content View Controller
+
+;; Managing a Popover's Position and Size
+
+;; Managing a Popover's Appearance
+
+;; Closing a Popover
+
+;; Getting and Setting the Delegate
+
+;; Constants
+
+;; Notifications
+
+;; Initializers
+
+;; Instance Properties
+
+;; Instance Methods
 
 ;;; Alerts
 
@@ -1318,50 +1802,52 @@ see https://developer.apple.com/documentation/appkit/nsevent/eventtype?language=
   (:quick-look          33 "An event that initiates a Quick Look request.")
   (:system-defined      14 "A system-related event occurred."))
 
-(defgeneric event-type (ns-event)
-  (:documentation "Get EVENT's type.
+(defmethod event-type ((event ns-event))
+  "Get EVENT's type.
 Return `ns-event-type'.
 
 Invokes ObjC method type.
-see https://developer.apple.com/documentation/appkit/nsevent/type?language=objc")
-  (:method ((event ns-event))
-    (let ((type (invoke event "type")))
-      (case type
-        (1  :left-mouse-down)
-        (6  :left-mouse-dragged)
-        (2  :left-mouse-up)
-        (3  :right-mouse-down)
-        (4  :right-mouse-up)
-        (7  :right-mouse-dragged)
-        (25 :other-mouse-down)
-        (27 :other-mouse-dragged)
-        (26 :other-mouse-up)
-        (5  :mouse-moved)
-        (8  :mouse-entered)
-        (9  :mouse-exited)
-        (10 :key-down)
-        (11 :key-up)
-        (19 :begin-gesture)
-        (20 :end-gesture)
-        (30 :magnify)
-        (32 :smart-magnify)
-        (31 :swipe)
-        (18 :rotate)
-        (29 :gesture)
-        (37 :direct-touch)
-        (23 :tablet-point)
-        (24 :tablet-proximity)
-        (34 :pressure)
-        (22 :scroll-wheel)
-        (38 :change-mode)
-        (13 :app-kit-defined)
-        (15 :application-defined)
-        (17 :cursor-update)
-        (12 :flags-changed)
-        (16 :periodic)
-        (33 :quick-look)
-        (14 :system-defined)
-        (otherwise type)))))
+see https://developer.apple.com/documentation/appkit/nsevent/type?language=objc"
+  (invoke event "type"))
+
+(defmethod event-type :around ((event ns-event))
+  (let ((type (call-next-method)))
+    (case type
+      (1  :left-mouse-down)
+      (6  :left-mouse-dragged)
+      (2  :left-mouse-up)
+      (3  :right-mouse-down)
+      (4  :right-mouse-up)
+      (7  :right-mouse-dragged)
+      (25 :other-mouse-down)
+      (27 :other-mouse-dragged)
+      (26 :other-mouse-up)
+      (5  :mouse-moved)
+      (8  :mouse-entered)
+      (9  :mouse-exited)
+      (10 :key-down)
+      (11 :key-up)
+      (19 :begin-gesture)
+      (20 :end-gesture)
+      (30 :magnify)
+      (32 :smart-magnify)
+      (31 :swipe)
+      (18 :rotate)
+      (29 :gesture)
+      (37 :direct-touch)
+      (23 :tablet-point)
+      (24 :tablet-proximity)
+      (34 :pressure)
+      (22 :scroll-wheel)
+      (38 :change-mode)
+      (13 :app-kit-defined)
+      (15 :application-defined)
+      (17 :cursor-update)
+      (12 :flags-changed)
+      (16 :periodic)
+      (33 :quick-look)
+      (14 :system-defined)
+      (otherwise type))))
 
 (define-objc-enum ns-event-subtype
   "Subtypes for various types of events.
@@ -1383,36 +1869,38 @@ These subtypes apply when the event type is `:system-defined'. "
   (:tablet-proximity          2 "A tablet-proximity event occurred.")
   (:touch                     3 "A touch event occurred."))
 
-(defgeneric event-subtype (ns-event)
-  (:documentation "Get EVENT's subtype.
+(defmethod event-subtype ((event ns-event))
+  "Get EVENT's subtype.
 
 Invoke ObjC method subtype.
-see https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc")
-  (:method ((event ns-event))
-    (let ((type    (get-type event))
-          (subtype (invoke event "subtype")))
-      (flet ((other (subtype)
-               (case subtype
-                 (1 :tablet-point)
-                 (2 :tablet-proximity)
-                 (3 :touch)
-                 (otherwise subtype))))
-        (case type
-          (:appkit-defined
-           (case subtype
-             (1 :application-activated)
-             (2 :application-deactivated)
-             (8 :screen-changed)
-             (0 :window-exposed)
-             (otherwise (other subtype))))
-          (:system-defined
-           (case subtype
-             (4 :window-moved)
-             (1 :power-off)
-             (0 :mouse-event)
-             (otherwise (other subtype))))
-          (otherwise
-           (other subtype)))))))
+see https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc"
+  (invoke event "subtype"))
+
+(defmethod event-subtype :around ((event ns-event))
+  (let ((type    (event-type event))
+        (subtype (call-next-method)))
+    (flet ((other (subtype)
+             (case subtype
+               (1 :tablet-point)
+               (2 :tablet-proximity)
+               (3 :touch)
+               (otherwise subtype))))
+      (case type
+        (:appkit-defined
+         (case subtype
+           (1 :application-activated)
+           (2 :application-deactivated)
+           (8 :screen-changed)
+           (0 :window-exposed)
+           (otherwise (other subtype))))
+        (:system-defined
+         (case subtype
+           (4 :window-moved)
+           (1 :power-off)
+           (0 :mouse-event)
+           (otherwise (other subtype))))
+        (otherwise
+         (other subtype))))))
 
 (define-objc-enum ns-event-modifier-flags
   "Flags that represent key states in an event object.
@@ -1429,23 +1917,25 @@ see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift
   (:function                         8388608 "A function key has been pressed.")
   (:device-independent-flags-mask 4294901760 "Device-independent modifier flags are masked."))
 
-(defgeneric modifier-flags (ns-event)
-  (:documentation "Get EVENT's modifierFlags.
+(defmethod modifier-flags ((event ns-event))
+  "Get EVENT's modifierFlags.
 Return a list of `ns-event-modifier-flags'.
 
 Invoke ObjC method modifierFlags.
-see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc")
-  (:method ((event ns-event))
-    (coca.objc::with-objc-enum-flags (invoke event "modifierFlags")
-      (:caps-lock                          65536)
-      (:shift                             131072)
-      (:control                           262144)
-      (:option                            524288)
-      (:command                          1048576)
-      (:numeric-pad                      2097152)
-      (:help                             4194304)
-      (:function                         8388608)
-      (:device-independent-flags-mask 4294901760))))
+see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc"
+  (invoke event "modifierFlags"))
+
+(defmethod modifier-flags :around ((event ns-event))
+  (coca.objc::with-objc-enum-flags (call-next-method)
+    (:caps-lock                          65536)
+    (:shift                             131072)
+    (:control                           262144)
+    (:option                            524288)
+    (:command                          1048576)
+    (:numeric-pad                      2097152)
+    (:help                             4194304)
+    (:function                         8388608)
+    (:device-independent-flags-mask 4294901760)))
 
 
 ;;;; Menus, Cursors, and the Dock
@@ -1846,7 +2336,8 @@ returns the selected color to your app."
 ;;; Text views
 
 (doc-objc-class "NSTextField"           ; ns-text-field
-  "Text the user can select or edit to send an action message to a target when the user presses the Return key."
+  "Text the user can select or edit to send an action message to a target
+when the user presses the Return key."
   "see https://developer.apple.com/documentation/appkit/nstextfield?language=objc")
 
 (doc-objc-class "NSTextView"            ; ns-text-view

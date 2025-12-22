@@ -1,22 +1,26 @@
 ;;;; foundation.lisp --- ObjC bindings for Foundation Framework
-;; Access essential data types, collections, and operating-system
-;; services to define the base layer of functionality for your app.
-;;
-;; The Foundation framework provides a base layer of functionality for
-;; apps and frameworks, including data storage and persistence, text
-;; processing, date and time calculations, sorting and filtering, and
-;; networking. The classes, protocols, and data types defined by
-;; Foundation are used throughout the macOS, iOS, watchOS, and tvOS
-;; SDKs.
-;;
-;; https://developer.apple.com/documentation/foundation?language=objc
 
 (uiop:define-package #:coca.foundation
   (:use :cl :coca.objc)
+  (:documentation
+   "Access essential data types, collections, and operating-system
+services to define the base layer of functionality for your app.
+
+The Foundation framework provides a base layer of functionality for
+apps and frameworks, including data storage and persistence, text
+processing, date and time calculations, sorting and filtering, and
+networking. The classes, protocols, and data types defined by
+Foundation are used throughout the macOS, iOS, watchOS, and tvOS
+SDKs.
+
+https://developer.apple.com/documentation/foundation?language=objc")
   (:export
    ;; Object Runtime
    #:ns-object
+   #:copy
    #:description
+   #:ns-uinteger
+   #:ns-integer
    #:ns-number
    #:ns-value
    #:ns-value-transformer
@@ -94,6 +98,11 @@
 
    ;; Dates and Times
    #:ns-date
+   #:ns-time-interval
+   #:ns-date-since
+   #:ns-date-now
+   #:ns-date-distant-future
+   #:ns-date-distant-past
    #:ns-date-components
    #:ns-calendar
    #:ns-time-zone
@@ -160,6 +169,8 @@
    #:ns-compound-predicate
    #:ns-sort-descriptor
    #:ns-ordered
+   #:ns-ordered-p
+   #:decode-ns-ordered
 
    ;; Task Management
    #:ns-undo-manager
@@ -297,6 +308,7 @@
 
    ;; Processes and Threads
    #:ns-run-loop
+   #:ns-run-loop-mode
    #:+ns-run-loop-common-modes+
    #:+ns-default-run-loop-mode+
    #:ns-timer
@@ -345,6 +357,13 @@ the ability to behave as Objective-C objects."
 See also `print-object' implementation for `ns-object'. "
   "See https://developer.apple.com/documentation/ObjectiveC/NSObject-swift.class?language=objc. ")
 
+(defun copy (ns-object)
+  "Returns the object returned by copy(with:).
+
+see https://developer.apple.com/documentation/objectivec/nsobject-swift.class/copy()?language=objc"
+  (declare (type ns-object ns-object))
+  (invoke ns-object "copy"))
+
 (defun description (ns-object)
   "Returns a string that represents the contents of the receiving class.
 
@@ -353,7 +372,7 @@ Internally this is equal to calling (ns-string-to-string (invoke ns-object \"des
 
 See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/description()?language=objc"
   (declare (type ns-object ns-object))
-  (ns-string-to-string (invoke ns-object "description")))
+  (invoke-into-string ns-object "description"))
 
 (defmethod print-object ((obj ns-object) stream)
   "When printing `ns-object', print `description' of OBJ. "
@@ -362,6 +381,14 @@ See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/de
 ;;; Copying
 
 ;;; Value Wrappers and Transformations
+
+(define-objc-typedef ns-integer :long
+  "Describes an integer.
+see https://developer.apple.com/documentation/ObjectiveC/NSInteger?language=objc")
+
+(define-objc-typedef ns-uinteger :unsigned-long
+  "Describes an unsigned integer.
+see https://developer.apple.com/documentation/objectivec/nsuinteger?language=objc")
 
 (doc-objc-class "NSNumber"              ; ns-number
   "An object wrapper for primitive scalar numeric values."
@@ -390,14 +417,16 @@ See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/de
 ;;; Remote Objects
 
 (doc-objc-class "NSProxy"               ; ns-proxy
-  "An abstract superclass defining an API for objects that act as stand-ins for other objects or for objects that don’t exist yet."
+  "An abstract superclass defining an API for objects that act as stand-ins for
+other objects or for objects that don’t exist yet."
   "see https://developer.apple.com/documentation/foundation/nsproxy?language=objc")
 
 ;;; Memory Management
 
 (doc-objc-class "NSAutoreleasePool"     ; ns-autorelease-pool
   "An object that supports Cocoa’s reference-counted memory management system."
-  "An autorelease pool stores objects that are sent a release message when the pool itself is drained.
+  "An autorelease pool stores objects that are sent a release message when
+the pool itself is drained.
 
 Important:
 If you use Automatic Reference Counting (ARC), you cannot use
@@ -565,13 +594,25 @@ Return OBJECT self. "
   (invoke object "autorelease"))
 
 (defun alloc (class)
-  "Returns a new instance of the receiving CLASS. "
+  "Returns a new instance of the receiving CLASS.
+
+Dev Note:
+Use `alloc-init' if do not need custom initialization process.
+
+see https://developer.apple.com/documentation/objectivec/nsobject-swift.class/alloc?language=objc"
+  (declare (type (or symbol string objc-class) class))
   (the ns-object (invoke class "alloc")))
 
-(defun alloc-init (object)
-  "Invoke "
-  (declare (type ns-object object))
-  (invoke (invoke object "alloc") "init"))
+(defun alloc-init (class)
+  "Invoke [[CLASS alloc] init];
+
+This is equal to calling:
+
+    (invoke (invoke CLASS \"alloc\") \"init\")
+
+see also `alloc'. "
+  (declare (type (or symbol string objc-class) class))
+  (the ns-object (invoke (invoke class "alloc") "init")))
 
 (defun make-autorelease-pool ()
   "Makes an autorelease pool for the current thread.
@@ -604,7 +645,6 @@ See also `with-autorelease-pool'. "
 
 ;;;; Numbers, Data, and Basic Values
 ;; see https://developer.apple.com/documentation/foundation/numbers-data-and-basic-values?language=objc
-
 
 ;;; Numbers
 
@@ -740,6 +780,10 @@ See https://developer.apple.com/documentation/foundation/nsstring/utf8string?lan
   (declare (type ns-string ns-string))
   (the string (invoke ns-string "UTF8String")))
 
+(defmethod objc-object-pointer ((string string))
+  "Convert STRING to `ns-string' first and then pass the pointer. "
+  (objc-object-pointer (string-to-ns-string string)))
+
 (defmacro invoke-into-string (object method &rest args)
   "Call `invoke' and return string.
 
@@ -751,7 +795,6 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 ;;;; Collections
 ;; Use arrays, dictionaries, sets, and specialized collections to store and iterate groups of objects or values.
 ;; https://developer.apple.com/documentation/foundation/collections?language=objc
-
 
 ;;; Basic Collections
 
@@ -860,7 +903,82 @@ that are subject to eviction when resources are low."
 
 (doc-objc-class "NSDate"                ; ns-date
   "A representation of a specific point in time, independent of any calendar or time zone."
+  "To Create `ns-date'
+==========================
++ `ns-time-interval'
++ `ns-date-since'
++ `ns-date-distant-past'
++ `ns-date-distant-future'"
   "see https://developer.apple.com/documentation/foundation/nsdate?language=objc")
+
+;; Creating Date
+
+(deftype ns-time-interval ()
+  "A number of seconds.
+
+A NSTimeInterval value is always specified in seconds; it yields
+sub-millisecond precision over a range of 10,000 years.
+
+On its own, a time interval does not specify a unique point in time,
+or even a span between specific times. Combining a time interval with
+one or more known reference points yields a Date or DateInterval
+value.
+
+see https://developer.apple.com/documentation/foundation/timeinterval?language=objc"
+  'double-float)
+
+(defun ns-date-since (interval &optional (since :now))
+  "Creates and returns a date since INTERVAL seconds from SINCE.
+Return a `ns-date' object.
+
+Parameters:
++ INTERVAL:
++ SINCE:
+  + :now       dateWithTimeIntervalSinceNow:
+  + :1970      dateWithTimeIntervalSince1970:
+  + :2001      dateWithTimeIntervalSinceReferenceDate:
+  + `ns-date'  dateWithTimeInterval:sinceDate:
+"
+  (declare (type real interval)
+           (type (or (member :now :1970 :2001) ns-date) since))
+  (let ((interval (coerce interval 'ns-time-interval)))
+    (case since
+      (:now  (invoke 'ns-date "dateWithTimeIntervalSinceNow:"           interval))
+      (:1970 (invoke 'ns-date "dateWithTimeIntervalSince1970:"          interval))
+      (:2001 (invoke 'ns-date "dateWithTimeIntervalSinceReferenceDate:" interval))
+      (otherwise
+       (invoke 'ns-date "dateWithTimeInterval:sinceDate:" interval (the ns-date since))))))
+
+(defun ns-date-now ()
+  "The current date and time, as of the time of access. "
+  (alloc-init 'ns-date))
+
+;; Getting Temporal Boundaries
+
+(defun ns-date-distant-past ()
+  "A date object representing a date in the distant past.
+Return an `ns-date' object representing a date in the distant past
+(in terms of centuries).
+
+You can use this object as a control date, a guaranteed temporal boundary.
+
+see https://developer.apple.com/documentation/foundation/nsdate/distantpast?language=objc"
+  (invoke 'ns-date "distantPast"))
+
+(defun ns-date-distant-future ()
+  "A date object representing a date in the distant future.
+Return an `ns-date' object representing a date in the distant future
+(in terms of centuries).
+
+You can pass this value when an NSDate object is required to have the
+date argument essentially ignored. For example, the NSWindow method
+nextEventMatchingMask:untilDate:inMode:dequeue: returns nil if an
+event specified in the event mask does not happen before the specified
+date. You can use the object returned by distantFuture as the date
+argument to wait indefinitely for the event to occur.
+
+see https://developer.apple.com/documentation/foundation/nsdate/distantfuture?language=objc"
+  (invoke 'ns-date "distantFuture"))
 
 ;;; Calendrical Calculations
 
@@ -920,7 +1038,8 @@ formatting data for presentation."
 ;;; Essentials
 
 (doc-objc-class "NSMeasurement"         ; ns-measurement
-  "A numeric quantity labeled with a unit of measure, with support for unit conversion and unit-aware calculations."
+  "A numeric quantity labeled with a unit of measure, with support for unit conversion
+and unit-aware calculations."
   "see https://developer.apple.com/documentation/foundation/nsmeasurement?language=objc")
 
 (doc-objc-class "NSUnit"                ; ns-unit
@@ -934,7 +1053,8 @@ formatting data for presentation."
 ;;; Conversion
 
 (doc-objc-class "NSUnitConverter"       ; ns-unit-converter
-  "An abstract class that provides a description of how to convert a unit to and from the base unit of its dimension."
+  "An abstract class that provides a description of how to convert a unit to and from
+the base unit of its dimension."
   "see https://developer.apple.com/documentation/foundation/unitconverter?language=objc")
 
 (doc-objc-class "NSUnitConverterLinear" ; ns-unit-converter-linear
@@ -1883,13 +2003,30 @@ of your app running on a person’s devices."
   "The programmatic interface to objects that manage input sources."
   "see https://developer.apple.com/documentation/foundation/runloop?language=objc")
 
+(deftype ns-run-loop-mode ()
+  "Modes that a run loop operates in.
+
+System Run Loop Modes:
++ `+ns-run-loop-common-modes+'
++ `+ns-default-run-loop-mode+'
+
+`coca.appkit:ns-application' defines additional run loop modes,
+including the following:
++ `coca.appkit:+ns-event-tracking-run-loop-mode+'
++ `coca.appkit:+ns-modal-panel-run-loop-mode+'
+
+"
+  'ns-string)
+
 (define-objc-const +ns-run-loop-common-modes+
     ("NSRunLoopCommonModes" :object coca.objc::foundation)
-  "A pseudo-mode that includes one or more other run loop modes. ")
+  "A pseudo-mode that includes one or more other run loop modes.
+see https://developer.apple.com/documentation/foundation/runloop/mode/common?language=objc")
 
 (define-objc-const +ns-default-run-loop-mode+
     ("NSDefaultRunLoopMode" :object coca.objc::foundation)
-  "The mode set to handle input sources other than connection objects.")
+  "The mode set to handle input sources other than connection objects.
+see https://developer.apple.com/documentation/foundation/runloop/mode/default?language=objc")
 
 (doc-objc-class "NSTimer"               ; ns-timer
   "A timer that fires after a certain time interval has elapsed,
