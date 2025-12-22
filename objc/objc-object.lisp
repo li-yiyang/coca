@@ -16,11 +16,12 @@ Parameter:
   (etypecase pointer
     (standard-objc-object pointer)
     (foreign-pointer
-     (with-cached ((pointer-address pointer) *objc-objects*)
-       (when (object_isClass pointer)
-         (error "Pointer ~A pointing to ObjC Class is not an object. " pointer))
-       (let ((class (coerce-to-objc-class (object_getClassName pointer))))
-         (make-instance class :objc-object-pointer pointer))))))
+     (if (null-pointer-p pointer) nil
+         (with-cached ((pointer-address pointer) *objc-objects*)
+           (when (object_isClass pointer)
+             (error "Pointer ~A pointing to ObjC Class is not an object. " pointer))
+           (let ((class (coerce-to-objc-class (object_getClassName pointer))))
+             (make-instance class :objc-object-pointer pointer)))))))
 
 ;; TODO:
 ;; should or not finalize object?
