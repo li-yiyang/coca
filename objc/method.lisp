@@ -99,11 +99,13 @@ type hint declaration. "
   (with-slots (objc-class-methods objc-object-pointer) class
     (the function
          (with-cached (sel objc-class-methods)
-           (let* ((method   (class_getClassMethod objc-object-pointer
-                                                  (objc-object-pointer sel)))
-                  (encoding (method_getTypeEncoding method)))
-             (with-cached (encoding *methods*)
-               (compile-objc-method-calling encoding)))))))
+           (let ((method (class_getClassMethod objc-object-pointer
+                                               (objc-object-pointer sel))))
+             (when (null-pointer-p method)
+               (error "Unknown ObjC class method ~S for ~S. " sel class))
+             (let ((encoding (method_getTypeEncoding method)))
+               (with-cached (encoding *methods*)
+                 (compile-objc-method-calling encoding))))))))
 
 (defun objc-class-instance-method (class sel)
   "Get function to call instance of CLASS and SEL. "
@@ -112,11 +114,13 @@ type hint declaration. "
   (with-slots (objc-instance-methods objc-object-pointer) class
     (the function
          (with-cached (sel objc-instance-methods)
-           (let* ((method   (class_getInstanceMethod objc-object-pointer
-                                                     (objc-object-pointer sel)))
-                  (encoding (method_getTypeEncoding method)))
-             (with-cached (encoding *methods*)
-               (compile-objc-method-calling encoding)))))))
+           (let ((method (class_getInstanceMethod objc-object-pointer
+                                                  (objc-object-pointer sel))))
+             (when (null-pointer-p method)
+               (error "Unknown ObjC instance method ~S for ~S. " sel class))
+             (let ((encoding (method_getTypeEncoding method)))
+               (with-cached (encoding *methods*)
+                 (compile-objc-method-calling encoding))))))))
 
 (defun objc-class-method-signature (object method)
   "Tries to find the relevant method, and returns its signature. "
