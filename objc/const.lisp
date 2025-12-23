@@ -32,20 +32,20 @@ Parameters:
      `(defparameter ,name
         (coerce-to-objc-object
          (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer)
-         ,documentation)))
+                       :pointer))
+        ,documentation))
     ((:class)
      `(defparameter ,name
         (coerce-to-objc-class
          (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer)
-         ,documentation)))
+                       :pointer))
+        ,documentation))
     ((:sel)
      `(defparameter ,name
         (coerce-to-selector
          (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer)
-         ,documentation)))
+                       :pointer))
+        ,documentation))
     (otherwise
      `(defconstant ,name
         (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)

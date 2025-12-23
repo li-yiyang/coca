@@ -1256,14 +1256,14 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
               "initWithContentRect:styleMask:backing:defer:screen:"
               ns-rect
               (ns-window-style-mask style)
-              backing
+              (ns-backing-store-type backing)
               (and defer t)
               screen)
       (invoke (alloc 'ns-window)
               "initWithContentRect:styleMask:backing:defer:"
               ns-rect
               (ns-window-style-mask style)
-              backing
+              (ns-backing-store-type backing)
               (and defer t))))
 
 ;; Managing the Window's Behavior
