@@ -25,7 +25,7 @@ Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
                :class     :sel
                :unknown   :pointer
                :pointer   :bits)
-       (cons (member :struct :union) (cons string t))
+       (cons (member :struct :union :pointer) (cons symbol t))
        (cons (eql :array) t)
        (cons (eql :bits)  (cons number null))))
 
