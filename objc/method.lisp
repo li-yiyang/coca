@@ -47,7 +47,7 @@ type hint declaration. "
              `(or ,(second encoding) simple-vector)))
     (:object
      (values `(:pointer (objc-object-pointer ,arg))
-             '(or standard-objc-object foreign-pointer)))
+             '(or standard-objc-object objc-class foreign-pointer)))
     (:class
      (values `(:pointer (objc-object-pointer ,arg))
              '(or objc-class foreign-pointer)))
