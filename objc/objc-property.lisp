@@ -112,6 +112,10 @@ It should return the class of slot definition required. "
   (declare (ignore class object slot))
   (error "Cannot unbound ObjC property ~S. " (c2mop:slot-definition-name slot)))
 
+(defun gen-objc-property-set (name)
+  (declare (type string name))
+  (concatenate 'string "set" (the string (str:pascal-case name)) ":"))
+
 (defun objc-property-slot-initargs (def)
   "Convert DEF as ObjC property initialize args. "
   (etypecase def
@@ -136,7 +140,7 @@ It should return the class of slot definition required. "
                           nil
                           (coerce-to-selector
                            (or objc-property-writer
-                               (str:concat "set" (str:pascal-case pname) ":"))))))
+                               (gen-objc-property-set pname))))))
          `(:name                 ,name
            :objc-property        ,pname
            :objc-property-reader ,reader
@@ -220,10 +224,19 @@ Parameters:
 
       (
          NAME
-       { OBJC-PROPERTY-READER | (OBJC-PROPERTY-READER OBJC-PROPERTY-WRITER) }
-        [:read-only]
+       {
+          OBJC-PROPERTY-READER
+        | (OBJC-PROPERTY-READER [:read-only] {:reader OBJC-READER} {:writer OBJC-WRITER})
+       }
         [documentation]
       )
+
+  Example:
+
+    (name \"isRunning\")                     ;; => (\"isRunning\" \"setIsRunning:\")
+    (name (\"isRunning\" \"setRunning:\"))
+    (name (\"isRunning\" nil))               ;; => read-only
+    (name (\"isRunning\" nil :objc-property \"running\"))
 
   Dev Note:
   see `coca.objc::objc-class-add-objc-properties'.
@@ -241,17 +254,25 @@ Parameters:
              (setf slots nil))
            (setf docstring (format nil "~{~A~^~%~%~}" documentations))))
     (when slots
-      (loop :for (name objc-property . optional) :in slots
-            :for objc-reader := (atomize objc-property #'first)
-            :for objc-writer := (atomize objc-property #'second)
-            :for read-only   := (etypecase (first optional)
-                                  ((eql :read-only) t)
-                                  (string           nil))
-            :for document    := (cond ((stringp (first  optional)) (first  optional))
-                                      ((stringp (second optional)) (second optional))
-                                      (t nil))
-            :collect `(:name                    ,name
-                       :objc-property           ,objc-reader
+      (loop :for (name objc-property* . optional) :in slots
+            :for (objc-property read-only objc-reader objc-writer)
+              := (destructuring-bind (property . options) (listfy objc-property*)
+                   (let* ((read-only (eq (car options) :read-only))
+                          (plist     (if read-only (cdr options) options)))
+                     (declare (type string property)
+                              (type list   plist))
+                     (assert (evenp (length plist)))
+                     (list property
+                           read-only
+                           (getf plist :reader property)
+                           (getf plist :writer
+                                 (if read-only
+                                     nil
+                                     (gen-objc-property-set property))))))
+            :for document := (or (car optional)
+                                 (format nil "ObjC property ~A. " objc-property))
+            :collect `(,name
+                       :objc-property           ,objc-property
                        :objc-property-reader    ,objc-reader
                        :objc-property-writer    ,objc-writer
                        :objc-property-read-only ,read-only

@@ -351,52 +351,73 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 ;;; Life Cycle
 
 (doc-objc-class "NSApplication"         ; ns-application
+  ((current-event ("currentEvent" :read-only)
+                  "The last event object that the app retrieved from the event queue.
+
+The shared app object receives events and forwards them to the
+affected `ns-window' objects, which then distribute them to the objects
+in its view hierarchy. Use this property to get the event that was
+last handled by the app.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
+   (running-p ("running" :read-only :reader "isRunning")
+              "A Boolean value indicating whether the main event loop is running.
+
+The value of this property is `t' when the main event loop is running
+or false when it’s not. Calling the `stop' method sets the value to
+`nil'.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
+   (active-p ("active" :read-only :reader "isActive")
+             "A Boolean value indicating whether this is the active app.
+
+The shared app object receives events and forwards them to the
+affected `ns-window' objects, which then distribute them to the objects
+in its view hierarchy. Use this property to get the event that was
+last handled by the app.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc"))
+  ;;
   "An object that manages an app’s main event loop and resources used by all of that app's objects."
   "Every app uses a single instance of `ns-application' to control the main
-event loop, keep track of the app’s windows and menus, distribute
+event loop, keep track of the app's windows and menus, distribute
 events to the appropriate objects (that’s, itself or one of its windows),
-set up autorelease pools, and receive notification of
-app-level events. An NSApplication object has a delegate
-(an object that you assign) that’s notified when the app starts or terminates, is
-hidden or activated, should open a file selected by the user, and so
-forth. By setting the delegate and implementing the delegate methods,
-you customize the behavior of your app without having to subclass
-NSApplication. In your app’s main() function, create the NSApplication
-instance by calling the sharedApplication class method. After creating
-the application object, the main() function should load your app’s
-main nib file and then start the event loop by sending the application
-object a run message. If you create an Application project in Xcode,
-this main() function is created for you. The main() function Xcode
-creates begins by calling a function named NSApplicationMain(), which
-is functionally similar to the following:
+set up autorelease pools, and receive notification of app-level events.
+
+An `ns-application' object has a delegate (an object that you assign)
+that’s notified when the app starts or terminates, is hidden or
+activated, should open a file selected by the user, and so forth. By
+setting the delegate and implementing the delegate methods, you
+customize the behavior of your app without having to subclass
+`ns-application'.
+
+In Lisp main thread, create the `ns-application' instance by calling
+function `ns-app'. An example of main thread function:
 
     (defun ns-application-main ()
-      (let ((app (invoke 'ns-application \"sharedApplication\")))
-        (invoke 'ns-bundle \"loadNibNamed:owner:\"
-                (string-to-ns-string \"myMain\")
-                (coerce-to-objc-class 'ns-app))
-        (invoke app \"run\")))
+      (let ((app (ns-app)))
+        ;; load nib or else
+        ;; set up window or else
+        (run app)))
 
-The sharedApplication class method initializes the display environment
+The `ns-app' function initializes the display environment
 and connects your program to the window server and the display
 server. The `ns-application' object maintains a list of all the
 `ns-window' objects the app uses, so it can retrieve any of the app’s
-`ns-view' objects. The sharedApplication method also initializes the
-global variable NSApp, which you use to retrieve the NSApplication
-instance. sharedApplication only performs the initialization once. If
-you invoke it more than once, it returns the application object it
-created previously.
+`ns-view' objects.
 
-The shared NSApplication object performs the important task of
+Dev Note:
+Use `ns-app' to retrive the global variable `coca.appkit::*ns-app*'."
+  "The shared `ns-application' object performs the important task of
 receiving events from the window server and distributing them to the
-proper `ns-responder' objects. NSApp translates an event into an
+proper `ns-responder' objects. `ns-app' translates an event into an
 `ns-event' object, then forwards the event object to the affected
 `ns-window' object. All keyboard and mouse events go directly to the
 `ns-window' object associated with the event. The only exception to
 this rule is if the Command key is pressed when a key-down event
 occurs; in this case, every `ns-window' object has an opportunity to
 respond to the event. When a window object receives an `ns-window'
-object from NSApp, it distributes it to the objects in its view
+object from `ns-app', it distributes it to the objects in its view
 hierarchy.
 
 `ns-application' is also responsible for dispatching certain Apple
@@ -408,14 +429,12 @@ also use the `ns-apple-event-manager' class to register your own Apple
 event handlers. The applicationWillFinishLaunching: method is
 generally the best place to do so. For more information on how events
 are handled and how you can modify the default behavior, including
-information on working with Apple events in scriptable apps, see How
-Cocoa Applications Handle Apple Events [1] in Cocoa Scripting Guide [2].
-[1] https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ScriptableCocoaApplications/SApps_handle_AEs/SAppsHandleAEs.html#//apple_ref/doc/uid/20001239
-[2] https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ScriptableCocoaApplications/SApps_intro/SAppsIntro.html#//apple_ref/doc/uid/TP40002164
+information on working with Apple events in scriptable apps, see
+``How Cocoa Applications Handle Apple Events'' in ``Cocoa Scripting Guide''.
 
 The `ns-application' class sets up @autorelease block during
-initialization and inside the event loop—specifically, within its
-initialization (or sharedApplication) and run methods. Similarly, the
+initialization and inside the event loop-specifically, within its
+initialization and run methods. Similarly, the
 methods `Coca.AppKit' adds to `ns-bundle' employ @autorelease blocks
 during the loading of nib files. These @autorelease blocks aren’t
 accessible outside the scope of the respective `ns-application' and
@@ -578,22 +597,9 @@ see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(mat
           mode
           (and deque t)))
 
-(defmethod is-running ((app ns-application))
-  "Test if the main event loop of APP is running.
-Invoke ObjC method running.
-
-see https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc"
-  (invoke app "isRunning"))
-
 (defmethod run ((app ns-application))
   "Starts the main event loop. "
   (invoke app "run"))
-
-(defmethod current-event ((app ns-application))
-  "Return the last event object that the app retrieved from the event queue.
-
-see https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc"
-  (invoke app "currentEvent"))
 
 (doc-objc-class "NSRunningApplication"  ; ns-running-application
   "An object that can manipulate and provide information for a single instance of an app."
