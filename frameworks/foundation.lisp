@@ -372,7 +372,7 @@ Internally this is equal to calling (ns-string-to-string (invoke ns-object \"des
 
 See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/description()?language=objc"
   (declare (type ns-object ns-object))
-  (invoke-into-string ns-object "description"))
+  (ns-string-to-string (invoke ns-object "description")))
 
 (defmethod print-object ((obj ns-object) stream)
   "When printing `ns-object', print `description' of OBJ. "
