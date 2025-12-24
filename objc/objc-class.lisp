@@ -75,16 +75,16 @@ Parameters:
                     (type string          name)
                     (type symbol          class-name))
            (let ((super (class_getSuperClass ptr)))
-             (setf (find-class class-name)
-                   (make-instance
-                    'objc-class
-                    :objc-class-name     name
-                    :objc-object-pointer ptr
-                    :direct-superclasses (if (null-pointer-p super)
-                                             (list (find-class 'standard-objc-object))
-                                             (list (coerce-to-objc-class super)
-                                                   (find-class 'standard-objc-object)))
-                    :name                class-name)))))
+             (c2mop:ensure-finalized
+              (c2mop:ensure-class
+               class-name
+               :name                class-name
+               :metaclass           (find-class 'objc-class)
+               :objc-class-name     name
+               :objc-object-pointer ptr
+               :direct-superclasses (if (null-pointer-p super)
+                                        (list (find-class 'standard-objc-object))
+                                        (list (coerce-to-objc-class super))))))))
     (the objc-class
       (etypecase class
         (objc-class class)
