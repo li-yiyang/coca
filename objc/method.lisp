@@ -43,16 +43,16 @@ type hint declaration. "
                    :collect (objc-encoding-cffi-type type)
                    :collect (if coerce
                                 `(coerce (struct-aref ,arg ,idx) ',(objc-encoding-lisp-type type))
-                                `(struct-aref ,arg ,idx)))
+                                `(the ,(objc-encoding-lisp-type type) (struct-aref ,arg ,idx))))
              `(or ,(second encoding) simple-vector)))
     (:object
-     (values `(:pointer (objc-object-pointer ,arg))
+     (values `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
              '(or standard-objc-object objc-class foreign-pointer)))
     (:class
-     (values `(:pointer (objc-object-pointer ,arg))
+     (values `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
              '(or objc-class foreign-pointer)))
     (:sel
-     (values `(:pointer (objc-object-pointer ,arg))
+     (values `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
              '(or sel foreign-pointer)))
     (:coerce
      (let ((encoding (cdr encoding)))
@@ -79,18 +79,18 @@ type hint declaration. "
         :collect arg                :into args
         :collect `(type ,hint ,var) :into hints
         :finally (return
-                   `(lambda ,vars
-                      (declare ,@hints)
-                      (,(case (atomize ret)
-                          ((:union :bits)
-                           (error "Unknown how to wrap return type ~S. " ret))
-                          (:object   'coerce-to-objc-object)
-                          (:class    'coerce-to-objc-class)
-                          (:sel      'coerce-to-selector)
-                          (otherwise 'progn))
-                       (foreign-funcall "objc_msgSend"
-                                        ,@(apply #'append args)
-                                        ,(objc-encoding-cffi-type ret)))))))
+                   (let ((call `(foreign-funcall "objc_msgSend"
+                                                 ,@(apply #'append args)
+                                                 ,(objc-encoding-cffi-type ret))))
+                     `(lambda ,vars
+                        (declare ,@hints)
+                        ,(case (atomize ret)
+                           ((:union :bits)
+                            (error "Unknown how to wrap return type ~S. " ret))
+                           (:object   `(coerce-to-objc-object (the foreign-pointer ,call)))
+                           (:class    `(coerce-to-objc-class  (the foreign-pointer ,call)))
+                           (:sel      `(coerce-to-selector    (the foreign-pointer ,call)))
+                           (otherwise call)))))))
 
 (defun objc-class-class-method (class sel)
   "Get function to call CLASS and SEL. "
