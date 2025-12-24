@@ -23,35 +23,7 @@
 
 The API is defined like LispWorks' OBJC API. You could consider Coca/ObjC
 as a reimplementation on portable CFFI. But the API may not exactly same as
-LispWorks' API.
-
-Types:
-
-  ObjC Type     Lisp Wrapper   Type Encoding `objc-encoding'
-  -----------------------------------------------------------
-  Class         `objc-class'   :class
-  SEL           `sel'          :sel
-  id            ...            :object
-
-The ObjC type should be annoted by `objc-encoding', which is basically CFFI
-foreign type declaration with some add-ons.
-
-Struct:
-Use `define-objc-struct' would define foreign ObjC struct representation
-(CFFI (:struct NAME)) and lisp representation (a struct type in lisp).
-
-Invoke:
-Use `invoke' to call ObjC method (objc_msgSend).
-For example, calling [window close] is equal to calling (invoke window \"close\").
-And calling [box setWidth:10 height:20] is equal to (invoke \"setWidth:height:\" 10 20).
-
-Use `can-invoke-p' to test if method could be called.
-
-Class:
-Every ObjC class is instance of meta class `objc-class'.
-
-Use `coerce-to-objc-class' to intern ObjC class as lisp class.
-"
+LispWorks' API."
   :depends-on (:str
                :cffi
                :cffi-libffi
@@ -126,12 +98,18 @@ Use `objc-object-pointer' to get the foreign pointer of the `coca.objc::objc-poi
   :pointer                    ^TypeEncoding
   :unknown                    ?
 
+Use `coca.objc:define-objc-typedef' to define an alias for the ObjC encoding.
+
 See `coca.objc::decode-objc-type-encoding' for parsing type encoding.
 See `coca.objc::encode-objc-type-encoding' for generating type encoding.
-See `coca.objc::
 
 Dev Note:
-Use `objc-encoding' type as ObjC type encoding annotation
+Use `objc-encoding' type as ObjC type encoding annotation.
+
+Use `coca.objc::objc-encoding-cffi-type', `coca.objc::objc-encoding-lisp-type'
+for representing ObjC encoding in CFFI and lisp side.
+
+Use `coca.objc::as-objc-encoding' to normalize input.
 
 TODO:
 + (:union OBJC-UNION)
@@ -152,6 +130,15 @@ Use type `standard-objc-object' to test if object is ObjC object. ")
     :description "Implement ObjC Object wrapper"
     :long-description
     "TODO: finalize? ")
+   (:file        "objc-property"
+    :depends-on ("objc-class"
+                 "method")
+    :description "Implement ObjC property as lisp slot"
+    :long-description
+    "The ObjC property should be interned as lisp slot.
+
+Use `doc-objc-class' to descript the documentation and the property of
+as lisp slot. ")
    (:file        "sel"
     :depends-on ("cffi")
     :description "Wrap for ObjC SEL"
@@ -212,9 +199,7 @@ from type encoding.
 The compiled lambda expression are cached by type encoding string in `coca.objc::*methods*'.
 
 The instance methods and class methods are seperately stored under `objc-class'
-`coca.objc::class-instance-method' and `coca.objc::class-class-method'.
-
-TODO: better and cleaner implementation. ")
+`coca.objc::class-instance-method' and `coca.objc::class-class-method'.")
    (:file        "enum"
     :depends-on ("encoding")
     :description "Wrapper of ObjC enum"

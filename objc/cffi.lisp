@@ -367,6 +367,7 @@ the ProtocolName protocol."
 
 (defclass objc-pointer ()
   ((objc-object-pointer
+    :type          foreign-pointer
     :initarg       :objc-object-pointer
     :reader        objc-object-pointer
     :documentation "Return the foreign-pointer in ObjC. "))
@@ -379,6 +380,13 @@ Dev Note:
 Subclass of `objc-pointer' should implement function whose name
 should be like: `coerce-to-{...}', which take in a `foreign-pointer'
 and return the instance of `objc-pointer'. "))
+
+(defmethod print-object ((objc objc-pointer) stream)
+  "The OBJC or `coca.objc::objc-pointer' is printed like #<CLASS POINTER>. "
+  (print-unreadable-object (objc stream)
+    (format stream "~S ~X"
+            (class-name (class-of objc))
+            (pointer-address (the foreign-pointer (objc-object-pointer objc))))))
 
 (defgeneric objc-object-pointer (objc-pointer)
   (:documentation

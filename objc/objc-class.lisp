@@ -108,17 +108,6 @@ Parameters:
              (let ((class-name (objc-intern name)))
                (wrap-ptr-as-objc-class class name class-name)))))))))
 
-(defmacro doc-objc-class (name &body documentations)
-  "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
-
-Parameters:
-+ NAME: string of ObjC class name
-+ DOCUMENTATIONS: documentation strings (joined by new line)"
-  `(progn
-     (setf (documentation (coerce-to-objc-class ,name) t)
-           (format nil "~{~A~^~%~%~}" (list ,@documentations)))
-     (class-name (coerce-to-objc-class ,name))))
-
 ;;; Foundamental Classes
 
 ;; (defun coerce-all-objc-classes ()
