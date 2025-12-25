@@ -350,6 +350,13 @@ https://developer.apple.com/documentation/foundation?language=objc")
 ;;; Object Basics
 
 (doc-objc-class "NSObject"              ; ns-object
+  (("description" :reader description
+                  :after  ns-string-to-string
+                  :documentation
+                  "Returns a string that represents the contents of the receiving class.
+Dev Note:
+Internally this is equal to calling (ns-string-to-string (invoke ns-object \"description\")).
+See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/description()?language=objc"))
   "The root class of most Objective-C class hierarchies,
 from which subclasses inherit a basic interface to the runtime system and
 the ability to behave as Objective-C objects."
@@ -363,16 +370,6 @@ See also `print-object' implementation for `ns-object'. "
 see https://developer.apple.com/documentation/objectivec/nsobject-swift.class/copy()?language=objc"
   (declare (type ns-object ns-object))
   (invoke ns-object "copy"))
-
-(defun description (ns-object)
-  "Returns a string that represents the contents of the receiving class.
-
-Dev Note:
-Internally this is equal to calling (ns-string-to-string (invoke ns-object \"description\")).
-
-See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/description()?language=objc"
-  (declare (type ns-object ns-object))
-  (ns-string-to-string (invoke ns-object "description")))
 
 (defmethod print-object ((obj ns-object) stream)
   "When printing `ns-object', print `description' of OBJ. "
