@@ -351,33 +351,6 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 ;;; Life Cycle
 
 (doc-objc-class "NSApplication"         ; ns-application
-  ((current-event ("currentEvent" :read-only)
-                  "The last event object that the app retrieved from the event queue.
-
-The shared app object receives events and forwards them to the
-affected `ns-window' objects, which then distribute them to the objects
-in its view hierarchy. Use this property to get the event that was
-last handled by the app.
-
-see https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
-   (running-p ("running" :read-only :reader "isRunning")
-              "A Boolean value indicating whether the main event loop is running.
-
-The value of this property is `t' when the main event loop is running
-or false when it’s not. Calling the `stop' method sets the value to
-`nil'.
-
-see https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
-   (active-p ("active" :read-only :reader "isActive")
-             "A Boolean value indicating whether this is the active app.
-
-The shared app object receives events and forwards them to the
-affected `ns-window' objects, which then distribute them to the objects
-in its view hierarchy. Use this property to get the event that was
-last handled by the app.
-
-see https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc"))
-  ;;
   "An object that manages an app’s main event loop and resources used by all of that app's objects."
   "Every app uses a single instance of `ns-application' to control the main
 event loop, keep track of the app's windows and menus, distribute

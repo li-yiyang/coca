@@ -68,7 +68,8 @@ Return CFFI type. "
                       (objc-encoding-lisp-type (gethash type *objc-encoding-aliases*)))
                      (t (error "Unknown ObjC encoding ~S. "  type))))
       (list    (ecase (car type)
-                 (:struct type)))))
+                 (:struct  type)
+                 (:pointer :pointer)))))
 
   (defun as-objc-encoding (type)
     "Convert TYPE into `objc-encoding'.

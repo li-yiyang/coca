@@ -72,11 +72,21 @@ Rules:
 "
   (declare (type string name))
   (str:match name
+    ;; Black list: not conflicts with CL symbols
+    ;; should add more later
+    (("count")   (intern "COUNTS" package))
+    (("length")  (intern "LEN"    package))
+
+    ;; Prefix escape
     (("NS" name) (intern (str:concat "NS-" (str:upcase (str:param-case name))) package))
     (("CG" name) (intern (str:concat "CG-" (str:upcase (str:param-case name))) package))
     ;; FIX: frameworks/webkit.lisp
     (("WK" name) (intern (str:concat "WK-" (str:upcase (str:param-case name))) package))
-    (("_"  name) (objc-intern (str:concat "%" name) package))
+
+    ;; internal/private
+    (("__" name) (intern (str:concat "%%"  (str:upcase (str:param-case name))) package))
+    (("_"  name) (intern (str:concat "%"   (str:upcase (str:param-case name))) package))
+
     (t           (intern (str:upcase (str:param-case name))                    package))))
 
 ;;;; utils.lisp ends here

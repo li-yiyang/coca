@@ -45,69 +45,6 @@ All the ObjC class should be cached within `coca.objc::*classes*'.
             (slot-value class 'objc-class-name)
             (pointer-address (objc-object-pointer class)))))
 
-(defun coerce-to-objc-class (class)
-  "Coerces its argument to an Objective-C class pointer.
-Return the lisp class of CLASS.
-
-
-Parameters:
-+ CLASS:
-  + `objc-class':
-  + symbol: find class and assert it's `objc-class'
-  + string: of ObjC class
-    this would make an `objc-class' instance class with name CLASS-NAME,
-    by default the CLASS-NAME is parsed by `str:param-case' from CLASS,
-    or you could set it via optional parameter CLASS-NAME
-
-    this would using `coca.objc::objc_getClass' to get class in the ObjC
-    runtime, if not found, raise error.
-  + foreign-pointer of ObjC class
-    the foreign-pointer would be checked via `coca.objc::object_isClass'
-    to test if it's a valid foreign-pointer to ObjC Class
-
-    the name of class would be fetched by `coca.objc::class_getName',
-    the CLASS-NAME would be used to set the lisp class name if needed
-    (see above as string CLASS input)
-"
-  (declare (type (or string symbol objc-class foreign-pointer) class))
-  (flet ((wrap-ptr-as-objc-class (ptr name class-name)
-           (declare (type foreign-pointer ptr)
-                    (type string          name)
-                    (type symbol          class-name))
-           (let ((super (class_getSuperClass ptr)))
-             (c2mop:ensure-finalized
-              (c2mop:ensure-class
-               class-name
-               :name                class-name
-               :metaclass           (find-class 'objc-class)
-               :objc-class-name     name
-               :objc-object-pointer ptr
-               :direct-superclasses (if (null-pointer-p super)
-                                        (list (find-class 'standard-objc-object))
-                                        (list (coerce-to-objc-class super))))))))
-    (the objc-class
-      (etypecase class
-        (objc-class class)
-        (symbol
-         (let ((class (find-class class)))
-           (assert (typep class 'objc-class))
-           class))
-        (string
-         (with-cached (class *classes*)
-           (let ((ptr (objc_getClass class)))
-             (when (null-pointer-p ptr)
-               (error "Unknown ObjC class `~A' within current ObjC Runtime. " class))
-             (wrap-ptr-as-objc-class ptr class (objc-intern class)))))
-        (foreign-pointer
-         (when (null-pointer-p class)
-           (error "NULL pointer is not a pointer of ObjC class"))
-         (unless (object_isClass class)
-           (error "~S is not a pointer of ObjC class. " class))
-         (let ((name (class_getName class)))
-           (with-cached (name *classes*)
-             (let ((class-name (objc-intern name)))
-               (wrap-ptr-as-objc-class class name class-name)))))))))
-
 ;;; Foundamental Classes
 
 ;; (defun coerce-all-objc-classes ()

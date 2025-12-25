@@ -251,6 +251,26 @@ Parameters:
   (class :pointer)
   (count :pointer))
 
+(defcfun (class_copyPropertyList "class_copyPropertyList") :pointer
+  "extern objc_property_t * class_copyPropertyList(Class cls, unsigned int * outCount);
+
+Describes the properties declared by a class.
+
+Parameters:
++ CLASS: ObjC class to inspect
++ OUT-COUNT: On return, contains the length of the returned array.
+  If outCount is NULL, the length is not returned.
+
+An array of pointers of type objc_property_t describing the properties
+declared by the class. Any properties declared by superclasses are not
+included. The array contains *outCount pointers followed by a NULL
+terminator. You must free the array with free().  If cls declares no
+properties, or cls is Nil, returns NULL and *outCount is 0.
+
+see https://developer.apple.com/documentation/objectivec/class_copypropertylist(_:_:)?language=objc"
+  (class     :pointer)
+  (out-count :pointer))
+
 ;;; Object
 
 (defcfun (object_isClass "object_isClass") :bool
@@ -361,6 +381,24 @@ All the protocols listed between angle brackets are considered part of
 the ProtocolName protocol."
   (protocol     :pointer)
   (other        :pointer))
+
+;;; Property
+
+(defcfun (property_getName "property_getName") :string
+  "extern const char * property_getName(objc_property_t property);
+
+Returns the name of a property.
+
+see https://developer.apple.com/documentation/objectivec/property_getname(_:)?language=objc"
+  (property  :pointer))
+
+(defcfun (property_getAttributes "property_getAttributes") :string
+  "extern const char * property_getAttributes(objc_property_t property);
+
+Returns the attribute string of a property.
+
+see https://developer.apple.com/documentation/objectivec/property_getattributes(_:)?language=objc"
+  (property  :pointer))
 
 
 ;;; Highlevel
