@@ -16,6 +16,16 @@
     :initarg  :objc-property-reader
     :initform nil
     :accessor objc-property-reader)
+   (objc-property-after-read
+    :type      function
+    :initarg   :objec-property-after-read
+    :initform  #'identity
+    :accessor  objc-property-after-read)
+   (objc-property-befor-write
+    :type      function
+    :initarg   :objec-property-before-write
+    :initform  #'identity
+    :accessor  objc-property-before-write)
    (objc-property-writer
     :type   (or null sel)
     :initarg  :objc-property-writer
@@ -84,16 +94,17 @@ It should return the class of slot definition required. "
   (let ((eslotd (call-next-method)))
     (dolist (slotd direct-slot-definitions)
       (when (objc-property-slot-p slotd)
-        (setf (objc-property-name   eslotd) (objc-property-name   slotd)
-              (objc-property-reader eslotd) (objc-property-reader slotd)
-              (objc-property-writer eslotd) (objc-property-writer slotd))
+        (setf (objc-property-name       eslotd) (objc-property-name   slotd)
+              (objc-property-reader     eslotd) (objc-property-reader slotd)
+              (objc-property-writer     eslotd) (objc-property-writer slotd)
+              (objc-property-after-read eslotd) (objc-property-after-read slotd))
         (return)))
     eslotd))
 
 ;; For `objc-property-slot':
 ;; reading slot is invoke on `objc-property-reader'
 (defmethod c2mop:slot-value-using-class ((class objc-class) object (slot objc-property-slot))
-  (invoke object (objc-property-reader slot)))
+  (funcall (objc-property-wrapper slot) (invoke object (objc-property-reader slot))))
 
 ;; For `objc-property-slot':
 ;; writing slot is invoke on `objc-property-writer'
@@ -129,6 +140,19 @@ It should return the class of slot definition required. "
 
 KEY: ObjC property name string
 VAL: symbol of ObjC property in lisp (as slot name)")
+
+(defparameter *objc-property-blacklist*
+  (let* ((slots    '("debugDescription"))
+         (blacklist (make-hash-table :test 'equal
+                                     :size (length slots))))
+    (dolist (slot slots blacklist)
+      (setf (gethash (the string slot) blacklist) t)))
+  "Names of ObjC properties that should not be interned.
+
+KEY: ObjC property name string
+VAL: boolean
+
+see `objc-class-additional-direct-slots'. ")
 
 (defun decode-objc-property-attributes (name attributes)
   "Decode the ObjC property attribute type string.
@@ -189,7 +213,8 @@ Return form should be able to use as :direct-slots. "
                    :for property   := (mem-aref properties :pointer i)
                    :for name       := (property_getName       property)
                    :for attributes := (property_getAttributes property)
-                   :if (not (gethash name super-slots))
+                   :if (and (not (gethash name super-slots))
+                            (not (gethash name *objc-property-blacklist*)))
                      :collect (multiple-value-bind (name objc-property objc-reader objc-writer)
                                   (decode-objc-property-attributes name attributes)
                                 `(:name                 ,name
@@ -268,98 +293,98 @@ Parameters:
              (let ((class-name (objc-intern name)))
                (wrap-ptr-as-objc-class class name class-name)))))))))
 
-(defun objc-property-slot-initargs (def)
-  "Convert DEF as ObjC property initialize args. "
-  (etypecase def
-    (list
-     (destructuring-bind (name &key
-                                 objc-property-type
-                                 objc-property
-                                 objc-property-reader
-                                 objc-property-writer
-                                 objc-property-read-only
-                                 documentation
-                          &allow-other-keys)
-         def
-       (let* ((pname  (the string
-                        (or objc-property
-                            (error "Missing ~S for ObjC property. "
-                                   :objc-property))))
-              (reader (coerce-to-selector
-                       (or objc-property-reader
-                           pname)))
-              (writer (if objc-property-read-only
-                          nil
-                          (coerce-to-selector
-                           (or objc-property-writer
-                               (gen-objc-property-set pname))))))
-         `(:name                 ,name
-           :objc-property        ,pname
-           :objc-property-reader ,reader
-           :objc-property-writer ,writer
-           :type                 ,(if objc-property-type
-                                      (objc-encoding-lisp-type objc-property-type)
-                                      t)
-           :documentation        ,(or documentation
-                                      (format nil "ObjC property ~A. " pname))
-           :initargs             ()
-           :readers             (,name)
-           :writers             ,(when writer `((setf ,name)))
-           :allocation           :objc))))
-    (objc-property-slot
-     `(:name                 ,(c2mop:slot-definition-name         def)
-       :objc-property        ,(objc-property-name                 def)
-       :objc-property-reader ,(objc-property-reader               def)
-       :objc-property-writer ,(objc-property-writer               def)
-       :initargs             ,(c2mop:slot-definition-initargs     def)
-       :initform             ,(c2mop:slot-definition-initform     def)
-       :initfunction         ,(c2mop:slot-definition-initfunction def)
-       :readers              ,(c2mop:slot-definition-readers      def)
-       :writers              ,(c2mop:slot-definition-writers      def)
-       :type                 ,(c2mop:slot-definition-type         def)
-       :allocation           :objc
-       :documentation        ,(documentation def t)))
-    (c2mop:direct-slot-definition
-     `(:name                 ,(c2mop:slot-definition-name         def)
-       :initargs             ,(c2mop:slot-definition-initargs     def)
-       :allocation           ,(c2mop:slot-definition-allocation   def)
-       :initform             ,(c2mop:slot-definition-initform     def)
-       :initfunction         ,(c2mop:slot-definition-initfunction def)
-       :readers              ,(c2mop:slot-definition-readers      def)
-       :writers              ,(c2mop:slot-definition-writers      def)
-       :type                 ,(c2mop:slot-definition-type         def)
-       :documentation        ,(documentation def t)))))
+;; (defun objc-property-slot-initargs (def)
+;;   "Convert DEF as ObjC property initialize args. "
+;;   (etypecase def
+;;     (list
+;;      (destructuring-bind (name &key
+;;                                  objc-property-type
+;;                                  objc-property
+;;                                  objc-property-reader
+;;                                  objc-property-writer
+;;                                  objc-property-read-only
+;;                                  documentation
+;;                           &allow-other-keys)
+;;          def
+;;        (let* ((pname  (the string
+;;                         (or objc-property
+;;                             (error "Missing ~S for ObjC property. "
+;;                                    :objc-property))))
+;;               (reader (coerce-to-selector
+;;                        (or objc-property-reader
+;;                            pname)))
+;;               (writer (if objc-property-read-only
+;;                           nil
+;;                           (coerce-to-selector
+;;                            (or objc-property-writer
+;;                                (gen-objc-property-set pname))))))
+;;          `(:name                 ,name
+;;            :objc-property        ,pname
+;;            :objc-property-reader ,reader
+;;            :objc-property-writer ,writer
+;;            :type                 ,(if objc-property-type
+;;                                       (objc-encoding-lisp-type objc-property-type)
+;;                                       t)
+;;            :documentation        ,(or documentation
+;;                                       (format nil "ObjC property ~A. " pname))
+;;            :initargs             ()
+;;            :readers             (,name)
+;;            :writers             ,(when writer `((setf ,name)))
+;;            :allocation           :objc))))
+;;     (objc-property-slot
+;;      `(:name                 ,(c2mop:slot-definition-name         def)
+;;        :objc-property        ,(objc-property-name                 def)
+;;        :objc-property-reader ,(objc-property-reader               def)
+;;        :objc-property-writer ,(objc-property-writer               def)
+;;        :initargs             ,(c2mop:slot-definition-initargs     def)
+;;        :initform             ,(c2mop:slot-definition-initform     def)
+;;        :initfunction         ,(c2mop:slot-definition-initfunction def)
+;;        :readers              ,(c2mop:slot-definition-readers      def)
+;;        :writers              ,(c2mop:slot-definition-writers      def)
+;;        :type                 ,(c2mop:slot-definition-type         def)
+;;        :allocation           :objc
+;;        :documentation        ,(documentation def t)))
+;;     (c2mop:direct-slot-definition
+;;      `(:name                 ,(c2mop:slot-definition-name         def)
+;;        :initargs             ,(c2mop:slot-definition-initargs     def)
+;;        :allocation           ,(c2mop:slot-definition-allocation   def)
+;;        :initform             ,(c2mop:slot-definition-initform     def)
+;;        :initfunction         ,(c2mop:slot-definition-initfunction def)
+;;        :readers              ,(c2mop:slot-definition-readers      def)
+;;        :writers              ,(c2mop:slot-definition-writers      def)
+;;        :type                 ,(c2mop:slot-definition-type         def)
+;;        :documentation        ,(documentation def t)))))
 
-(defun objc-class-add-objc-properties (objc-class objc-properties)
-  "Add ObjC OBJC-PROPERTIES to OBJC-CLASS.
+;; (defun objc-class-add-objc-properties (objc-class objc-properties)
+;;   "Add ObjC OBJC-PROPERTIES to OBJC-CLASS.
 
-Parameters:
-+ OBJC-CLASS: should be coerce to objc class
-+ OBJC-PROPERTIES: a list like:
+;; Parameters:
+;; + OBJC-CLASS: should be coerce to objc class
+;; + OBJC-PROPERTIES: a list like:
 
-     (NAME . OBJC-PROPERTY-SLOT-OPTIONS)
+;;      (NAME . OBJC-PROPERTY-SLOT-OPTIONS)
 
-  OBJC-PROPERTY-SLOT-OPTIONS:
+;;   OBJC-PROPERTY-SLOT-OPTIONS:
 
-     objc-property-type
-     objc-property
-     objc-property-reader
-     objc-property-writer
-     objc-property-read-only
-     documentation
-"
-  (let* ((class  (coerce-to-objc-class objc-class))
-         (name   (class-name class))
-         (super  (c2mop:class-direct-superclasses class))
-         (direct (union (mapcar #'objc-property-slot-initargs (c2mop:class-direct-slots class))
-                        (mapcar #'objc-property-slot-initargs objc-properties)
-                        :key (lambda (plist) (getf plist :name)))))
-    (c2mop:ensure-finalized
-     (c2mop:ensure-class name
-                         :metaclass           (find-class 'objc-class)
-                         :name                name
-                         :direct-superclasses super
-                         :direct-slots        direct))))
+;;      objc-property-type
+;;      objc-property
+;;      objc-property-reader
+;;      objc-property-writer
+;;      objc-property-read-only
+;;      documentation
+;; "
+;;   (let* ((class  (coerce-to-objc-class objc-class))
+;;          (name   (class-name class))
+;;          (super  (c2mop:class-direct-superclasses class))
+;;          (direct (union (mapcar #'objc-property-slot-initargs (c2mop:class-direct-slots class))
+;;                         (mapcar #'objc-property-slot-initargs objc-properties)
+;;                         :key (lambda (plist) (getf plist :name)))))
+;;     (c2mop:ensure-finalized
+;;      (c2mop:ensure-class name
+;;                          :metaclass           (find-class 'objc-class)
+;;                          :name                name
+;;                          :direct-superclasses super
+;;                          :direct-slots        direct))))
 
 (defmacro doc-objc-class (name &body documentations)
   "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
