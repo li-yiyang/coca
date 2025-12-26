@@ -124,21 +124,15 @@ TODO:
 
 The `objc-class' is subclass of `standard-objc-object'.
 
-Use type `standard-objc-object' to test if object is ObjC object. ")
+Use type `standard-objc-object' to test if object is ObjC object.
+
+Use `doc-objc-class' to descript the documentation and the property of
+as lisp slot. ")
    (:file        "objc-object"
     :depends-on ("objc-class")
     :description "Implement ObjC Object wrapper"
     :long-description
     "TODO: finalize? ")
-   (:file        "objc-property"
-    :depends-on ("objc-class"
-                 "method")
-    :description "Implement ObjC property as lisp slot"
-    :long-description
-    "The ObjC property should be interned as lisp slot.
-
-Use `doc-objc-class' to descript the documentation and the property of
-as lisp slot. ")
    (:file        "sel"
     :depends-on ("cffi")
     :description "Wrap for ObjC SEL"
