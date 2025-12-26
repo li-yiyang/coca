@@ -36,6 +36,7 @@
    ;; #:define-objc-method
    ;; #:define-objc-protocol
    #:declare-objc-method
+   #:send
    #:invoke
    #:can-invoke-p))
 

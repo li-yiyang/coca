@@ -244,4 +244,30 @@ Parameters:
                       (coerce-to-objc-class (object_getClassName object)))))
        (objc-class-method-signature class method)))))
 
+(defmacro send (object &rest sending-form)
+  "CCL's objc:send style macro for `invoke'.
+
+Example:
+
+    (send object :message-like-this) ;; => (invoke object \"messageLikeThis\")
+    (send object :foo-abc a :bar b)  ;; => (invoke object \"fooAbc:Bar:\" a b)
+
+Dev Note:
+Just a compability layer.
+Use with caution. "
+  (let ((len (length (the list sending-form))))
+    (when (zerop len)
+      (error "Malformed sending form, expecting (send ~A [METHOD-ARG...]). " object))
+    (if (= len 1)
+        `(invoke ,object ,(str:camel-case (first sending-form)))
+        (loop :with sel  := (str:concat (str:camel-case (pop sending-form)) ":")
+              :with args := (list (pop sending-form))
+              :for (key . rest) :on (cddr sending-form) :by #'cddr
+              :for arg := (if (endp rest)
+                              (error "Missing argument after ~S. " key)
+                              (first rest))
+              :do (setf sel (str:concat sel (str:pascal-case key) ":"))
+                  (push arg args)
+              :finally (return `(invoke ,object ,sel ,@(reverse args)))))))
+
 ;;;; method.lisp end here
