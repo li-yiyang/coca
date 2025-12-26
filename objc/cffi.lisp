@@ -411,6 +411,12 @@ Returns the attribute string of a property.
 see https://developer.apple.com/documentation/objectivec/property_getattributes(_:)?language=objc"
   (property  :pointer))
 
+;;; wrapper
+
+(defcfun (coca_lisp_call_wrapper "coca_lisp_call_wrapper") :void
+  "Wrapper code of @try @catch"
+  (callback :pointer))
+
 
 ;;; Highlevel
 

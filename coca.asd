@@ -30,10 +30,13 @@ LispWorks' API."
                :trivial-garbage
                :closer-mop
                :trivial-main-thread)
+  :defsystem-depends-on (:cffi-grovel)
   :pathname "objc"
   :components
   ((:file        "package"
     :description "Package definition of coca.objc")
+   (:cffi-wrapper-file "wrapper"
+    :depends-on ("package"))
    (:file        "utils"
     :depends-on ("package")
     :description "Helper functions of coca.objc"
@@ -54,7 +57,8 @@ Alist and Plist:
  provide functionalities to filter alist and plist
 ")
    (:file        "cffi"
-    :depends-on ("package")
+    :depends-on ("package"
+                 "wrapper")
     :description "CFFI bindings to ObjC Runtime"
     :long-description
     "Only needed ObjC Runtime functions are imported.
