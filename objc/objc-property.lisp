@@ -111,9 +111,9 @@ It should return the class of slot definition required. "
 ;; writing slot is invoke on `objc-property-writer'
 ;; if `objc-property-writer' is `nil', it's a read-only slot
 (defmethod (setf c2mop:slot-value-using-class) (value (class objc-class) object (slot objc-property-slot))
-  (let ((writer (objc-property-reader slot)))
+  (let ((writer (objc-property-writer slot)))
     (if writer
-        (invoke object writer (funcall (objc-property-before-write class) value))
+        (invoke object writer (funcall (objc-property-before-write slot) value))
         (error "ObjC property ~S is read only. " (c2mop:slot-definition-name slot)))))
 
 (defmethod c2mop:slot-boundp-using-class ((class objc-class) object (slot objc-property-slot))
@@ -322,14 +322,16 @@ Parameters:
                                                               before after accessor
                                                               (reader accessor)
                                                               (writer accessor)
+                                                              (getter (objc-property-reader slotd))
+                                                              (setter (objc-property-writer slotd))
                                                               documentation
                                                        &allow-other-keys)
                                       update
                                     (declare (ignore name))
                                     `(:name                       ,(c2mop:slot-definition-name slotd)
                                       :objc-property              ,(objc-property-name   slotd)
-                                      :objc-property-reader       ,(objc-property-reader slotd)
-                                      :objc-property-writer       ,(objc-property-writer slotd)
+                                      :objc-property-reader       ,(coerce-to-selector getter)
+                                      :objc-property-writer       ,(and setter (coerce-to-selector setter))
                                       :objc-property-before-write ,(or before #'identity)
                                       :objc-property-after-read   ,(or after  #'identity)
                                       :initargs                   ()

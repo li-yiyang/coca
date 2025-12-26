@@ -1112,6 +1112,10 @@ and to fade-in and fade-out effects."
 ;;; Windows
 
 (doc-objc-class "NSWindow"              ; ns-window
+  (("visible"
+    :accessor visible-p
+    :setter  "setIsVisible:"
+    :documentation "Boolean value indicates if window is visible on screen. "))
   "A window that an app displays on the screen. "
   "A single `ns-window' object corresponds to, at most, one on-screen window.
 Windows perform two principal functions:
@@ -1331,14 +1335,6 @@ see https://developer.apple.com/documentation/appkit/nswindow/contentview?langua
 ;; Managing Window Layers
 
 ;; Managing Window Visibility and Occlusion State
-
-(defmethod visible-p ((window ns-window))
-  "Test if WINDOW is visible onscreen. "
-  (invoke window "visible"))
-
-(defmethod (setf visible-p) (visible (window ns-window))
-  "Sets the WINDOW's visible state to the VISIBLE. "
-  (invoke window "setIsVisible:" (and visible t)))
 
 ;; Managing Window Frames in User Defaults
 
