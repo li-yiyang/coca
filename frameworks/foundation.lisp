@@ -730,6 +730,18 @@ instances.
   (w :double :type real)
   (h :double :type real))
 
+(define-objc-struct (cg-affine-transform "CGAffineTransform")
+  (a  :double)
+  (b  :double)
+  (c  :double)
+  (d  :double)
+  (tx :double)
+  (ty :double))
+
+(define-objc-struct (cps-process-serial-number "CPSProcessSerNum")
+  (hi :unsigned-int)
+  (lo :unsigned-int))
+
 (doc-objc-class "NSAffineTransform"     ; ns-affine-transform
   "A graphics coordinate transformation."
   "see https://developer.apple.com/documentation/foundation/nsaffinetransform?language=objc")

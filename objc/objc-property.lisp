@@ -117,8 +117,8 @@ It should return the class of slot definition required. "
         (error "ObjC property ~S is read only. " (c2mop:slot-definition-name slot)))))
 
 (defmethod c2mop:slot-boundp-using-class ((class objc-class) object (slot objc-property-slot))
-  (declare (ignore class object slot))
-  t)
+  (declare (ignore class))
+  (can-invoke-p object (objc-property-reader slot)))
 
 (defmethod c2mop:slot-makunbound-using-class ((class objc-class) object (slot objc-property-slot))
   (declare (ignore class object slot))

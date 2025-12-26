@@ -146,11 +146,17 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:content-view-controller
    #:content-view
    #:style
-   #:main-window-p
-   #:can-become-main-window-p
-   #:make-main-window
-   #:toolbar
-   #:visible-p
+   #:alpha-value
+   #:background-color
+   #:color-space
+   #:can-hide
+   #:on-active-space
+   #:on-active-space
+   #:hides-on-deactivate
+   #:collection-behavior
+   #:opaque
+   #:has-shadow
+   #:visible
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -1111,26 +1117,6 @@ and to fade-in and fade-out effects."
 
 ;;; Windows
 
-(doc-objc-class "NSWindow"              ; ns-window
-  (("visible"
-    :accessor visible-p
-    :setter  "setIsVisible:"
-    :documentation "Boolean value indicates if window is visible on screen. "))
-  "A window that an app displays on the screen. "
-  "A single `ns-window' object corresponds to, at most, one on-screen window.
-Windows perform two principal functions:
-+ To place views in a provided area
-+ To accept and distribute mouse and keyboard events the user generates to the appropriate views"
-  "Notes:
-Although the `ns-window' class inherits the `ns-coding' protocol from `ns-responder',
-the class doesn't support coding. Legacy support for archivers exists, but its use is
-deprecated and may not work. Any attempt to archive or unarchive a window object using a
-keyed coding object raises an `ns-invalid-argument-exception' exception.
-For details about window restoration, see restorationClass."
-  "see https://developer.apple.com/documentation/appkit/nswindow?language=objc")
-
-;; Creating a window
-
 (define-objc-enum ns-window-style-mask
   "Constants that specify the style of a window,
 and that you can combine with the C bitwise OR operator.
@@ -1163,6 +1149,153 @@ See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.st
   (:nonactivating-panel       (ash 1  7) "The window is a panel or a subclass of NSPanel"
                               "that does not activate the owning app.")
   (:hud-window                (ash 1 13) "The window is a HUD panel. "))
+
+(doc-objc-class "NSWindow"              ; ns-window
+  (("contentViewController"
+    :reader content-view-controller
+    :documentation "Get the main content view controller for the window.
+
+The value of this property provides the content view of the
+window. Setting this value removes the existing value of `content-view'
+and makes the `content-view-controller' .view the main content view for the
+window. By default, the value of this property is `nil'.
+
+The content view controller controls only the `content-view' object, and
+not the title of the window. The window title can easily be bound to
+the `content-view-controller' object using code such as:
+
+    [window bind:NSTitleBinding
+        toObject:contentViewController
+     withKeyPath:@\"title\"
+         options:nil]
+
+Setting `content-view-controller' causes the window to resize based on
+the current size of the `content-view-controller'; to restrict the
+size of the window, use Auto Layout (note that the value of this
+property is encoded in the NIB). Directly assigning a `content-view'
+value clears out the root view controller.
+
+see https://developer.apple.com/documentation/appkit/nswindow/contentviewcontroller?language=objc")
+   ("contentView"
+    :reader content-view
+    :documentation "Get the window’s content view,
+the highest accessible view object in the window’s view hierarchy.
+
+The window retains the new content view and owns it thereafter. The
+view object is resized to fit precisely within the content area of the
+window. You can modify the content view’s coordinate system through
+its bounds rectangle, but you can’t alter its frame rectangle
+(its size or location) directly.
+
+Setting this property releases the old content view. If you plan to
+reuse it, be sure to retain it before changing the property value and
+to release it as appropriate when adding it to another `ns-window' or
+`ns-view' object.
+
+see https://developer.apple.com/documentation/appkit/nswindow/contentview?language=objc")
+   ("styleMask"
+    :accessor style-mask
+    :after  decode-ns-window-style-mask
+    :before ns-window-style-mask
+    :documentation "Flags that describe the window’s current style,
+such as if it’s resizable or in full-screen mode.
+
+The styleMask is settable on macOS 10.6 and later. Setting this
+property has the same restrictions as the styleMask parameter of
+initWithContentRect:styleMask:backing:defer:. Changing the style mask
+may cause the view hierarchy to be rebuilt.
+
+Dev Note:
+see `ns-window-style-mask'.
+
+see https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.property?language=objc")
+   ("alphaValue"
+    :accessor alpha-value
+    :documentation "The window's alpha value.
+see https://developer.apple.com/documentation/appkit/nswindow/alphavalue?language=objc")
+   ("backgroundColor"
+    :accessor background-color
+    :documentation "The color of window's background.
+see https://developer.apple.com/documentation/appkit/nswindow/backgroundcolor?language=objc")
+   ("colorSpace"
+    :accessor color-space
+    :documentation "The window’s color space.
+
+The value of this property is nil if the window does not have a
+backing store, and is off-screen.
+
+see https://developer.apple.com/documentation/appkit/nswindow/colorspace?language=objc")
+   ("canHide"
+    :accessor can-hide
+    :documentation "A Boolean value that indicates whether the window can hide
+when its application becomes hidden.
+
+The value of this property is true if the window can hide when its
+application becomes hidden (during execution of the `ns-application'
+`ns-application' `hide' method); otherwise, `nil'.
+By default, the value of the property is `t'.
+
+see https://developer.apple.com/documentation/appkit/nswindow/canhide?language=objc")
+   ("onActiveSpace"
+    :accessor on-active-space
+    :documentation "Whether the window is on the currently active space.
+
+The value of this property is true if the window is on the currently
+active space; otherwise, false. For visible windows, this property
+indicates whether the window is currently visible on the active
+space. For nonvisible windows, it indicates whether ordering the
+window onscreen would cause it to be on the active space.
+
+see https://developer.apple.com/documentation/appkit/nswindow/isonactivespace?language=objc")
+   ("hidesOnDeactivate"
+    :reader hides-on-deactivate
+    :documentation "Whether the window is removed from the screen
+when its application becomes inactive.
+
+The value of this property is true if the window is removed from the
+screen when its application is deactivated; false if it remains
+onscreen. The default value for NSWindow is false; the default value
+for NSPanel is true.
+
+see https://developer.apple.com/documentation/appkit/nswindow/hidesondeactivate?language=objc")
+   ("collectionBehavior"
+    :accessor collection-behavior
+    :documentation "A value that identifies the window’s behavior in window collections.
+
+The possible values for this property are listed in `ns-window-collection-behavior'.
+
+see https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.property?language=objc")
+   ("opaque"
+    :accessor opaque
+    :documentation "Whether the window is opaque.
+see https://developer.apple.com/documentation/appkit/nswindow/isopaque?language=objc")
+   ("hasShadow"
+    :accessor has-shadow
+    :documentation "Whether the window has a shadow.
+see https://developer.apple.com/documentation/appkit/nswindow/hasshadow?language=objc")
+   ("visible"
+    :accessor visible
+    :setter  "setIsVisible:"
+    :documentation "If window is visible on screen.
+
+Dev Note:
+Using (setf visible-p) would invoke setIsVisible: method.
+
+see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language=objc"))
+  "A window that an app displays on the screen. "
+  "A single `ns-window' object corresponds to, at most, one on-screen window.
+Windows perform two principal functions:
++ To place views in a provided area
++ To accept and distribute mouse and keyboard events the user generates to the appropriate views"
+  "Notes:
+Although the `ns-window' class inherits the `ns-coding' protocol from `ns-responder',
+the class doesn't support coding. Legacy support for archivers exists, but its use is
+deprecated and may not work. Any attempt to archive or unarchive a window object using a
+keyed coding object raises an `ns-invalid-argument-exception' exception.
+For details about window restoration, see restorationClass."
+  "see https://developer.apple.com/documentation/appkit/nswindow?language=objc")
+
+;; Creating a window
 
 (define-objc-enum ns-backing-store-type
   (:retained    0 "Deprecated"
@@ -1253,72 +1386,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Configuring the Window's Content
 
-(defmethod content-view-controller ((window ns-window))
-  "Return the main content view controller for the window.
-
-The value of this property provides the content view of the
-window. Setting this value removes the existing value of contentView
-and makes the contentViewController.view the main content view for the
-window. By default, the value of this property is nil.
-
-The content view controller controls only the contentView object, and
-not the title of the window. The window title can easily be bound to
-the contentViewController object using code such as:
-
-    [window bind:NSTitleBinding
-        toObject:contentViewController
-     withKeyPath:@\"title\"
-         options:nil]
-
-    (invoke window
-            \"bind:toObject:withKeyPath:options:\"
-            +ns-title-binding+
-            content-view-controller
-            (string-to-ns-string \"title\")
-            nil)
-
-Setting contentViewController causes the window to resize based on the
-current size of the contentViewController; to restrict the size of the
-window, use Auto Layout (note that the value of this property is
-encoded in the NIB). Directly assigning a contentView value clears out
-the root view controller.
-
-Parameters:
-+ WINDOW: `ns-window'
-
-see https://developer.apple.com/documentation/appkit/nswindow/contentviewcontroller?language=objc
-"
-  (invoke window "contentViewController"))
-
-(defmethod content-view ((window ns-window))
-  "Return the WINDOW's content view,
-the highest accessible view object in the WINDOW's view hierarchy.
-
-The window retains the new content view and owns it thereafter. The
-view object is resized to fit precisely within the content area of the
-window. You can modify the content view’s coordinate system through
-its bounds rectangle, but you can’t alter its frame rectangle (its
-size or location) directly.
-
-Setting this property releases the old content view. If you plan to
-reuse it, be sure to retain it before changing the property value and
-to release it as appropriate when adding it to another NSWindow or
-NSView object.
-
-Parameters:
-+ WINDOW: `ns-window'
-
-see https://developer.apple.com/documentation/appkit/nswindow/contentview?language=objc"
-  (invoke window "contentView"))
-
 ;; Configuring the Window's Appearance
-
-(defmethod style ((window ns-window))
-  "Get `ns-window-style-mask' flags that describe the WINDOW's current style. "
-  (invoke window "styleMask"))
-
-(defmethod style :around ((window ns-window))
-  (decode-ns-window-style-mask (call-next-method)))
 
 ;; Accessing Window Information
 
@@ -1342,27 +1410,27 @@ see https://developer.apple.com/documentation/appkit/nswindow/contentview?langua
 
 ;; Managing Main Status
 
-(defmethod main-window-p ((window ns-window))
-  "Test if WINDOW is application's main window.
-see https://developer.apple.com/documentation/appkit/nswindow/ismainwindow?language=objc"
-  (invoke window "mainWindow"))
+;; (defmethod main-window-p ((window ns-window))
+;;   "Test if WINDOW is application's main window.
+;; see https://developer.apple.com/documentation/appkit/nswindow/ismainwindow?language=objc"
+;;   (invoke window "mainWindow"))
 
-(defmethod can-become-main-window-p ((window ns-window))
-  "Test if WINDOW can become the application's main window.
-see https://developer.apple.com/documentation/appkit/nswindow/canbecomemain?language=objc"
-  (invoke window "canBecomeMainWindow"))
+;; (defmethod can-become-main-window-p ((window ns-window))
+;;   "Test if WINDOW can become the application's main window.
+;; see https://developer.apple.com/documentation/appkit/nswindow/canbecomemain?language=objc"
+;;   (invoke window "canBecomeMainWindow"))
 
-(defmethod make-main-window ((window ns-window))
-  "Makes the window the main window.
-see https://developer.apple.com/documentation/appkit/nswindow/makemain()?language=objc"
-  (invoke window "makeMainWindow"))
+;; (defmethod make-main-window ((window ns-window))
+;;   "Makes the window the main window.
+;; see https://developer.apple.com/documentation/appkit/nswindow/makemain()?language=objc"
+;;   (invoke window "makeMainWindow"))
 
 ;; Managing Toolbars
 
-(defmethod toolbar ((window ns-window))
-  "Get the WINDOW's toolbar
-see https://developer.apple.com/documentation/appkit/nswindow/toolbar?language=objc"
-  (invoke window "toolbar"))
+;; (defmethod toolbar ((window ns-window))
+;;   "Get the WINDOW's toolbar
+;; see https://developer.apple.com/documentation/appkit/nswindow/toolbar?language=objc"
+;;   (invoke window "toolbar"))
 
 ;; Managing Attached Windows
 

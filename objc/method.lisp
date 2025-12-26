@@ -68,6 +68,10 @@ type hint declaration. "
      (values (list (objc-encoding-cffi-type encoding) arg)
              (objc-encoding-lisp-type encoding)))))
 
+(defun coerce-to-objc-class* (ptr)
+  "PTR could be NULL pointer for `coerce-to-objc-class'. "
+  (if (null-pointer-p ptr) nil (coerce-to-objc-class ptr)))
+
 ;; TODO: need a cleaner code
 (defun objc-method-calling-lambda-form (args-encodings ret)
   "Generate lambda expression to call foreign function of ARGS-ENCODINGS and RET."
@@ -88,7 +92,7 @@ type hint declaration. "
                            ((:union :bits)
                             (error "Unknown how to wrap return type ~S. " ret))
                            (:object   `(coerce-to-objc-object (the foreign-pointer ,call)))
-                           (:class    `(coerce-to-objc-class  (the foreign-pointer ,call)))
+                           (:class    `(coerce-to-objc-class* (the foreign-pointer ,call)))
                            (:sel      `(coerce-to-selector    (the foreign-pointer ,call)))
                            (otherwise call)))))))
 
