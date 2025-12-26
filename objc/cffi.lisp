@@ -308,6 +308,17 @@ To get the method name as a C string, call sel_getName(method_getName(method)).
 See https://developer.apple.com/documentation/objectivec/method_getname(_:)?language=objc"
   (method :pointer))
 
+(defcfun (method_getImplementation "method_getImplementation") :pointer
+  "extern IMP method_getImplementation(Method m);
+
+Returns the implementation of a method.
+
+Parameters:
++ METHOD: pointer to method
+
+See https://developer.apple.com/documentation/objectivec/method_getimplementation(_:)?language=objc"
+  (method :pointer))
+
 ;;; Protocol
 
 (defcfun (protocol_getName "protocol_getName") :string

@@ -9,7 +9,8 @@ KEY: string of SEL name
 VAL: `sel' object. ")
 
 (defclass sel (objc-pointer)
-  ((name :initarg :name))
+  ((name :initarg :name
+         :reader  sel-name))
   (:documentation
    "A foreign type for Objective-C method selectors.
 
