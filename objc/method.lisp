@@ -8,17 +8,19 @@
 ;;     (lambda (#:object0 #:sel1 #:struct2 #:type3)
 ;;       (declare (type ... ...))
 ;;       ({coerce-to-objc-object | coerce-to-objc-class | ... }
-;;        (cffi:foreign-funcall-pointer objc-method-implementation
-;;          :pointer (objc-object-pointer #:object0) ;; objc-method-calling-arg-form
+;;        (coca_objc_msgsend
+;;          IMP ret
+;;          :pointer  ;; objc-method-calling-arg-form
 ;;          :pointer (objc-object-pointer #:sel1)
 ;;          :double  (struct-aref #:struct0 0)
-;;          :double  (struct-aref #:struct0 1)
-;;          ...      ...
-;;          <return>)))
+;;          :double  (struct-aref #:struct0 1))))
 ;;
 ;; Ref:
 ;; Friday Q&A 2012-11-16: Let's Build objc_msgSend
 ;; https://www.mikeash.com/pyblog/friday-qa-2012-11-16-lets-build-objc_msgsend.html
+;;
+;; ObjC [1.5] NSException (EN)
+;; https://li-yiyang.github.io/lisp/objc-ns-exception/
 
 (defun objc-class-class-method (class sel)
   "Get function to call CLASS and SEL. "
@@ -69,6 +71,8 @@ this should expand the ARG as:
 
     (CFFI-TYPE ARG
      CFFI-TYPE ARG...)
+
+and together return the type hints declaration infomation.
 
 See `:struct' case branch. "
   (case (atomize encoding)
@@ -130,6 +134,38 @@ Return a list of VARS, HINTS, CALL-TYPED-ARGS, WRAP. "
                                    (objc-encoding-cffi-type ret)
                                    (atomize ret)))))))
 
+;; see `cffi::foreign-funcall-form/fsbv-with-libffi'
+;; FIXME: CFFI type processing, currently,
+;; the return value is not current
+(defmacro coca_objc_msgSend (cif imp ret &rest type-arg)
+  "A body of foreign-funcall calling coca_objc_msgSend. "
+  (multiple-value-bind (args types)
+      (loop :for (type arg) :on type-arg :by #'cddr
+            :collect type :into types
+            :collect arg  :into args
+            :finally (return (values args types)))
+    (let* ((arglens (length args))
+           (symbols (loop :with *gensym-counter* := 0
+                          :repeat arglens :collect (gensym "ARG")))
+           (argvals (gensym "ARGUMENT-VALUES"))
+           (result  (gensym "RESULT")))
+      `(with-foreign-objects ((,argvals :pointer ,arglens)
+                              ,@(unless (eql ret :void)
+                                  `((,result ',(case ret
+                                                 (:string   :pointer)
+                                                 (otherwise ret))))))
+         ,(cffi::translate-objects-ret
+           symbols args types ret
+           `(progn
+              ,@(loop :for sym :in symbols
+                      :for cnt :from 0
+                      :collect `(setf (mem-aref ,argvals :pointer ,cnt) ,sym))
+              (%coca_objc_msgSend ,cif
+                                  ,imp
+                                  ,(if (eql ret :void) '(null-pointer) result)
+                                  ,argvals)
+              ,(if (eql ret :void) '(values) result)))))))
+
 (defun compile-objc-method-calling (implementation encoding)
   "Coerce ENCODING to a function calling foreign IMPLEMENTATION.
 Return the compiled function.
@@ -148,7 +184,11 @@ Return a compiled lambda function:
 "
   (destructuring-bind (vars hints call ret wrap)
       (objc-method-calling-form encoding)
-    (let ((call `(foreign-funcall-pointer ,implementation () ,@call ,ret)))
+    (let* ((cif  (cffi::make-libffi-cif
+                  "coca_objc_msgSend" ret
+                  (loop :for (type arg) :on call :by #'cddr
+                        :collect type)))
+           (call `(coca_objc_msgSend ,cif ,implementation ,ret ,@call)))
       (compile nil `(lambda ,vars
                       (declare ,@hints)
                       ,(case wrap
@@ -298,18 +338,9 @@ Use with caution. "
 (defcallback coca-exception :void ((exception :pointer))
   (error (coerce-to-objc-object (the foreign-pointer exception))))
 
-(foreign-funcall "set_coca_lisp_exception_callback"
+(foreign-funcall "set_coca_lisp_exception_handler"
                  :pointer (callback coca-exception)
                  :void)
-
-(defmacro within-objc-call (expr)
-  (let ((res (gensym "RES")))
-    `(let (,res)
-       (declare (special ,res))
-       (let ((*coca-callback* (lambda () (print (bt:current-thread)) (setf ,res ,expr))))
-         (declare (special *coca-callback*))
-         (coca_lisp_call_wrapper (callback coca-call))
-         ,res))))
 
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
@@ -350,13 +381,13 @@ Example:
             (sel   (coerce-to-selector method))
             (imp   (objc-class-instance-method class sel)))
        (declare (type function imp))
-       (within-objc-call (apply imp (cons object (cons sel args))))))
+       (apply imp (cons object (cons sel args)))))
     ((or symbol string objc-class)
      (let* ((class  (coerce-to-objc-class object))
             (sel    (coerce-to-selector   method))
             (imp    (objc-class-class-method class sel)))
        (declare (type function imp))
-       (within-objc-call (apply imp (cons class (cons sel args))))))
+       (apply imp (cons class (cons sel args)))))
     (foreign-pointer
      (if (object_isClass object)
          (let* ((class (coerce-to-objc-class object))
@@ -368,6 +399,6 @@ Example:
                 (sel   (coerce-to-selector   method))
                 (imp   (objc-class-instance-method class sel)))
            (declare (type function imp))
-           (within-objc-call (apply imp (cons object (cons sel args)))))))))
+           (apply imp (cons object (cons sel args))))))))
 
 ;;;; method.lisp end here
