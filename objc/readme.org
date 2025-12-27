@@ -1,5 +1,5 @@
 :PROPERTIES:
-:header-args:lisp: :package coca.objc :results verbatim :exports results
+:header-args:lisp: :package coca.objc :wrap example :exports results
 :END:
 #+title: Coca/ObjC
 #+author: 凉凉
@@ -21,10 +21,12 @@ These API is not likely to be modified.
   #+end_src
 
   #+RESULTS:
-  : Metaclass of ObjC object.
-  :
-  : Use `coerce-to-objc-class' to make an ObjC Class as lisp class.
-  : All the ObjC class should be cached within `coca.objc::*classes*'.
+  #+begin_example
+  Metaclass of ObjC object.
+
+  Use `coerce-to-objc-class' to make an ObjC Class as lisp class.
+  All the ObjC class should be cached within `coca.objc::*classes*'.
+  #+end_example
 + =standard-objc-object=
 
   #+begin_src lisp :exports results
@@ -32,12 +34,14 @@ These API is not likely to be modified.
   #+end_src
 
   #+RESULTS:
-  : The class from which all classes that implement an ObjC class should inherit.
-  :
-  : Dev Note:
-  : You may not need to directly use `standard-objc-object'.
-  : It's just a handy CLOS notation of `coca.objc::objc-pointer',
-  : making ObjC object different if you want to test type of `coca.objc::objc-pointer'.
+  #+begin_example
+  The class from which all classes that implement an ObjC class should inherit.
+
+  Dev Note:
+  You may not need to directly use `standard-objc-object'.
+  It's just a handy CLOS notation of `coca.objc::objc-pointer',
+  making ObjC object different if you want to test type of `coca.objc::objc-pointer'.
+  #+end_example
 
 ** Types
 + =objc-encoding=
@@ -47,10 +51,12 @@ These API is not likely to be modified.
   #+end_src
 
   #+RESULTS:
-  : Type of ObjC encoding representation in lisp.
-  :
-  : Dev Note:
-  : Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
+  #+begin_example
+  Type of ObjC encoding representation in lisp.
+
+  Dev Note:
+  Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
+  #+end_example
 + =define-objc-typedef=
 
   #+begin_src lisp :exports results
@@ -64,7 +70,7 @@ These API is not likely to be modified.
   Example:
 
       (define-objc-typedef ns-uinteger :unsigned-long
-        \"NSUInteger in lisp. \")
+        "NSUInteger in lisp. ")
 
   Syntax:
 
@@ -131,7 +137,9 @@ These API is not likely to be modified.
   #+end_src
 
   #+RESULTS:
-  : Returns the ObjC foreign pointer associated with a given Lisp object.
+  #+begin_example
+  Returns the ObjC foreign pointer associated with a given Lisp object.
+  #+end_example
 + =coerce-to-objc-class=
 
   #+begin_src lisp :exports results
@@ -210,17 +218,17 @@ These API is not likely to be modified.
   Example:
 
       ;; [NSWindow alloc];
-      (invoke \"NSWindow\" \"alloc\")
+      (invoke "NSWindow" "alloc")
 
-      ;; [NSString initWithUTF8String:\"Hello World\"];
-      (invoke \"NSString\" \"initWithUTF8String:\" \"Hello World\")
+      ;; [NSString initWithUTF8String:"Hello World"];
+      (invoke "NSString" "initWithUTF8String:" "Hello World")
 
       ;; [[NSWindow alloc] initWithContentRect:rect
       ;;                             styleMask:style
       ;;                               backing:backing
       ;;                                 defer:defer]
-      (invoke (invoke \"NSWindow\" \"alloc\")
-              \"initWithContentRect:styleMask:backing:defer:\"
+      (invoke (invoke "NSWindow" "alloc")
+              "initWithContentRect:styleMask:backing:defer:"
               rect style backing defer)
   #+end_example
 
@@ -234,10 +242,12 @@ These API is not likely to be modified.
   #+end_src
 
   #+RESULTS:
-  : Test if OBJECT can invoke METHOD or not.
-  :
-  : Parameter:
-  : + OBJECT:
-  :   + `objc-class' like: test both class and instance method
-  :   + `standard-objc-object' like: test only instance method
-  : + METHOD: `sel' or things can be `coerce-to-selector'
+  #+begin_example
+  Test if OBJECT can invoke METHOD or not.
+
+  Parameter:
+  + OBJECT:
+    + `objc-class' like: test both class and instance method
+    + `standard-objc-object' like: test only instance method
+  + METHOD: `sel' or things can be `coerce-to-selector'
+  #+end_example
