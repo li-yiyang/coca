@@ -1489,27 +1489,6 @@ and application-specific information."
   "An object that represents a special condition that interrupts the normal flow of program execution. "
   "see https://developer.apple.com/documentation/foundation/nsexception?language=objc")
 
-(define-condition objc-exception (objc-error)
-  ((name      :initarg :name)
-   (reason    :initarg :reason)
-   (exception :initarg :exception))
-  (:documentation "Throw `ns-exception' as lisp condition. ")
-  (:report (lambda (condition stream)
-             (with-slots (name reason) condition
-               (format stream "[~A] ~A" name reason)))))
-
-(cffi:defcallback objc-uncaught-exception-handler :void ((ns-exception :pointer))
-  "Throw `ns-exception' as `objc-exception'. "
-  (let ((exception (coca.objc::coerce-to-objc-object ns-exception)))
-    (error 'objc-exception :exception exception
-                           :name      (invoke-into-string exception "name")
-                           :reason    (invoke-into-string exception "reason"))))
-
-;; Changes the top-level error handler.
-(cffi:foreign-funcall "NSSetUncaughtExceptionHandler"
-                      :pointer (cffi:get-callback 'objc-uncaught-exception-handler)
-                      :void)
-
 ;;; Diagonstics and Debugging
 
 (defun ns-log (msg &rest args)

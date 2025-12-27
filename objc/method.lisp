@@ -184,8 +184,9 @@ Parameter:
 + METHOD: `sel' or things can be `coerce-to-selector'"
   (etypecase object
     (standard-objc-object
-     (and (ignore-errors (objc-class-class-method (class-of           object)
-                                                  (coerce-to-selector method)))
+     (and (ignore-errors
+           (objc-class-instance-method (class-of           object)
+                                       (coerce-to-selector method)))
           t))
     ((or symbol string objc-class)
      (let ((class (coerce-to-objc-class object))
@@ -196,36 +197,6 @@ Parameter:
      (if (object_isClass object)
          (can-invoke-p (coerce-to-objc-class  object) method)
          (can-invoke-p (coerce-to-objc-object object) method)))))
-
-;; (defun invoke (object method &rest args)
-;;   "Call METHOD on OBJECT by ARGS.
-;;
-;; Parameters:
-;; + OBJECT: object, class to call
-;; + METHOD: sel, string as function"
-;;   (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
-;;            (type (or string sel) method))
-;;   (etypecase object
-;;     (standard-objc-object
-;;      (let ((class (class-of object))
-;;            (sel   (coerce-to-selector method)))
-;;        (apply (the function (objc-class-instance-method class sel))
-;;               (cons object (cons sel args)))))
-;;     ((or symbol string objc-class)
-;;      (let ((class  (coerce-to-objc-class object))
-;;            (sel    (coerce-to-selector   method)))
-;;        (apply (the function (objc-class-class-method class sel))
-;;               (cons class (cons sel args)))))
-;;     (foreign-pointer
-;;      (if (object_isClass object)
-;;          (let ((class (coerce-to-objc-class object))
-;;                (sel   (coerce-to-selector   method)))
-;;            (apply (the function (objc-class-class-method class sel))
-;;                   (cons class (cons sel args))))
-;;          (let ((class (coerce-to-objc-class (objc_getClass object)))
-;;                (sel   (coerce-to-selector   method)))
-;;            (apply (the function (objc-class-instance-method class sel))
-;;                   (cons object (cons sel args))))))))
 
 (defun objc-class-method-signature (object method)
   "Tries to find the relevant method, and returns its signature. "
@@ -285,32 +256,6 @@ Use with caution. "
                   (push arg args)
               :finally (return `(invoke ,object ,sel ,@(reverse args)))))))
 
-
-
-;;; coca_lisp_call_wrapper
-
-(declaim (type function *coca-callback*))
-(defparameter *coca-callback* (lambda () (error "This shouldn't be...")))
-
-(defcallback coca-call :void ()
-  (funcall *coca-callback*))
-
-(defcallback coca-exception :void ((exception :pointer))
-  (error (coerce-to-objc-object (the foreign-pointer exception))))
-
-(foreign-funcall "set_coca_lisp_exception_callback"
-                 :pointer (callback coca-exception)
-                 :void)
-
-(defmacro within-objc-call (expr)
-  (let ((res (gensym "RES")))
-    `(let (,res)
-       (declare (special ,res))
-       (let ((*coca-callback* (lambda () (print (bt:current-thread)) (setf ,res ,expr))))
-         (declare (special *coca-callback*))
-         (coca_lisp_call_wrapper (callback coca-call))
-         ,res))))
-
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
 Return value is warpped as lisp value.
@@ -350,13 +295,13 @@ Example:
             (sel   (coerce-to-selector method))
             (imp   (objc-class-instance-method class sel)))
        (declare (type function imp))
-       (within-objc-call (apply imp (cons object (cons sel args))))))
+       (apply imp (cons object (cons sel args)))))
     ((or symbol string objc-class)
      (let* ((class  (coerce-to-objc-class object))
             (sel    (coerce-to-selector   method))
             (imp    (objc-class-class-method class sel)))
        (declare (type function imp))
-       (within-objc-call (apply imp (cons class (cons sel args))))))
+       (apply imp (cons class (cons sel args)))))
     (foreign-pointer
      (if (object_isClass object)
          (let* ((class (coerce-to-objc-class object))
@@ -368,6 +313,6 @@ Example:
                 (sel   (coerce-to-selector   method))
                 (imp   (objc-class-instance-method class sel)))
            (declare (type function imp))
-           (within-objc-call (apply imp (cons object (cons sel args)))))))))
+           (apply imp (cons object (cons sel args))))))))
 
 ;;;; method.lisp end here

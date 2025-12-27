@@ -35,8 +35,6 @@ LispWorks' API."
   :components
   ((:file        "package"
     :description "Package definition of coca.objc")
-   (:cffi-wrapper-file "wrapper"
-    :depends-on ("package"))
    (:file        "utils"
     :depends-on ("package")
     :description "Helper functions of coca.objc"
@@ -57,8 +55,7 @@ Alist and Plist:
  provide functionalities to filter alist and plist
 ")
    (:file        "cffi"
-    :depends-on ("package"
-                 "wrapper")
+    :depends-on ("package")
     :description "CFFI bindings to ObjC Runtime"
     :long-description
     "Only needed ObjC Runtime functions are imported.
