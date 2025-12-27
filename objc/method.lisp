@@ -175,12 +175,27 @@ Return `objc-class'. "
                                        (class-of (coerce-to-objc-object object))))))
 
 (defun can-invoke-p (object method)
-  "Test if OBJECT can invoke METHOD or not. "
-  (let ((class  (objc-class-of      object))
-        (method (coerce-to-selector method)))
-    (the boolean
-      (or (ignore-errors (and (objc-class-class-method    class method) t))
-          (ignore-errors (and (objc-class-instance-method class method) t))))))
+  "Test if OBJECT can invoke METHOD or not.
+
+Parameter:
++ OBJECT:
+  + `objc-class' like: test both class and instance method
+  + `standard-objc-object' like: test only instance method
++ METHOD: `sel' or things can be `coerce-to-selector'"
+  (etypecase object
+    (standard-objc-object
+     (and (ignore-errors (objc-class-class-method (class-of           object)
+                                                  (coerce-to-selector method)))
+          t))
+    ((or symbol string objc-class)
+     (let ((class (coerce-to-objc-class object))
+           (sel   (coerce-to-selector   method)))
+       (or (ignore-errors (and (objc-class-class-method    class sel) t))
+           (ignore-errors (and (objc-class-instance-method class sel) t)))))
+    (foreign-pointer
+     (if (object_isClass object)
+         (can-invoke-p (coerce-to-objc-class  object) method)
+         (can-invoke-p (coerce-to-objc-object object) method)))))
 
 ;; (defun invoke (object method &rest args)
 ;;   "Call METHOD on OBJECT by ARGS.
@@ -298,10 +313,35 @@ Use with caution. "
 
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
+Return value is warpped as lisp value.
 
 Parameters:
 + OBJECT: object, class to call
-+ METHOD: sel, string as function"
++ METHOD: sel, string as function
+
+Return Value:
++ if Class:  wrap as `objc-class'
++ if Object: wrap as `standard-objc-object'
++ if SEL:    wrap as `sel'
++ if struct: as lisp struct (`define-objc-struct')
++ if CFFI compatible value: as CFFI behavior
+
+Example:
+
+    ;; [NSWindow alloc];
+    (invoke \"NSWindow\" \"alloc\")
+
+    ;; [NSString initWithUTF8String:\"Hello World\"];
+    (invoke \"NSString\" \"initWithUTF8String:\" \"Hello World\")
+
+    ;; [[NSWindow alloc] initWithContentRect:rect
+    ;;                             styleMask:style
+    ;;                               backing:backing
+    ;;                                 defer:defer]
+    (invoke (invoke \"NSWindow\" \"alloc\")
+            \"initWithContentRect:styleMask:backing:defer:\"
+            rect style backing defer)
+"
   (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
            (type (or string sel) method))
   (etypecase object

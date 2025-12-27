@@ -458,7 +458,7 @@ and return the instance of `objc-pointer'. "))
 
 Dev Note:
 You may not need to directly use `standard-objc-object'.
-It's just a handy CLOS notation of `coca.objc::objc-pointer',
-making ObjC object different if you want to test type of `coca.objc::objc-pointer'. "))
+It's just a handy CLOS notation of `coca.objc::objc-pointer', making
+ObjC object different if you want to test type of `coca.objc::objc-pointer'. "))
 
 ;;;; cffi.lisp ends here

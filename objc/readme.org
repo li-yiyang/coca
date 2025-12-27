@@ -1,20 +1,243 @@
+:PROPERTIES:
+:header-args:lisp: :package coca.objc :results verbatim :exports results
+:END:
 #+title: Coca/ObjC
 #+author: 凉凉
 * About
 This is =coca/objc= subsystem as Objective-C runtime binding for Common Lisp.
 
-#+begin_src lisp
-(defsystem #:coca/objc/test
-  :author ("凉凉")
-  :license "LGPL"
-  :version "0.0.0"                      ; should match coca/objc
-  :description "Test for MLX-CL core API"
-  :depends-on (:coca/objc :fiveam)
-  :pathname "test/objc"
-  :components
-  ((:file "package")
-   (:file "utils"     :depends-on ("package"))
-   (:file "encoding"  :depends-on ("package"))
-   (:file "method"    :depends-on ("package")))
-  :perform (test-op (op c) (symbol-call :coca.objc.test :run-tests)))
-#+end_src
+*Warn*: The API may not unstable.
+
+
+
+* Stable API
+These API is not likely to be modified.
+
+** Classes
++ =objc-class=
+
+  #+begin_src lisp :exports results
+  (documentation (find-class 'objc-class) t)
+  #+end_src
+
+  #+RESULTS:
+  : Metaclass of ObjC object.
+  :
+  : Use `coerce-to-objc-class' to make an ObjC Class as lisp class.
+  : All the ObjC class should be cached within `coca.objc::*classes*'.
++ =standard-objc-object=
+
+  #+begin_src lisp :exports results
+  (documentation (find-class 'standard-objc-object) t)
+  #+end_src
+
+  #+RESULTS:
+  : The class from which all classes that implement an ObjC class should inherit.
+  :
+  : Dev Note:
+  : You may not need to directly use `standard-objc-object'.
+  : It's just a handy CLOS notation of `coca.objc::objc-pointer',
+  : making ObjC object different if you want to test type of `coca.objc::objc-pointer'.
+
+** Types
++ =objc-encoding=
+
+  #+begin_src lisp :exports results
+  (documentation 'objc-encoding 'type)
+  #+end_src
+
+  #+RESULTS:
+  : Type of ObjC encoding representation in lisp.
+  :
+  : Dev Note:
+  : Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
++ =define-objc-typedef=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-typedef) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC type alias of NAME for OBJC-ENCODING.
+
+  Example:
+
+      (define-objc-typedef ns-uinteger :unsigned-long
+        \"NSUInteger in lisp. \")
+
+  Syntax:
+
+      (define-objc-typedef NAME OBJC-ENCODING &optional [DOC] TYPE)
+
+  Parameters:
+  + NAME: symbol as lisp type alias
+  + OBJC-ENCODING: `objc-encoding'
+  + DOC: document string of type
+  + TYPE: if given, would generate additional TYPE declaration for NAME
+  #+end_example
++ =define-objc-enum=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-enum) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC enum of NAME with BINDINGS.
+
+  Syntax:
+
+      (define-objc-enum NAME
+        [docstring]
+        (KEYWORD VAL [docstring]))
+
+  Dev Note:
+  this will define:
+  + lisp type of NAME
+  + a lisp function <NAME>-p to test if is valid flag
+  + an encoder function of NAME to convert enum keywords to unsigned-byte
+  + a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
+  #+end_example
++ =define-objc-const=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-const) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define a ObjC constant of OBJC-NAME in lisp as NAME.
+
+  Syntax:
+
+      (define-objc-const name
+          (objc-name objc-encoding &optional library)
+        [documentation])
+
+  Parameters:
+  + NAME: lisp constant name
+  + OBJC-NAME: objc global varible name
+  + OBJC-ENCODING: should be ObjC-encoding literally
+  + LIBRARY: library to search the ObjC global const
+  + DOCUMENTATION: optional documentation
+  #+end_example
+
+** Methods
++ =objc-object-pointer=
+
+  #+begin_src lisp :exports results
+  (documentation #'objc-object-pointer t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the ObjC foreign pointer associated with a given Lisp object.
++ =coerce-to-objc-class=
+
+  #+begin_src lisp :exports results
+  (documentation #'coerce-to-objc-class t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Coerces its argument to an Objective-C class pointer.
+  Return the lisp class of CLASS.
+
+  Parameters:
+  + CLASS:
+    + `objc-class':
+    + symbol: find class and assert it's `objc-class'
+    + string: of ObjC class
+      this would make an `objc-class' instance class with name CLASS-NAME,
+      by default the CLASS-NAME is parsed by `str:param-case' from CLASS,
+      or you could set it via optional parameter CLASS-NAME
+
+      this would using `coca.objc::objc_getClass' to get class in the ObjC
+      runtime, if not found, raise error.
+    + foreign-pointer of ObjC class
+      the foreign-pointer would be checked via `coca.objc::object_isClass'
+      to test if it's a valid foreign-pointer to ObjC Class
+
+      the name of class would be fetched by `coca.objc::class_getName',
+      the CLASS-NAME would be used to set the lisp class name if needed
+      (see above as string CLASS input)
+  #+end_example
+
++ =coerce-to-selector=
+
+  #+begin_src lisp :exports results
+  (documentation #'coerce-to-selector t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Coerces its argument to an Objective-C method selector.
+  Return `sel'.
+
+  Parameters:
+  + METHOD: string, `sel' or foreign-pointer.
+    + `sel':
+      return itself
+    + string:
+      get the `sel' by name
+      see `coca.objc::sel_registerName'
+    + foreign-pointer:
+      assuming it is a pointer to SEL (not checked)
+      see `coca.objc::sel_getName'
+  #+end_example
++ =invoke=
+
+  #+begin_src lisp :exports results
+  (documentation #'invoke t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Call METHOD on OBJECT by ARGS.
+  Return value is warpped as lisp value.
+
+  Parameters:
+  + OBJECT: object, class to call
+  + METHOD: sel, string as function
+
+  Return Value:
+  + if Class:  wrap as `objc-class'
+  + if Object: wrap as `standard-objc-object'
+  + if SEL:    wrap as `sel'
+  + if struct: as lisp struct (`define-objc-struct')
+  + if CFFI compatible value: as CFFI behavior
+
+  Example:
+
+      ;; [NSWindow alloc];
+      (invoke \"NSWindow\" \"alloc\")
+
+      ;; [NSString initWithUTF8String:\"Hello World\"];
+      (invoke \"NSString\" \"initWithUTF8String:\" \"Hello World\")
+
+      ;; [[NSWindow alloc] initWithContentRect:rect
+      ;;                             styleMask:style
+      ;;                               backing:backing
+      ;;                                 defer:defer]
+      (invoke (invoke \"NSWindow\" \"alloc\")
+              \"initWithContentRect:styleMask:backing:defer:\"
+              rect style backing defer)
+  #+end_example
+
+  Note: it's API should be kept same.
+  The implementation is likely to be changed...
+  So the behavior might inconsists.
++ =can-invoke-p=
+
+  #+begin_src lisp :exports results
+  (documentation #'can-invoke-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Test if OBJECT can invoke METHOD or not.
+  :
+  : Parameter:
+  : + OBJECT:
+  :   + `objc-class' like: test both class and instance method
+  :   + `standard-objc-object' like: test only instance method
+  : + METHOD: `sel' or things can be `coerce-to-selector'

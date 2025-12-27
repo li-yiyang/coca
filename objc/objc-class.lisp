@@ -281,7 +281,6 @@ Return form should be able to use as :direct-slots. "
   "Coerces its argument to an Objective-C class pointer.
 Return the lisp class of CLASS.
 
-
 Parameters:
 + CLASS:
   + `objc-class':

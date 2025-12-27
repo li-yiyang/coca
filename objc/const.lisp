@@ -8,7 +8,8 @@
 
 Syntax:
 
-    (define-objc-const (name objc-name objc-encoding &optional library)
+    (define-objc-const name
+        (objc-name objc-encoding &optional library)
       [documentation])
 
 Parameters:
@@ -52,6 +53,6 @@ Parameters:
                       ,(objc-encoding-cffi-type objc-encoding))
         ,documentation))))
 
-(trivial-indent:define-indentation define-objc-const (2 4 &body))
+;; (trivial-indent:define-indentation define-objc-const (2 4 &body))
 
 ;;;; const.lisp ends here

@@ -127,11 +127,12 @@ Example:
 
 Syntax:
 
-    (define-objc-typedef NAME OBJC-ENCODING &optional TYPE)
+    (define-objc-typedef NAME OBJC-ENCODING &optional [DOC] TYPE)
 
 Parameters:
 + NAME: symbol as lisp type alias
 + OBJC-ENCODING: `objc-encoding'
++ DOC: document string of type
 + TYPE: if given, would generate additional TYPE declaration for NAME
 "
   (let* ((body      docstring?-type)
