@@ -101,6 +101,9 @@ See `:struct' case branch. "
     (:sel
      (list `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
            '(or sel foreign-pointer)))
+    (:bool
+     (list `(:unsigned-long-long (if ,arg 1 0))
+           t))
     (:coerce
      (let ((encoding (cdr encoding)))
        (case (atomize encoding)
@@ -134,26 +137,35 @@ Return a list of VARS, HINTS, CALL-TYPED-ARGS, WRAP. "
                                    (objc-encoding-cffi-type ret)
                                    (atomize ret)))))))
 
-;; see `cffi::foreign-funcall-form/fsbv-with-libffi'
-;; FIXME: CFFI type processing, currently,
-;; the return value is not current
+;; (funcall *foreign-structures-by-value*
+;;          thing         ;; imp-pointer
+;;          fargs         ;; arguments
+;;          syms          ;; make-gensym-list
+;;          types         ;; list of cffi-type
+;;          rettype       ;; return-type (CFFI type)
+;;          ctypes        ;; list of (canonicalize-foreign-type cffi-type)
+;;          pointerp)     ;; t
 (defmacro coca_objc_msgSend (cif imp ret &rest type-arg)
-  "A body of foreign-funcall calling coca_objc_msgSend. "
-  (multiple-value-bind (args types)
-      (loop :for (type arg) :on type-arg :by #'cddr
-            :collect type :into types
-            :collect arg  :into args
-            :finally (return (values args types)))
+  "A body of foreign-funcall calling coca_objc_msgSend.
+This is like wrapper form of `cffi::libffi/call'.
+
+Dev Note:
+see `cffi::foreign-funcall-form/fsbv-with-libffi'
+see `cffi::foreign-funcall-form' (with `pointerp' as `nil')
+"
+  (multiple-value-bind (args symbols types)
+      (loop :with *gensym-counter* := 0
+            :for (type arg) :on type-arg :by #'cddr
+            :collect (gensym "ARG")                         :into symbols
+            :collect type                                   :into types
+            :collect arg                                    :into args
+            :finally (return (values args symbols types)))
     (let* ((arglens (length args))
-           (symbols (loop :with *gensym-counter* := 0
-                          :repeat arglens :collect (gensym "ARG")))
            (argvals (gensym "ARGUMENT-VALUES"))
            (result  (gensym "RESULT")))
       `(with-foreign-objects ((,argvals :pointer ,arglens)
                               ,@(unless (eql ret :void)
-                                  `((,result ',(case ret
-                                                 (:string   :pointer)
-                                                 (otherwise ret))))))
+                                  `((,result ',ret))))
          ,(cffi::translate-objects-ret
            symbols args types ret
            `(progn
@@ -178,26 +190,28 @@ Return a compiled lambda function:
 
     (lambda (ARGS...)
       (WRAP
-        (foreign-funcall-pointer IMPLEMENTATION
-         ,@TYPE-ARGS...
-         ,@OBJC-METHOD-CALLING-FORM-RET)))
+        (coca_objc_msgSend CIF IMP RET
+         ,@TYPE-ARGS...)))
 "
   (destructuring-bind (vars hints call ret wrap)
       (objc-method-calling-form encoding)
     (let* ((cif  (cffi::make-libffi-cif
-                  "coca_objc_msgSend" ret
-                  (loop :for (type arg) :on call :by #'cddr
-                        :collect type)))
+                  "coca_objc_msgSend"
+                  ret
+                  (loop :for (type -) :on call :by #'cddr
+                        :collect (cffi::canonicalize-foreign-type type))
+                  :default-abi))
            (call `(coca_objc_msgSend ,cif ,implementation ,ret ,@call)))
-      (compile nil `(lambda ,vars
-                      (declare ,@hints)
-                      ,(case wrap
-                         ((:union :bits)
-                          (error "Unknown how to wrap return type ~S. " ret))
-                         (:object   `(coerce-to-objc-object (the foreign-pointer ,call)))
-                         (:class    `(coerce-to-objc-class* (the foreign-pointer ,call)))
-                         (:sel      `(coerce-to-selector    (the foreign-pointer ,call)))
-                         (otherwise call)))))))
+      (compile nil
+               (print `(lambda ,vars
+                         (declare ,@hints)
+                         ,(case wrap
+                            ((:union :bits)
+                             (error "Unknown how to wrap return type ~S. " ret))
+                            (:object   `(coerce-to-objc-object (the foreign-pointer ,call)))
+                            (:class    `(coerce-to-objc-class* (the foreign-pointer ,call)))
+                            (:sel      `(coerce-to-selector    (the foreign-pointer ,call)))
+                            (otherwise call))))))))
 
 (defun coerce-to-objc-class* (ptr)
   "PTR could be NULL pointer for `coerce-to-objc-class'. "

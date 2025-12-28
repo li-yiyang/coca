@@ -2,6 +2,7 @@
 
 (in-package :coca.objc)
 
+;; TODO: -I should be automatically generated
 (cc-flags "-ObjC" "-framework" "Foundation" "-lffi"
           "-I/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/include/ffi")
 (ld-flags "-framework" "Foundation" "-lffi")
@@ -20,7 +21,7 @@ void set_coca_lisp_exception_handler (coca_lisp_callback_t callback) {
 
 void coca_objc_msgSend (ffi_cif *cif, IMP imp, void* retval, void** args) {
   @try {
-    return ffi_call(cif, FFI_FN(imp), retval, args);
+    ffi_call(cif, FFI_FN(imp), retval, args);
   }
   @catch (NSException *e) {
     coca_lisp_exception_handler(e);
