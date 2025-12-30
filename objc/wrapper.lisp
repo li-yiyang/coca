@@ -2,15 +2,16 @@
 
 (in-package :coca.objc)
 
-;; TODO: -I should be automatically generated
-(cc-flags "-ObjC" "-framework" "Foundation" "-lffi"
-          "-I/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/include/ffi")
+(cc-flags "-ObjC" "-framework" "Foundation" "-lffi")
+(pkg-config-cflags "libffi")
+
 (ld-flags "-framework" "Foundation" "-lffi")
 
-(c "
-#import  <Foundation/Foundation.h>
-#include <ffi.h>
+(import  "Foundation/Foundation.h")
 
+(include "ffi.h")
+
+(objc "
 typedef void (*coca_lisp_callback_t)(id);
 
 static coca_lisp_callback_t coca_lisp_exception_handler = NULL;
@@ -28,11 +29,5 @@ void coca_objc_msgSend (ffi_cif *cif, IMP imp, void* retval, void** args) {
   }
 }
 ")
-
-(defwrapper (%coca_objc_msgSend "coca_objc_msgSend") :void
-  (ffi-cif        :pointer)
-  (implementation :pointer)
-  (retval         :pointer)
-  (args           :pointer))
 
 ;;;; wrapper.lisp ends here

@@ -30,12 +30,12 @@ LispWorks' API."
                :trivial-garbage
                :closer-mop
                :trivial-main-thread)
-  :defsystem-depends-on (:cffi-grovel)
+  :defsystem-depends-on (:coca-grovel)
   :pathname "objc"
   :components
   ((:file        "package"
     :description "Package definition of coca.objc")
-   (:cffi-wrapper-file "wrapper"
+   (:objc-file   "wrapper"
     :depends-on ("package"))
    (:file        "utils"
     :depends-on ("package")
