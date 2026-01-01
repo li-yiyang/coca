@@ -2,25 +2,253 @@
 
 (in-package :coca.objc)
 
-;; Dev Note:
-;; An ObjC method calling lambda should be like
+
+;;;; objc-method-encoding
+
+(defparameter *objc-method-encodings* (make-hash-table :test 'equal)
+  "ObjC method encodings.
+
+KEY: method type encoding string
+VAL: `coca.objc::objc-method-encoding'")
+
+(defstruct objc-method-encoding
+  (encoding ""    :type string)
+  (atypes   ()    :type list)
+  (ret      :void :type objc-basic-encoding)
+  (calling  nil   :type function)
+  (cif      nil   :type foreign-pointer))
+
+(defun coerce-to-objc-method-encoding (encoding)
+  "Make `coca.objc::objc-method-encoding' with ENCODING.
+
+Parameter:
++ ENCODING: ObjC method type encoding string
+"
+  (declare (type string encoding))
+  (with-cached (encoding *objc-method-encodings*)
+    (multiple-value-bind (arg-types ret)
+        (decode-objc-type-encoding encoding)
+      (let* ((len    (length (the list arg-types)))
+             (atypes (foreign-alloc :pointer :count len)))
+        (loop :for i :from 0
+              :for enc :in arg-types
+              :do (setf (mem-aref atypes :pointer i)
+                        (objc-encoding-ffi-type enc)))
+        (let* ((cif  (coca_alloc_ffi_cif len (objc-encoding-ffi-type ret) atypes))
+               (info (make-objc-method-encoding
+                      :encoding encoding
+                      :atypes   arg-types
+                      :ret      ret
+                      :cif      cif
+                      :calling  (compile nil (objc-method-foreign-call-form
+                                              cif ret arg-types)))))
+          (tg:finalize info (lambda ()
+                              (foreign-free cif)
+                              (foreign-free atypes)))
+          info)))))
+
+
+;;; Generate ObjC method calling lambda form
 ;;
-;;     (lambda (#:object0 #:sel1 #:struct2 #:type3)
-;;       (declare (type ... ...))
-;;       ({coerce-to-objc-object | coerce-to-objc-class | ... }
-;;        (coca_objc_msgsend
-;;          IMP ret
-;;          :pointer  ;; objc-method-calling-arg-form
-;;          :pointer (objc-object-pointer #:sel1)
-;;          :double  (struct-aref #:struct0 0)
-;;          :double  (struct-aref #:struct0 1))))
+;; See man ffi_call
 ;;
-;; Ref:
-;; Friday Q&A 2012-11-16: Let's Build objc_msgSend
-;; https://www.mikeash.com/pyblog/friday-qa-2012-11-16-lets-build-objc_msgsend.html
+;; 1. generate ffi_cif:
+;;    + `objc-method-encoding'
 ;;
-;; ObjC [1.5] NSException (EN)
-;; https://li-yiyang.github.io/lisp/objc-ns-exception/
+;;    ffi_type* atypes = malloc(sizeof(ffi_type*) * (length ARGS));
+;;    atypes[i] = (objc-encoding-ffi-type ARGS[i]);
+;;    ffi_cif* cif = coca_alloc_ffi_cif(
+;;      (length ARGS),
+;;      (objc-encoding-ffi-type RET-TYPE),
+;;      atypes
+;;    );
+;; 2. compile calling lambda function
+;;    + `objc-method-foreign-alloc-form'
+;;    + `objc-method-foreign-setf-form'
+;;    + `objc-method-foreign-aref-form'
+;;    + `objc-method-foreign-free-form'
+;;    + `objc-method-foreign-call-form'
+
+(defun objc-method-foreign-alloc-form (encoding)
+  "Alloc foreign memory as place-holder for lisp value of ObjC ENCODING.
+Return S-expression to be used in `coca.objc::objc-encoding-foreign-aref-form'.
+
+Parameter:
++ ENCODING: ObjC encoding to alloc
+
+Dev Note:
+this is equal to generate a C code calling:
+
+    malloc(sizeof(ENCODING))
+
+"
+  (declare (type objc-basic-encoding encoding))
+  (case encoding
+    ((:unknown :class :sel :object :pointer :string)
+     `(foreign-alloc :pointer))
+    (otherwise
+     `(foreign-alloc ',encoding))))
+
+(defun objc-method-foreign-setf-form (foreign lisp encoding)
+  "Copy LISP value to FOREIGN with ENCODING.
+Return S-expression to be used in `coca.objc::objc-encoding-foreign-aref-form'.
+
+Parameters:
++ FOREIGN: symbol of variable to the foreign arg
+  FOREIGN is allocated by `coca.objc::objc-encoding-alloc-form'
++ LISP: symbol of lisp variable to be copied to FOREIGN
++ ENCODING: ObjC encoding"
+  (case (atomize encoding)
+    (:string                            ; char **FOREIGN;
+     `(setf (mem-aref ,foreign :pointer) (foreign-string-alloc ,lisp)))
+    (:struct                            ; struct ENCODING *FOREIGN;
+     (let* ((struct    (objc-struct           (second encoding)))
+            (slots     (objc-struct-slots     struct))
+            (coerce-p  (objc-struct-coerce-p  struct))
+            (encodings (objc-struct-encodings struct)))
+       `(with-foreign-slots (,slots ,foreign ,encoding)
+          ,@(loop :for i :from 0
+                  :for slot     :in slots
+                  :for coerce   :in coerce-p
+                  :for encoding :in encodings
+                  :collect (if coerce-p
+                               `(setf ,slot (coerce (struct-aref ,lisp ,i)
+                                                    ',(objc-encoding-lisp-type encoding)))
+                               `(setf ,slot (struct-aref ,lisp ,i)))))))
+    ((:object :sel :class)              ; id/SEL/Class FOREIGN;
+     `(setf (mem-aref ,foreign :pointer) (objc-object-pointer ,lisp)))
+    (otherwise
+     `(setf (mem-aref ,foreign ,(objc-encoding-cffi-type encoding)) ,lisp))))
+
+(defun objc-method-foreign-aref-form (foreign encoding)
+  "Copy foreign value from FOREIGN to LISP with ENCODING.
+Return S-expression to be used in `coca.objc::objc-encoding-foreign-aref-form'.
+
+Parameter:
++ FOREIGN: symbol of variable to the foreign result pointer
++ ENCODING: ObjC encoding"
+  (declare (type symbol foreign)
+           (type objc-basic-encoding encoding))
+  (case (atomize encoding)
+    (:string                            ; char **FOREIGN;
+     `(the string (foreign-string-to-lisp (mem-aref ,foreign :pointer))))
+    (:struct                            ; struct STRUCT *FOREIGN;
+     (let* ((struct-info (objc-struct (second encoding)))
+            (name        (objc-struct-lisp-name struct-info))
+            (slots       (objc-struct-slots     struct-info)))
+       `(with-foreign-slots (,slots ,foreign ,encoding)
+          ;; (make-STRUCT {:SLOT SLOT}* ...)
+          (,(intern (str:concat "MAKE-" (symbol-name name)) (symbol-package name))
+           ,@(loop :for slot :in slots
+                   :collect (intern (symbol-name slot) :keyword)
+                   :collect slot)))))
+    (:object                            ; id *FOREIGN;
+     `(coerce-to-objc-object          (the foreign-pointer (mem-aref ,foreign :pointer))))
+    (:class                             ; Class *FOREIGN;
+     `(pointer-to-objc-class-nullable (the foreign-pointer (mem-aref ,foreign :pointer))))
+    (:sel                               ; SEL *FOREIGN;
+     `(coerce-to-selector             (the foreign-pointer (mem-aref ,foreign :pointer))))
+    (otherwise                          ; ENCODING* FOREIGN;
+     `(the ,(objc-encoding-lisp-type encoding)
+        (mem-aref ,foreign ,(objc-encoding-cffi-type encoding))))))
+
+(defun objc-method-foreign-free-form (foreign encoding)
+  "Free FOREIGN with ENCODING.
+Return S-expression to be used in `coca.objc::objc-encoding-foreign-aref-form'.
+
+Parameters:
++ FOREIGN: symbol to foreign pointer
++ ENCODING: ObjC encoding
+"
+  (declare (type symbol foreign)
+           (type objc-basic-encoding encoding))
+  (case (atomize encoding)
+    (:string `(progn (foreign-free (mem-aref ,foreign :pointer))
+                     (foreign-free ,foreign)))
+    (otherwise `(foreign-free ,foreign))))
+
+(defun objc-method-foreign-call-form (cif ret arg-types)
+  "Generate ObjC method calling form.
+
+Dev Note:
+This is equal to generating below C code:
+
+    void* arg_values = malloc(sizeof(void*) * LEN);
+
+    // Init args: (objc-encoding-copy-to-foreign SYM VAL ENCODING)
+    // see `coca.objc::objc-method-foreign-alloc-form'
+    void* arg[i] = malloc(sizeof(TYPE));
+
+    // Fill ffi_call arg_values buffer
+    // see `coca.objc::objc-method-foreign-setf-form'
+    arg_values[i] = arg[i];
+
+    // Call `coca.objc::coca_objc_msgSend'
+    // see coca/objc;wrapper.lisp
+    coca_objc_msgSend(&cif, imp, &result, arg_values);
+
+    // Clean up:
+    // see `coca.objc::objc-method-foreign-free-form'
+    free(arg_values);
+    free(arg[i]);
+"
+  (multiple-value-bind (args syms declaration)
+      (loop :for type :in arg-types
+            :for name := (symbol-name (atomize type))
+            :for arg  := (gensym name)
+            :for sym  := (gensym (str:concat "FOREIGN-" name))
+            :for hint := (case (atomize type)
+                           (:object   '(or standard-objc-object objc-class))
+                           (otherwise (objc-encoding-lisp-type  type)))
+            :collect arg :into args
+            :collect sym :into syms
+            :collect `(type ,hint ,arg) :into declaration
+            :finally (return (values args syms declaration)))
+    (let ((len     (length (the list arg-types)))
+          (voidp   (eq ret :void))
+          (avalues (gensym "ARG-VALUES"))
+          (result  (gensym "RESULT"))
+          (imp     (gensym "IMP"))
+          (status  (gensym "STATUS")))
+      `(lambda (,imp ,@args)
+         (declare (type foreign-pointer ,imp)
+                  ,@declaration)
+         (let ((,avalues (foreign-alloc :pointer :count ,len))
+               ,@(loop :for sym  :in syms
+                       :for type :in arg-types
+                       :collect `(,sym ,(objc-method-foreign-alloc-form type)))
+               (,result ,(if voidp
+                             '(null-pointer)
+                             (objc-method-foreign-alloc-form ret))))
+           (declare (type foreign-pointer ,avalues ,@syms ,result))
+           (unwind-protect
+                (progn
+                  ,@(loop :for arg  :in args
+                          :for sym  :in syms
+                          :for type :in arg-types
+                          :collect (objc-method-foreign-setf-form sym arg type))
+                  ,@(loop :for i :from 0
+                          :for sym :in syms
+                          :collect `(setf (mem-aref ,avalues :pointer ,i) ,sym))
+                  (let ((,status (coca_objc_msgSend ,cif ,imp ,result ,avalues)))
+                    (if (null-pointer-p ,status)
+                        ,(if voidp
+                             '(values)
+                             (objc-method-foreign-aref-form result ret))
+                        (error "NSException: ~S. " (coerce-to-objc-object ,status)))))
+             (foreign-free ,avalues)
+             ,@(loop :for sym  :in syms
+                     :for type :in arg-types
+                     :collect (objc-method-foreign-free-form sym type))
+             (foreign-free ,result)))))))
+
+(defun compile-objc-method-calling (imp encoding)
+  "Compile an lambda function calling IMP using ENCODING. "
+  (let* ((enc (coerce-to-objc-method-encoding encoding))
+         (fun (objc-method-encoding-calling   enc)))
+    (lambda (&rest args) (apply fun (cons imp args)))))
+
+
 
 (defun objc-class-class-method (class sel)
   "Get function to call CLASS and SEL. "
@@ -56,177 +284,47 @@
                 (enc (method_getTypeEncoding   method)))
             (compile-objc-method-calling imp enc)))))))
 
-(defparameter *methods* (make-hash-table :test 'equal)
-  "Cache for `compile-objc-method-calling'.
-
-KEY: method encoding string
-VAL: list of lambda-list, type hints, foreign-funcall typed-args")
-
-(defun objc-method-calling-arg-form (encoding arg)
-  "Return values of list as `cffi:foreign-funcall' avaliable arguments,
-type hint declaration.
-
-Dev Note:
-this should expand the ARG as:
-
-    (CFFI-TYPE ARG
-     CFFI-TYPE ARG...)
-
-and together return the type hints declaration infomation.
-
-See `:struct' case branch. "
-  (case (atomize encoding)
-    ((:union :bits)
-     (error "Unknown how to put ~S to funcall. " encoding))
-    (:struct
-     (list (loop :with info  := (objc-struct-info (second encoding))
-                 :for idx :from 0
-                 :for slot  :in (objc-struct-info-slots info)
-                 :for type* :in (objc-struct-info-types info)
-                 :for coerce := (eql (atomize type*) :coerce)
-                 :for type   := (if coerce (cdr type*) type*)
-                 :collect (objc-encoding-cffi-type type)
-                 :collect (if coerce
-                              `(coerce (struct-aref ,arg ,idx)
-                                       ',(objc-encoding-lisp-type type))
-                              `(the ,(objc-encoding-lisp-type type)
-                                 (struct-aref ,arg ,idx))))
-           `(or ,(second encoding) simple-vector)))
-    (:object
-     (list `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
-           '(or standard-objc-object objc-class foreign-pointer)))
-    (:class
-     (list `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
-           '(or objc-class foreign-pointer)))
-    (:sel
-     (list `(:pointer (the foreign-pointer (objc-object-pointer ,arg)))
-           '(or sel foreign-pointer)))
-    (:bool
-     (list `(:unsigned-long-long (if ,arg 1 0))
-           t))
-    (:coerce
-     (let ((encoding (cdr encoding)))
-       (case (atomize encoding)
-         ;; ignore `:coerce'
-         ((:object :class :sel :string :pointer :char :unsigned-char)
-          (objc-method-calling-arg-form encoding arg))
-         (otherwise
-          (list `(,(objc-encoding-cffi-type encoding)
-                  (coerce ,arg ',(objc-encoding-lisp-type encoding)))
-                t)))))
-    (otherwise
-     (list (list (objc-encoding-cffi-type encoding) arg)
-           (objc-encoding-lisp-type encoding)))))
-
-(defun objc-method-calling-form (encoding)
-  "Generate lambda expression to call foreign function of ENCODING.
-Return a list of VARS, HINTS, CALL-TYPED-ARGS, WRAP. "
-  (with-cached (encoding *methods*)
-    (multiple-value-bind (args-encodings ret)
-        (decode-objc-type-encoding encoding)
-      (loop :with *gensym-counter* := 0
-            :for enc :in args-encodings
-            :for var := (gensym (symbol-name (atomize enc)))
-            :for (arg hint) := (objc-method-calling-arg-form enc var)
-            :collect var                :into vars
-            :collect arg                :into args
-            :collect `(type ,hint ,var) :into hints
-            :finally (return (list vars
-                                   hints
-                                   (apply #'append args)
-                                   (objc-encoding-cffi-type ret)
-                                   (atomize ret)))))))
-
-;; (funcall *foreign-structures-by-value*
-;;          thing         ;; imp-pointer
-;;          fargs         ;; arguments
-;;          syms          ;; make-gensym-list
-;;          types         ;; list of cffi-type
-;;          rettype       ;; return-type (CFFI type)
-;;          ctypes        ;; list of (canonicalize-foreign-type cffi-type)
-;;          pointerp)     ;; t
-(defmacro coca_objc_msgSend (cif imp ret &rest type-arg)
-  "A body of foreign-funcall calling coca_objc_msgSend.
-This is like wrapper form of `cffi::libffi/call'.
-
-Dev Note:
-see `cffi::foreign-funcall-form/fsbv-with-libffi'
-see `cffi::foreign-funcall-form' (with `pointerp' as `nil')
-"
-  (multiple-value-bind (args symbols types)
-      (loop :with *gensym-counter* := 0
-            :for (type arg) :on type-arg :by #'cddr
-            :collect (gensym "ARG")                         :into symbols
-            :collect type                                   :into types
-            :collect arg                                    :into args
-            :finally (return (values args symbols types)))
-    (let* ((arglens (length args))
-           (argvals (gensym "ARGUMENT-VALUES"))
-           (result  (gensym "RESULT")))
-      `(with-foreign-objects ((,argvals :pointer ,arglens)
-                              ,@(unless (eql ret :void)
-                                  `((,result ',ret))))
-         ,(cffi::translate-objects-ret
-           symbols args types ret
-           `(progn
-              ,@(loop :for sym :in symbols
-                      :for cnt :from 0
-                      :collect `(setf (mem-aref ,argvals :pointer ,cnt) ,sym))
-              (%coca_objc_msgSend ,cif
-                                  ,imp
-                                  ,(if (eql ret :void) '(null-pointer) result)
-                                  ,argvals)
-              ,(if (eql ret :void) '(values) result)))))))
-
-(defun compile-objc-method-calling (implementation encoding)
-  "Coerce ENCODING to a function calling foreign IMPLEMENTATION.
-Return the compiled function.
-
-Parameters:
-+ IMPLEMENTATION: foreign pointer to ObjC IMP
-+ ENCODING: ObjC type encoding string
-
-Return a compiled lambda function:
-
-    (lambda (ARGS...)
-      (WRAP
-        (coca_objc_msgSend CIF IMP RET
-         ,@TYPE-ARGS...)))
-"
-  (destructuring-bind (vars hints call ret wrap)
-      (objc-method-calling-form encoding)
-    (let* ((cif  (cffi::make-libffi-cif
-                  "coca_objc_msgSend"
-                  ret
-                  (loop :for (type -) :on call :by #'cddr
-                        :collect (cffi::canonicalize-foreign-type type))
-                  :default-abi))
-           (call `(coca_objc_msgSend ,cif ,implementation ,ret ,@call)))
-      (compile nil
-               (print `(lambda ,vars
-                         (declare ,@hints)
-                         ,(case wrap
-                            ((:union :bits)
-                             (error "Unknown how to wrap return type ~S. " ret))
-                            (:object   `(coerce-to-objc-object (the foreign-pointer ,call)))
-                            (:class    `(coerce-to-objc-class* (the foreign-pointer ,call)))
-                            (:sel      `(coerce-to-selector    (the foreign-pointer ,call)))
-                            (otherwise call))))))))
-
-(defun coerce-to-objc-class* (ptr)
-  "PTR could be NULL pointer for `coerce-to-objc-class'. "
-  (if (null-pointer-p ptr) nil (coerce-to-objc-class ptr)))
-
-(defun objc-class-of (object)
-  "Get the ObjC class of OBJECT.
-Return `objc-class'. "
-  (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object))
+(defun objc-method-encoding (object method)
+  "Find `coca.objc::objc-method-encoding' by OBJECT and METHOD. "
+  (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
+           (type (or string sel) method))
   (etypecase object
-    (standard-objc-object          (class-of object))
-    ((or symbol string objc-class) (coerce-to-objc-class object))
-    (foreign-pointer               (if (object_isClass object)
-                                       (coerce-to-objc-class  object)
-                                       (class-of (coerce-to-objc-object object))))))
+    ((or symbol string objc-class)
+     (let* ((class  (coerce-to-objc-class object))
+            (class* (objc-object-pointer  class))
+            (sel    (coerce-to-selector   method))
+            (sel*   (objc-object-pointer  sel))
+            (method (class_getClassMethod class* sel*))
+            (method (if (null-pointer-p method)
+                        (class_getInstanceMethod class* sel*)
+                        method)))
+       (when (null-pointer-p method)
+         (error "Unknown ObjC method ~A for ~A. " sel class))
+       (coerce-to-objc-method-encoding (method_getTypeEncoding method))))
+    (standard-objc-object
+     (let* ((class  (class-of            object))
+            (sel    (coerce-to-selector  method))
+            (class* (objc-object-pointer class))
+            (sel*   (objc-object-pointer sel))
+            (method (class_getInstanceMethod class* sel*)))
+       (when (null-pointer-p method)
+         (error "Unknown ObjC method ~A for ~A. " sel class))
+       (coerce-to-objc-method-encoding (method_getTypeEncoding method))))
+    (foreign-pointer
+     (let ((class (if (object_isClass object)
+                      (coerce-to-objc-class object)
+                      (coerce-to-objc-class (object_getClassName object)))))
+       (objc-method-encoding class method)))))
+
+(defun objc-class-method-signature (object method)
+  "Return signature of OBJECT and METHOD. "
+  (let ((enc (object-objc-method-encoding object method)))
+    (values (objc-method-encoding-atypes   enc)
+            (objc-method-encoding-ret      enc)
+            (objc-method-encoding-encoding enc))))
+
+
+;;; invoke
 
 (defun can-invoke-p (object method)
   "Test if OBJECT can invoke METHOD or not.
@@ -251,67 +349,38 @@ Parameter:
          (can-invoke-p (coerce-to-objc-class  object) method)
          (can-invoke-p (coerce-to-objc-object object) method)))))
 
-;; (defun invoke (object method &rest args)
-;;   "Call METHOD on OBJECT by ARGS.
-;;
-;; Parameters:
-;; + OBJECT: object, class to call
-;; + METHOD: sel, string as function"
-;;   (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
-;;            (type (or string sel) method))
-;;   (etypecase object
-;;     (standard-objc-object
-;;      (let ((class (class-of object))
-;;            (sel   (coerce-to-selector method)))
-;;        (apply (the function (objc-class-instance-method class sel))
-;;               (cons object (cons sel args)))))
-;;     ((or symbol string objc-class)
-;;      (let ((class  (coerce-to-objc-class object))
-;;            (sel    (coerce-to-selector   method)))
-;;        (apply (the function (objc-class-class-method class sel))
-;;               (cons class (cons sel args)))))
-;;     (foreign-pointer
-;;      (if (object_isClass object)
-;;          (let ((class (coerce-to-objc-class object))
-;;                (sel   (coerce-to-selector   method)))
-;;            (apply (the function (objc-class-class-method class sel))
-;;                   (cons class (cons sel args))))
-;;          (let ((class (coerce-to-objc-class (objc_getClass object)))
-;;                (sel   (coerce-to-selector   method)))
-;;            (apply (the function (objc-class-instance-method class sel))
-;;                   (cons object (cons sel args))))))))
+(defun invoke (object method &rest args)
+  "Call METHOD on OBJECT by ARGS.
 
-(defun objc-class-method-signature (object method)
-  "Tries to find the relevant method, and returns its signature. "
+Parameters:
++ OBJECT: object, class to call
++ METHOD: sel, string as function"
   (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
            (type (or string sel) method))
   (etypecase object
-    ((or symbol string objc-class)
-     (let* ((class  (coerce-to-objc-class object))
-            (class* (objc-object-pointer  class))
-            (sel    (coerce-to-selector   method))
-            (sel*   (objc-object-pointer  sel))
-            (method (class_getClassMethod class* sel*))
-            (method (if (null-pointer-p method)
-                        (class_getInstanceMethod class* sel*)
-                        method)))
-       (when (null-pointer-p method)
-         (error "Unknown ObjC method ~A for ~A. " sel class))
-       (decode-objc-type-encoding (method_getTypeEncoding method))))
     (standard-objc-object
-     (let* ((class  (class-of            object))
-            (sel    (coerce-to-selector  method))
-            (class* (objc-object-pointer class))
-            (sel*   (objc-object-pointer sel))
-            (method (class_getInstanceMethod class* sel*)))
-       (when (null-pointer-p method)
-         (error "Unknown ObjC method ~A for ~A. " sel class))
-       (decode-objc-type-encoding (method_getTypeEncoding method))))
+     (let ((class (class-of object))
+           (sel   (coerce-to-selector method)))
+       (apply (the function (objc-class-instance-method class sel))
+              (cons object (cons sel args)))))
+    ((or symbol string objc-class)
+     (let ((class  (coerce-to-objc-class object))
+           (sel    (coerce-to-selector   method)))
+       (apply (the function (objc-class-class-method class sel))
+              (cons class (cons sel args)))))
     (foreign-pointer
-     (let ((class (if (object_isClass object)
-                      (coerce-to-objc-class object)
-                      (coerce-to-objc-class (object_getClassName object)))))
-       (objc-class-method-signature class method)))))
+     (if (object_isClass object)
+         (let ((class (coerce-to-objc-class object))
+               (sel   (coerce-to-selector   method)))
+           (apply (the function (objc-class-class-method class sel))
+                  (cons class (cons sel args))))
+         (let ((class (coerce-to-objc-class (objc_getClass object)))
+               (sel   (coerce-to-selector   method)))
+           (apply (the function (objc-class-instance-method class sel))
+                  (cons object (cons sel args))))))))
+
+
+;;; send
 
 (defmacro send (object &rest sending-form)
   "CCL's objc:send style macro for `invoke'.
@@ -339,80 +408,4 @@ Use with caution. "
                   (push arg args)
               :finally (return `(invoke ,object ,sel ,@(reverse args)))))))
 
-
-
-;;; coca_lisp_call_wrapper
-
-(declaim (type function *coca-callback*))
-(defparameter *coca-callback* (lambda () (error "This shouldn't be...")))
-
-(defcallback coca-call :void ()
-  (funcall *coca-callback*))
-
-(defcallback coca-exception :void ((exception :pointer))
-  (error (coerce-to-objc-object (the foreign-pointer exception))))
-
-(foreign-funcall "set_coca_lisp_exception_handler"
-                 :pointer (callback coca-exception)
-                 :void)
-
-(defun invoke (object method &rest args)
-  "Call METHOD on OBJECT by ARGS.
-Return value is warpped as lisp value.
-
-Parameters:
-+ OBJECT: object, class to call
-+ METHOD: sel, string as function
-
-Return Value:
-+ if Class:  wrap as `objc-class'
-+ if Object: wrap as `standard-objc-object'
-+ if SEL:    wrap as `sel'
-+ if struct: as lisp struct (`define-objc-struct')
-+ if CFFI compatible value: as CFFI behavior
-
-Example:
-
-    ;; [NSWindow alloc];
-    (invoke \"NSWindow\" \"alloc\")
-
-    ;; [NSString initWithUTF8String:\"Hello World\"];
-    (invoke \"NSString\" \"initWithUTF8String:\" \"Hello World\")
-
-    ;; [[NSWindow alloc] initWithContentRect:rect
-    ;;                             styleMask:style
-    ;;                               backing:backing
-    ;;                                 defer:defer]
-    (invoke (invoke \"NSWindow\" \"alloc\")
-            \"initWithContentRect:styleMask:backing:defer:\"
-            rect style backing defer)
-"
-  (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
-           (type (or string sel) method))
-  (etypecase object
-    (standard-objc-object
-     (let* ((class (class-of object))
-            (sel   (coerce-to-selector method))
-            (imp   (objc-class-instance-method class sel)))
-       (declare (type function imp))
-       (apply imp (cons object (cons sel args)))))
-    ((or symbol string objc-class)
-     (let* ((class  (coerce-to-objc-class object))
-            (sel    (coerce-to-selector   method))
-            (imp    (objc-class-class-method class sel)))
-       (declare (type function imp))
-       (apply imp (cons class (cons sel args)))))
-    (foreign-pointer
-     (if (object_isClass object)
-         (let* ((class (coerce-to-objc-class object))
-                (sel   (coerce-to-selector   method))
-                (imp   (objc-class-class-method class sel)))
-           (declare (type function imp))
-           (within-objc-call (apply imp (cons class (cons sel args)))))
-         (let* ((class (coerce-to-objc-class (objc_getClass object)))
-                (sel   (coerce-to-selector   method))
-                (imp   (objc-class-instance-method class sel)))
-           (declare (type function imp))
-           (apply imp (cons object (cons sel args))))))))
-
-;;;; method.lisp end here
+;;;; method.lisp ends here

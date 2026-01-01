@@ -49,12 +49,19 @@ void objc_function_haha () {
     (write-line string out)))
 
 (define-objc-syntax cc-flags (&rest flags)
+  "Add compiler flags"
   (appendf *cc-flags* (parse-command-flags-list flags)))
 
 (define-objc-syntax ld-flags (&rest flags)
+  "Add linker flags"
   (appendf *ld-dll-flags* (parse-command-flags-list flags)))
 
 (define-objc-syntax pkg-config-cflags (pkg &key optional)
+  "Add compiler flags using pkg-config --cflags
+
+Parameters:
++ PKG: package used in pkg-config PKG --cflags
++ OPTIONAL: if non-nil, the PKG is ignorable if pkg-config cannot find it"
   (let ((output-stream (make-string-output-stream))
         (program+args  (list "pkg-config" pkg "--cflags")))
     (format *debug-io* "~&;~{ ~a~}~%" program+args)
@@ -95,6 +102,6 @@ void objc_function_haha () {
 ;; + (define-objc-class  ...)
 ;; + (define-objc-method ...)
 ;; + (define-objc-struct ...)
-;; 
+;;
 
 ;;;; syntax.lisp ends here

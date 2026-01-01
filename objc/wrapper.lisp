@@ -19,20 +19,13 @@
 
 ;;; objc_msgSend
 (objc "
-typedef void (*coca_lisp_callback_t)(id);
-
-static coca_lisp_callback_t coca_lisp_exception_handler = NULL;
-
-void set_coca_lisp_exception_handler (coca_lisp_callback_t callback) {
-  coca_lisp_exception_handler = callback;
-}
-
-void coca_objc_msgSend (ffi_cif *cif, IMP imp, void* retval, void** args) {
+id coca_objc_msgSend (ffi_cif *cif, IMP imp, void* retval, void** args) {
   @try {
     ffi_call(cif, FFI_FN(imp), retval, args);
+    return NULL;
   }
   @catch (NSException *e) {
-    coca_lisp_exception_handler(e);
+    return e;
   }
 }
 ")

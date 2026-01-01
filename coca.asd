@@ -9,6 +9,7 @@
                :coca/frameworks)
   :components ((:file "package")))
 
+
 (defsystem #:coca/objc
   :author ("凉凉")
   :license "LGPL"
@@ -26,189 +27,25 @@ as a reimplementation on portable CFFI. But the API may not exactly same as
 LispWorks' API."
   :depends-on (:str
                :cffi
-               :cffi-libffi
                :trivial-garbage
                :closer-mop
                :trivial-main-thread)
   :defsystem-depends-on (:coca-grovel)
   :pathname "objc"
+  :serial t
   :components
-  ((:file        "package"
-    :description "Package definition of coca.objc")
-   (:objc-file   "wrapper"
-    :depends-on ("package"))
-   (:file        "utils"
-    :depends-on ("package")
-    :description "Helper functions of coca.objc"
-    :long-description
-    "These utils functions should be used to keep the code base clean and readable.
+  ((:file        "package")
+   (:objc-file   "wrapper")
+   (:file        "utils")
+   (:file        "cffi")
+   (:file        "sel")
+   (:file        "objc-class")
+   (:file        "objc-object")
+   (:file        "encoding")
+   (:file        "method")
+   (:file        "sugar")))
 
-Cache:
-+ `coca.objc::with-cached' provide cache ability on hash-table,
-  should be used in `coerce-to-objc-class', `coerce-to-selector' or else
-
-Atomize, Listfy:
-+ `coca.objc::atomize' should be used to turn (:struct ns-rect) like object into ns-rect
-+ `coca.objc::listfy' is kinda like inversed version of `coca.objc::atomize'
-
-Alist and Plist:
-+ `coca.objc::select-plist', `coca.objc::remove-plist'
-  `coca.objc::select-alist', `coca.objc::remove-alist'
- provide functionalities to filter alist and plist
-")
-   (:file        "cffi"
-    :depends-on ("package"
-                 "wrapper")
-    :description "CFFI bindings to ObjC Runtime"
-    :long-description
-    "Only needed ObjC Runtime functions are imported.
-
-By default, the framework Foundation and Cocoa is loaded.
-
-The documentation of each ObjC runtime functions could be found in Apple's documentation.
-https://developer.apple.com/documentation/objectivec/objective-c-runtime?language=objc
-
-All the object related with ObjC environment should be wrapped by `coca.objc::objc-pointer'.
-Use `objc-object-pointer' to get the foreign pointer of the `coca.objc::objc-pointer'. ")
-   (:file        "encoding"
-    :depends-on ("utils")
-    :description "Parse and manage ObjC type encoding"
-    :long-description
-    "The type encoding representation in coca.objc is basically CFFI type description.
-
-  Type Encoding               ObjC Type Encoding
-  :char                       c
-  :unsigned-char              C
-  :int                        i
-  :unsigned-int               I
-  :short                      s
-  :unsigned-short             S
-  :long                       l
-  :unsigned-long              L
-  :long-long                  q
-  :unsigned-long-long         Q
-  :float                      f
-  :double                     d
-  :bool                       B
-  :void                       v
-  :string                     *
-  :object                     @
-  :class                      #
-  :sel                        :
-  (:array TYPE)               [TYPE]
-  (:struct OBJC-STRUCT)       {OBJC-STRUCT-NAME=...}
-  (:union  OBJC-UNION)        (OBJC-UNION-NAME=...)
-  (:bits   NUM)               bNUM
-  :pointer                    ^TypeEncoding
-  :unknown                    ?
-
-Use `coca.objc:define-objc-typedef' to define an alias for the ObjC encoding.
-
-See `coca.objc::decode-objc-type-encoding' for parsing type encoding.
-See `coca.objc::encode-objc-type-encoding' for generating type encoding.
-
-Dev Note:
-Use `objc-encoding' type as ObjC type encoding annotation.
-
-Use `coca.objc::objc-encoding-cffi-type', `coca.objc::objc-encoding-lisp-type'
-for representing ObjC encoding in CFFI and lisp side.
-
-Use `coca.objc::as-objc-encoding' to normalize input.
-
-TODO:
-+ (:union OBJC-UNION)
-+ (:array TYPE)
-+ (:bits  NUM)
-")
-   (:file        "objc-class"
-    :depends-on ("cffi")
-    :description "ObjC Class wrapper in Lisp"
-    :long-description
-    "Every ObjC class in lisp should be instance of `objc-class'.
-
-The `objc-class' is subclass of `standard-objc-object'.
-
-Use type `standard-objc-object' to test if object is ObjC object.
-
-Use `doc-objc-class' to descript the documentation and the property of
-as lisp slot. ")
-   (:file        "objc-object"
-    :depends-on ("objc-class")
-    :description "Implement ObjC Object wrapper"
-    :long-description
-    "TODO: finalize? ")
-   (:file        "sel"
-    :depends-on ("cffi")
-    :description "Wrap for ObjC SEL"
-    :long-description
-    "Use `coerce-to-selector' to get `sel' object as ObjC SEL. ")
-   (:file        "struct"
-    :depends-on ("encoding")
-    :description "Trivial implementation of lisp struct to ObjC annotation "
-    :long-description
-    "
-Use `define-objc-struct' to define a new lisp structure representation of ObjC structure.
-
-Currently implemented ObjC structures are:
-
-    ObjC Structure         Lisp Structure
-    --------------------------------------
-    CGSize                 ns-size
-    CGPoint                ns-point
-    CGRect                 ns-rect
-
-Note that internally `coca.objc' use `coca.objc::struct-aref' to support `simple-vector'
-to be passed in as foreign ObjC structure, so
-
-Dev Note:
-Use `coca.objc::objc-struct-name' to get lisp struct name symbol from given
-ObjC struct name string.
-
-Use `coca.objc::objc-struct-info' to store meta data to generate `cffi:foreign-funcall'
-as ObjC structure. The `coca.objc::objc-struct-info' is a struct with slots:
-
-    Slot        Notes
-    -----------------------------------------------------------
-    name        ObjC struct name, used in type encoding parsing
-    len         Number of struct slots
-    slots       A list of struct slot accessor function
-    types       A list of struct slot CFFI type
-
-The `coca.objc::struct-aref' is used to provide slot picking functionalities.
-See objc/method.lisp for how it is used to get the struct elements.
-
-Use `coca.objc::case-struct-aref' for manual definition of `coca.objc::struct-aref'.
-
-TODO: better and cleaner implementation.
-")
-   (:file        "method"
-    :depends-on ("objc-class"
-                 "sel"
-                 "encoding"
-                 "struct")
-    :description "Implement ObjC method wrapper"
-    :long-description
-    "Use `invoke' to call ObjC method.
-
-Dev Note:
-Use `coca.objc::objc-method-calling-lambda-form' to generate lambda calling form
-from type encoding.
-
-The compiled lambda expression are cached by type encoding string in `coca.objc::*methods*'.
-
-The instance methods and class methods are seperately stored under `objc-class'
-`coca.objc::class-instance-method' and `coca.objc::class-class-method'.")
-   (:file        "enum"
-    :depends-on ("encoding")
-    :description "Wrapper of ObjC enum"
-    :long-description
-    "Use `define-objc-enum' to define enum wrapper function. ")
-   (:file        "const"
-    :depends-on ("encoding")
-    :description "Define ObjC global variable as lisp const. "
-    :long-description
-    "Use `define-objc-const' to define ObjC global const. ")))
-
+
 (defsystem #:coca/frameworks
   :author ("凉凉")
   :license "LGPL"

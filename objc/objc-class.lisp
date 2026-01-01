@@ -344,6 +344,19 @@ Parameters:
              (let ((class-name (objc-intern name)))
                (wrap-ptr-as-objc-class class name class-name)))))))))
 
+(defun pointer-to-objc-class-nullable (pointer)
+  "Convert POINTER to ObjC class.
+Return `nil' if POINTER is NULL, otherwise `objc-class'.
+
+Parameter:
++ POINTER: foreign pointer to ObjC class.
+  can be NULL pointer.
+"
+  (declare (type foreign-pointer pointer))
+  (if (null-pointer-p pointer)
+      nil
+      (coerce-to-objc-class pointer)))
+
 (defun objc-class-modify-objc-properties (class objc-properties)
   "Modify ObjC OBJC-PROPERTIES of OBJC-CLASS.
 
@@ -407,11 +420,6 @@ Parameters:
                          :name                name
                          :direct-superclasses super
                          :direct-slots        direct))))
-
-;; (objc-class-modify-objc-properties (find-class 'coca:ns-object)
-;;                                    '(("description" :documentation "get description of object"
-;;                                                     :after         coca:ns-string-to-string
-;;                                                     :reader        coca:description)))
 
 (defmacro doc-objc-class (name &body documentations)
   "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
