@@ -69,11 +69,12 @@ Parameters:
 + COERCE-P:  list of boolean, whether or not converting struct values
 "
   (let* ((len      (length encodings))
-         (elements (foreign-alloc :pointer :count len)))
+         (elements (foreign-alloc :pointer :count (1+ len))))
     (loop :for i :from 0
           :for encoding :in encodings
           :do (setf (mem-aref elements :pointer i)
                     (objc-encoding-ffi-type encoding)))
+    (setf (mem-aref elements :pointer len) (null-pointer))
     (let* ((ffi-type (coca_alloc_struct_ffi_type elements))
            (struct   (make-objc-struct :objc-name objc-name
                                        :lisp-name lisp-name
