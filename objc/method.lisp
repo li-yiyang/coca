@@ -199,7 +199,7 @@ This is equal to generating below C code:
             :for sym  := (gensym (str:concat "FOREIGN-" name))
             :for hint := (case (atomize type)
                            (:object   '(or standard-objc-object objc-class null))
-                           (:struct   '(or ,(objc-encoding-lisp-type type)
+                           (:struct   `(or ,(objc-encoding-lisp-type type)
                                            simple-vector))
                            (otherwise (objc-encoding-lisp-type  type)))
             :collect arg :into args
@@ -320,7 +320,7 @@ This is equal to generating below C code:
 
 (defun objc-class-method-signature (object method)
   "Return signature of OBJECT and METHOD. "
-  (let ((enc (object-objc-method-encoding object method)))
+  (let ((enc (objc-method-encoding object method)))
     (values (objc-method-encoding-atypes   enc)
             (objc-method-encoding-ret      enc)
             (objc-method-encoding-encoding enc))))
