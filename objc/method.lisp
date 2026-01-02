@@ -185,7 +185,7 @@ This is equal to generating below C code:
 
     // Call `coca.objc::coca_objc_msgSend'
     // see coca/objc;wrapper.lisp
-    coca_objc_msgSend(&cif, imp, &result, arg_values);
+    exception = coca_objc_msgSend(&cif, imp, &result, arg_values);
 
     // Clean up:
     // see `coca.objc::objc-method-foreign-free-form'
@@ -331,19 +331,24 @@ This is equal to generating below C code:
 
 Parameter:
 + OBJECT:
-  + `objc-class' like: test both class and instance method
-  + `standard-objc-object' like: test only instance method
+  + string or symbol of ObjC class name: test both class and instance method
+  + `objc-class': test class method
+  + `standard-objc-object': test only instance method
+  + foreign-pointer: depending on the object's type
 + METHOD: `sel' or things can be `coerce-to-selector'"
   (etypecase object
-    (standard-objc-object
-     (and (ignore-errors (objc-class-class-method (class-of           object)
-                                                  (coerce-to-selector method)))
-          t))
-    ((or symbol string objc-class)
+    ((or symbol string)
      (let ((class (coerce-to-objc-class object))
            (sel   (coerce-to-selector   method)))
        (or (ignore-errors (and (objc-class-class-method    class sel) t))
            (ignore-errors (and (objc-class-instance-method class sel) t)))))
+    (standard-objc-object
+     (and (ignore-errors (objc-class-instance-method (class-of           object)
+                                                     (coerce-to-selector method)))
+          t))
+    (objc-class
+     (and (ignore-errors (objc-class-class-method object (coerce-to-selector method)))
+          t))
     (foreign-pointer
      (if (object_isClass object)
          (can-invoke-p (coerce-to-objc-class  object) method)

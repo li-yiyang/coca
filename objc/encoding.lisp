@@ -144,6 +144,24 @@ VAL: `objc-basic-encoding'. ")
        (cons (member :bits)          (cons integer null))
        (cons (member :array)         (cons integer (cons symbol null)))))
 
+(defun as-objc-encoding (encoding)
+  "Convert `objc-encoding' ENCODING as `objc-basic-encoding'. "
+  (the objc-basic-encoding
+    (etypecase encoding
+      (objc-basic-encoding encoding)
+      (symbol  (cond ((gethash encoding *objc-encoding-aliases*)
+                      (gethash encoding *objc-encoding-aliases*))
+                     ((subtypep encoding 'sel)                  :sel)
+                     ((subtypep encoding 'standard-objc-object) :object)
+                     ((subtypep encoding 'objc-class)           :class)
+                     ((subtypep encoding 'objc-pointer)         :pointer)
+                     (t (error "Unknown ObjC encoding ~S. " encoding)))))))
+
+(defun set-objc-encoding-alias (alias objc-encoding)
+  "Set ALIAS for OBJC-ENCODING. "
+  (setf (gethash alias *objc-encoding-aliases*)
+        (as-objc-encoding objc-encoding)))
+
 (deftype objc-encoding ()
   "Type of ObjC encoding representation in lisp.
 
@@ -163,23 +181,7 @@ or alias of `objc-basic-encoding', otherwise, return `nil'. "
                        nil)
                    t)))))
 
-(defun as-objc-encoding (encoding)
-  "Convert `objc-encoding' ENCODING as `objc-basic-encoding'. "
-  (the objc-basic-encoding
-    (etypecase encoding
-      (objc-basic-encoding encoding)
-      (symbol  (cond ((gethash encoding *objc-encoding-aliases*)
-                      (gethash encoding *objc-encoding-aliases*))
-                     ((subtypep encoding 'sel)                  :sel)
-                     ((subtypep encoding 'standard-objc-object) :object)
-                     ((subtypep encoding 'objc-class)           :class)
-                     ((subtypep encoding 'objc-pointer)         :pointer)
-                     (t (error "Unknown ObjC encoding ~S. " encoding)))))))
-
-(defun set-objc-encoding-alias (alias objc-encoding)
-  "Set ALIAS for OBJC-ENCODING. "
-  (setf (gethash alias *objc-encoding-aliases*)
-        (as-objc-encoding objc-encoding)))
+;; objc-encoding-* series functions should use `objc-basic-encoding'
 
 (defun objc-encoding-init-value (encoding)
   "Initial value of ObjC type encoding in TYPE.
@@ -258,25 +260,27 @@ Return lisp type declaration. "
 (defparameter +ffi_type_pointer+ (foreign-symbol-pointer "ffi_type_pointer"))
 (defparameter +ffi_type_void+    (foreign-symbol-pointer "ffi_type_void"))
 
-(defun objc-encoding-ffi-type (encoding &aux (type (as-objc-encoding encoding)))
-  "Return ffi_type of ObjC encoding ENCODING. "
-  (etypecase type
-    (keyword (ecase type
-               ((:char)                                           +ffi_type_sint8+)
-               ((:unsigned-char :bool)                            +ffi_type_uint8+)
-               ((:int)                                            +ffi_type_sint32+)
-               ((:unsigned-int)                                   +ffi_type_uint32+)
-               ((:short)                                          +ffi_type_sint16+)
-               ((:unsigned-short)                                 +ffi_type_uint16+)
-               ((:long :long-long)                                +ffi_type_sint64+)
-               ((:unsigned-long :unsigned-long-long)              +ffi_type_uint64+)
-               ((:float)                                          +ffi_type_float+)
-               ((:double)                                         +ffi_type_double+)
-               ((:pointer :object :sel :class :unknown :string)   +ffi_type_pointer+)
-               ((:void)                                           +ffi_type_void+)))
-    (list    (ecase (first type)
-               (:struct  (objc-struct-ffi-type (objc-struct (second type))))
-               (:pointer +ffi_type_pointer+)))))
+(defun objc-encoding-ffi-type (encoding)
+  "Return ffi_type of ObjC encoding ENCODING.
+
+Parameter:
++ ENCODING: `coca.objc::objc-basic-encoding'
+"
+  (declare (type objc-basic-encoding encoding))
+  (ecase (atomize encoding)
+    ((:char)                                           +ffi_type_sint8+)
+    ((:unsigned-char :bool)                            +ffi_type_uint8+)
+    ((:int)                                            +ffi_type_sint32+)
+    ((:unsigned-int)                                   +ffi_type_uint32+)
+    ((:short)                                          +ffi_type_sint16+)
+    ((:unsigned-short)                                 +ffi_type_uint16+)
+    ((:long :long-long)                                +ffi_type_sint64+)
+    ((:unsigned-long :unsigned-long-long)              +ffi_type_uint64+)
+    ((:float)                                          +ffi_type_float+)
+    ((:double)                                         +ffi_type_double+)
+    ((:pointer :object :sel :class :unknown :string)   +ffi_type_pointer+)
+    ((:void)                                           +ffi_type_void+)
+    ((:struct) (objc-struct-ffi-type (objc-struct (second encoding))))))
 
 
 ;;; Decode/Encode type encoding
