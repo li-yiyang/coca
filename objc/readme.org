@@ -6,12 +6,27 @@
 * About
 This is =coca/objc= subsystem as Objective-C runtime binding for Common Lisp.
 
-*Warn*: The API may not unstable.
-
-
-
 * Stable API
-These API is not likely to be modified.
+New changes won't break these API.
+
+#+begin_src lisp :exports results
+(str:concat
+ (asdf:system-description      (asdf:find-system :coca/objc))
+ (string #\Newline)
+ (string #\Newline)
+ (asdf:system-long-description (asdf:find-system :coca/objc)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ObjC Runtime bridging in Common Lisp
+
+Coca/ObjC is a Common Lisp bridge to ObjC Runtime.
+
+The API is defined like LispWorks' OBJC API. You could consider Coca/ObjC
+as a reimplementation on portable CFFI. But the API may not exactly same as
+LispWorks' API.
+#+end_example
 
 ** Classes
 + =objc-class=
@@ -39,8 +54,24 @@ These API is not likely to be modified.
 
   Dev Note:
   You may not need to directly use `standard-objc-object'.
-  It's just a handy CLOS notation of `coca.objc::objc-pointer',
-  making ObjC object different if you want to test type of `coca.objc::objc-pointer'.
+  It's just a handy CLOS notation of `coca.objc::objc-pointer', making
+  ObjC object different if you want to test type of `coca.objc::objc-pointer'.
+  #+end_example
++ =sel=
+
+  #+begin_src lisp :exports results
+  (documentation (find-class 'sel) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  A foreign type for Objective-C method selectors.
+
+  Use `coerce-to-selector' to make a `sel' object.
+
+  Dev Note:
+  Every `sel' instance should be cached within `coca.objc::*sels*'
+  So not recommanded to use `make-instance' to alloc `sel' instance.
   #+end_example
 
 ** Types
@@ -54,9 +85,42 @@ These API is not likely to be modified.
   #+begin_example
   Type of ObjC encoding representation in lisp.
 
-  Dev Note:
-  Method related with `objc-encoding' should prefix with `OBJC-ENCODING-'.
+  See also `objc-basic-encoding'.
   #+end_example
+
+  #+begin_src lisp :exports results
+  (documentation 'objc-basic-encoding 'type)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Basic ObjC encoding.
+
+      ObjC Type Encoding       objc-basic-encoding
+      c                        :char
+      C                        :unsigned-char
+      i                        :int
+      I                        :unsigned-int
+      l                        :long
+      L                        :unsigned-long
+      q                        :long-long
+      Q                        :unsigned-long-long
+      f                        :float
+      d                        :double
+      B                        :bool
+      v                        :void
+      ,*                        :string
+      @                        :object
+      #                        :class
+      :                        :sel
+      [array type]             (:array encoding)
+      {NAME=type...}           (:struct NAME)
+      (NAME=type...)           (:union  NAME)
+      bNUM                     (:bits   NUM)
+      ^type                    :pointer
+      ?                        :unknown
+  #+end_example
+
 + =define-objc-typedef=
 
   #+begin_src lisp :exports results
@@ -81,6 +145,52 @@ These API is not likely to be modified.
   + OBJC-ENCODING: `objc-encoding'
   + DOC: document string of type
   + TYPE: if given, would generate additional TYPE declaration for NAME
+  #+end_example
++ =define-objc-struct=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-struct) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC struct.
+
+  Example:
+
+      ;; the
+      (define-objc-struct (ns-point "CGPoint")
+        (x :double)
+        (y :double))
+
+      ;; overwrite default lisp slot type definition
+      (define-objc-struct (ns-rect "CGRect")
+        (x :double  :type real)
+        (y :double  :type real)
+        (w :double  :type real)
+        (h :double  :type real))
+
+  Syntax:
+
+      (define-objc-struct (LISP-NAME OBJC-NAME)
+        { (SLOT OBJC-ENCODING &key TYPE) }*)
+
+  Parameters:
+  + LISP-NAME: symbol of lisp struct
+  + OBJC-NAME: string of ObjC struct
+  + SLOT: symbol of slot
+  + OBJC-ENCODING: ObjC encoding of struct slot
+  + TYPE: lisp type of slot,
+    if setting, the result should be coerced when copy to foreign
+
+  Dev Note:
+  This will define:
+  + lisp struct of LISP-NAME
+  + cffi struct of LISP-NAME
+  + `coca.objc::struct-aref' method implementation
+    the struct in Coca.ObjC could be replaced by `simple-vector',
+    which means calling with (coca:make-ns-rect ...) is equal to
+    calling with (300d0 300d0 400d0 400d0).
   #+end_example
 + =define-objc-enum=
 
@@ -231,10 +341,6 @@ These API is not likely to be modified.
               "initWithContentRect:styleMask:backing:defer:"
               rect style backing defer)
   #+end_example
-
-  Note: it's API should be kept same.
-  The implementation is likely to be changed...
-  So the behavior might inconsists.
 + =can-invoke-p=
 
   #+begin_src lisp :exports results
@@ -251,4 +357,3 @@ These API is not likely to be modified.
     + `standard-objc-object' like: test only instance method
   + METHOD: `sel' or things can be `coerce-to-selector'
   #+end_example
-

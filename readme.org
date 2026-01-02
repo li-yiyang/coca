@@ -1,0 +1,109 @@
+:PROPERTIES:
+:header-args:lisp: :package coca :wrap example :exports results
+:END:
+#+title: Coca
+#+subtitle: Cocoa in Common Lisp
+#+author: 凉凉
+* About
+#+begin_src lisp :exports results
+(asdf:system-description (asdf:find-system :coca))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Cocoa in Common Lisp
+#+end_example
+
+* Subsystems
+** Coca/ObjC
+Loads =coca/objc= and use package =:coca.objc= (see [[file:objc/readme.org][objc/readme]] for details).
+
+** Coca/Frameworks
+Load =coca/frameworks= will only loads
+=coca/frameworks/foundation= and =coca/frameworks/appkit=.
+
+*** Coca/Frameworks/Foundation
+#+begin_src lisp :exports results
+(str:concat
+ (asdf:system-description      (asdf:find-system :coca/frameworks/foundation))
+ (string #\Newline)
+ (string #\Newline)
+ (asdf:system-long-description (asdf:find-system :coca/frameworks/foundation)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ObjC bindings of Foundation Framework
+
+Access essential data types, collections, and operating-system services to
+define the base layer of functionality for your app.
+
+The Foundation framework provides a base layer of functionality for apps and
+frameworks, including data storage and persistence, text processing, date and
+time calculations, sorting and filtering, and networking. The classes, protocols,
+and data types defined by Foundation are used throughout the macOS, iOS,
+watchOS, and tvOS SDKs.
+
+see https://developer.apple.com/documentation/Foundation?language=objc
+#+end_example
+
+*** Coca/Frameworks/Appkit
+#+begin_src lisp :exports results
+(str:concat
+ (asdf:system-description      (asdf:find-system :coca/frameworks/appkit))
+ (string #\Newline)
+ (string #\Newline)
+ (asdf:system-long-description (asdf:find-system :coca/frameworks/appkit)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ObjC bindings of AppKit Framework
+
+Construct and manage a graphical, event-driven user interface for your macOS app.
+
+AppKit contains the objects you need to build the user interface for a macOS app.
+In addition to drawing windows, buttons, panels, and text fields, it handles all the
+event management and interaction between your app, people, and macOS.
+
+see https://developer.apple.com/documentation/AppKit?language=objc
+#+end_example
+
+*** Coca/Frameworks/Webkit
+#+begin_src lisp :exports results
+(str:concat
+ (asdf:system-description      (asdf:find-system :coca/frameworks/webkit))
+ (string #\Newline)
+ (string #\Newline)
+ (asdf:system-long-description (asdf:find-system :coca/frameworks/webkit)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ObjC bindings of Webkit Framework
+
+Integrate web content seamlessly into your app,
+and customize content interactions to meet your app's needs.
+
+Use the WebKit framework to integrate richly styled web content into your
+app's native content. WebKit offers a full browsing experience for your content,
+offering a platform-native view and supporting classes to:
+
++ Display rich web content using HTML, CSS, and JavaScript
++ Handle the incremental loading of page content
++ Display multiple MIME types and compound frame elements
++ Navigate between pages of content
++ Manage a forward-back list of recently visited pages
+
+For more information about WebKit, go to https://webkit.org.
+
+see https://developer.apple.com/documentation/WebKit?language=objc
+#+end_example
+
+* Documentations
+Coca is (or *SHOULD BE*) self-documented.
+Load the system and use =sly-describe-symbol= or SLIME functions
+to read the documentation of each symbol.
+
+* Reference
++ [[https://developer.apple.com/documentation][Apple's Documentation]]

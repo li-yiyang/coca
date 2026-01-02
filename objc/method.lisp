@@ -199,6 +199,8 @@ This is equal to generating below C code:
             :for sym  := (gensym (str:concat "FOREIGN-" name))
             :for hint := (case (atomize type)
                            (:object   '(or standard-objc-object objc-class null))
+                           (:struct   '(or ,(objc-encoding-lisp-type type)
+                                           simple-vector))
                            (otherwise (objc-encoding-lisp-type  type)))
             :collect arg :into args
             :collect sym :into syms
@@ -356,10 +358,35 @@ Parameter:
 
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
+Return value is warpped as lisp value.
 
 Parameters:
 + OBJECT: object, class to call
-+ METHOD: sel, string as function"
++ METHOD: sel, string as function
+
+Return Value:
++ if Class:  wrap as `objc-class'
++ if Object: wrap as `standard-objc-object'
++ if SEL:    wrap as `sel'
++ if struct: as lisp struct (`define-objc-struct')
++ if CFFI compatible value: as CFFI behavior
+
+Example:
+
+    ;; [NSWindow alloc];
+    (invoke \"NSWindow\" \"alloc\")
+
+    ;; [NSString initWithUTF8String:\"Hello World\"];
+    (invoke \"NSString\" \"initWithUTF8String:\" \"Hello World\")
+
+    ;; [[NSWindow alloc] initWithContentRect:rect
+    ;;                             styleMask:style
+    ;;                               backing:backing
+    ;;                                 defer:defer]
+    (invoke (invoke \"NSWindow\" \"alloc\")
+            \"initWithContentRect:styleMask:backing:defer:\"
+            rect style backing defer)
+"
   (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
            (type (or string sel) method))
   (etypecase object

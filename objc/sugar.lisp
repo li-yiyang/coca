@@ -6,13 +6,28 @@
 ;;; objc-encoding
 
 (defmacro define-objc-typedef (name objc-encoding &body body)
-  "Define ObjC OBJC-ENCODING alias as NAME.
+  "Define ObjC type alias of NAME for OBJC-ENCODING.
+
+Example:
+
+    ;; define ObjC type alias
+    (define-objc-typedef ns-uinteger :unsigned-long
+      \"NSUInteger in lisp. \")
+
+    ;; define ObjC type, but overwrite the lisp type
+    (define-objc-typedef ns-null :object
+      \"NSNull\"
+      'null)
 
 Syntax:
 
-    (define-objc-typedef NAME OBJC-ENCODING
-      [docstring]
-      &body BODY)
+   (define-objc-typedef NAME OBJC-ENCODING &body [DOC] BODY)
+
+Parameters:
++ NAME: symbol as lisp type alias
++ OBJC-ENCODING: `objc-encoding'
++ DOC: document string of type
++ TYPE: if given, would generate additional TYPE declaration for NAME
 "
   (let ((docstring (pop body))
         (type      (as-objc-encoding objc-encoding)))
@@ -31,9 +46,23 @@ Syntax:
 (defmacro define-objc-struct ((lisp-name objc-name) &body slot-definitions)
   "Define ObjC struct.
 
+Example:
+
+    ;; the
+    (define-objc-struct (ns-point \"CGPoint\")
+      (x :double)
+      (y :double))
+
+    ;; overwrite default lisp slot type definition
+    (define-objc-struct (ns-rect \"CGRect\")
+      (x :double  :type real)
+      (y :double  :type real)
+      (w :double  :type real)
+      (h :double  :type real))
+
 Syntax:
 
-    (define-objc-struct LISP-NAME OBJC-NAME
+    (define-objc-struct (LISP-NAME OBJC-NAME)
       { (SLOT OBJC-ENCODING &key TYPE) }*)
 
 Parameters:
@@ -43,6 +72,15 @@ Parameters:
 + OBJC-ENCODING: ObjC encoding of struct slot
 + TYPE: lisp type of slot,
   if setting, the result should be coerced when copy to foreign
+
+Dev Note:
+This will define:
++ lisp struct of LISP-NAME
++ cffi struct of LISP-NAME
++ `coca.objc::struct-aref' method implementation
+  the struct in Coca.ObjC could be replaced by `simple-vector',
+  which means calling with (coca:make-ns-rect ...) is equal to
+  calling with #(300d0 300d0 400d0 400d0).
 "
   (declare (type symbol lisp-name)
            (type string objc-name))
@@ -78,6 +116,8 @@ Parameters:
 
 (defmacro define-objc-enum (name &body bindings)
   "Define ObjC enum of NAME with BINDINGS.
+
+Example:
 
 Syntax:
 
@@ -194,7 +234,8 @@ Syntax:
              (t             ,flags)))))
 
 (defmacro define-objc-const (name (objc-name objc-encoding &optional (library :default))
-                             &optional documentation)
+                             &optional documentation
+                             &aux (encoding (as-objc-encoding objc-encoding)))
   "Define a ObjC constant of OBJC-NAME in lisp as NAME.
 
 Syntax:
@@ -211,38 +252,40 @@ Parameters:
 + DOCUMENTATION: optional documentation"
   (declare (type symbol name)
            (type string objc-name)
-           (type objc-encoding objc-encoding)
            (type (or null string) documentation))
-  (case (atomize objc-encoding)
-    ((:union :array)  (error "Don't support `:union' yet. "))
-    ((:struct :pointer)
-     `(defparameter ,name
-        (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                      ,(objc-encoding-cffi-type objc-encoding))
-        ,documentation))
-    ((:object)
-     `(defparameter ,name
-        (coerce-to-objc-object
-         (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer))
-        ,documentation))
-    ((:class)
-     `(defparameter ,name
-        (coerce-to-objc-class
-         (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer))
-        ,documentation))
-    ((:sel)
-     `(defparameter ,name
-        (coerce-to-selector
-         (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                       :pointer))
-        ,documentation))
-    (otherwise
-     `(defconstant ,name
-        (cffi:mem-ref (cffi::fs-pointer-or-lose ,objc-name ',library)
-                      ,(objc-encoding-cffi-type objc-encoding))
-        ,documentation))))
+  `(progn
+     (declaim (type ,(objc-encoding-lisp-type encoding) ,name))
+     ,(case (atomize encoding)
+        ((:union :array)  (error "Don't support `:union' yet. "))
+        ((:struct :pointer)
+         `(defparameter ,name
+            ,(objc-method-foreign-aref-form
+              `(foreign-symbol-pointer ,objc-name :library ',library)
+              encoding)
+            ,documentation))
+        ((:object)
+         `(defparameter ,name
+            (coerce-to-objc-object
+             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                           :pointer))
+            ,documentation))
+        ((:class)
+         `(defparameter ,name
+            (coerce-to-objc-class
+             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                           :pointer))
+            ,documentation))
+        ((:sel)
+         `(defparameter ,name
+            (coerce-to-selector
+             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                           :pointer))
+            ,documentation))
+        (otherwise
+         `(defconstant ,name
+            (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                          ,(objc-encoding-cffi-type encoding))
+            ,documentation)))))
 
 ;; (trivial-indent:define-indentation define-objc-const (2 4 &body))
 

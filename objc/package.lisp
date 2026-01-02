@@ -20,6 +20,7 @@
    #:coerce-to-selector
 
    ;; ObjC encoding
+   #:objc-basic-encoding
    #:objc-encoding
    #:define-objc-typedef
 
