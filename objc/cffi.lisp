@@ -468,6 +468,9 @@ and return the instance of `objc-pointer'. "))
 (defgeneric objc-object-pointer (objc-pointer)
   (:documentation
    "Returns the ObjC foreign pointer associated with a given Lisp object.")
+  (:method ((null null))
+    "Return NULL as nil. "
+    (null-pointer))
   (:method (foreign-pointer)
     "Return foreign-pointer directly. "
     (declare (type foreign-pointer foreign-pointer))

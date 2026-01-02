@@ -198,7 +198,7 @@ This is equal to generating below C code:
             :for arg  := (gensym name)
             :for sym  := (gensym (str:concat "FOREIGN-" name))
             :for hint := (case (atomize type)
-                           (:object   '(or standard-objc-object objc-class))
+                           (:object   '(or standard-objc-object objc-class null))
                            (otherwise (objc-encoding-lisp-type  type)))
             :collect arg :into args
             :collect sym :into syms
