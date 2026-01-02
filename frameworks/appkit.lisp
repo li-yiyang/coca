@@ -31,13 +31,16 @@ see https://developer.apple.com/documentation/appkit?language=objc")
   (:export
    ;; App and Environment
    #:ns-application
+   #:running-p
+   #:activep
+   #:current-event
    #:ns-app
    #:+ns-event-tracking-run-loop-mode+
    #:+ns-modal-panel-run-loop-mode+
    #:next-event
-   #:is-running
    #:run
-   #:current-event
+   #:finish-launching
+   #:send-event
    #:ns-running-application
    #:ns-workspace
    #:ns-workspace-open-configuration
@@ -46,6 +49,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-toolbar-item
    #:ns-sharing-service-picker-toolbar-item
    #:ns-help-manager
+   #:update-windows
 
    ;; Documents, Data, and Pasteboard
    #:ns-document
@@ -195,6 +199,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-event-mask-p
    #:decode-ns-event-mask
    #:ns-event
+   #:location-in-window
    #:event-type
    #:event-subtype
    #:modifier-flags
@@ -348,299 +353,6 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 (cffi:define-foreign-library appkit
   (:darwin (:framework "AppKit")))
 (cffi:use-foreign-library appkit)
-
-
-;;;; App and Environment
-;; Learn about the objects that you use to interact with the system.
-;; see https://developer.apple.com/documentation/appkit/app-and-environment?language=objc
-
-;;; Life Cycle
-
-(doc-objc-class "NSApplication"         ; ns-application
-  "An object that manages an app’s main event loop and resources used by all of that app's objects."
-  "Every app uses a single instance of `ns-application' to control the main
-event loop, keep track of the app's windows and menus, distribute
-events to the appropriate objects (that’s, itself or one of its windows),
-set up autorelease pools, and receive notification of app-level events.
-
-An `ns-application' object has a delegate (an object that you assign)
-that’s notified when the app starts or terminates, is hidden or
-activated, should open a file selected by the user, and so forth. By
-setting the delegate and implementing the delegate methods, you
-customize the behavior of your app without having to subclass
-`ns-application'.
-
-In Lisp main thread, create the `ns-application' instance by calling
-function `ns-app'. An example of main thread function:
-
-    (defun ns-application-main ()
-      (let ((app (ns-app)))
-        ;; load nib or else
-        ;; set up window or else
-        (run app)))
-
-The `ns-app' function initializes the display environment
-and connects your program to the window server and the display
-server. The `ns-application' object maintains a list of all the
-`ns-window' objects the app uses, so it can retrieve any of the app’s
-`ns-view' objects.
-
-Dev Note:
-Use `ns-app' to retrive the global variable `coca.appkit::*ns-app*'."
-  "The shared `ns-application' object performs the important task of
-receiving events from the window server and distributing them to the
-proper `ns-responder' objects. `ns-app' translates an event into an
-`ns-event' object, then forwards the event object to the affected
-`ns-window' object. All keyboard and mouse events go directly to the
-`ns-window' object associated with the event. The only exception to
-this rule is if the Command key is pressed when a key-down event
-occurs; in this case, every `ns-window' object has an opportunity to
-respond to the event. When a window object receives an `ns-window'
-object from `ns-app', it distributes it to the objects in its view
-hierarchy.
-
-`ns-application' is also responsible for dispatching certain Apple
-events received by the app. For example, macOS sends Apple events to
-your app at various times, such as when the app is launched or
-reopened. `ns-application' installs Apple event handlers to handle
-these events by sending a message to the appropriate object. You can
-also use the `ns-apple-event-manager' class to register your own Apple
-event handlers. The applicationWillFinishLaunching: method is
-generally the best place to do so. For more information on how events
-are handled and how you can modify the default behavior, including
-information on working with Apple events in scriptable apps, see
-``How Cocoa Applications Handle Apple Events'' in ``Cocoa Scripting Guide''.
-
-The `ns-application' class sets up @autorelease block during
-initialization and inside the event loop-specifically, within its
-initialization and run methods. Similarly, the
-methods `Coca.AppKit' adds to `ns-bundle' employ @autorelease blocks
-during the loading of nib files. These @autorelease blocks aren’t
-accessible outside the scope of the respective `ns-application' and
-`ns-bundle' methods. Typically, an app creates objects either while
-the event loop is running or by loading objects from nib files, so
-this lack of access usually isn’t a problem. However, if you do need
-to use Cocoa classes within the main() function itself
-(other than to load nib files or to instantiate `ns-application'),
-you should create an @autorelease block to contain the code using
-the classes."
-  "The delegate and notifications
-=====================================
-You can assign a delegate to your `ns-application' object. The delegate
-responds to certain messages on behalf of the object. Some of these
-messages, such as application:openFile:, ask the delegate to perform
-an action. Another message, applicationShouldTerminate:, lets the
-delegate determine whether the app should be allowed to quit. The
-`ns-application' class sends these messages directly to its delegate.
-
-`ns-application' also posts notifications to the app’s default
-notification center. Any object may register to receive one or more of
-the notifications posted by NSApplication by sending the message
-addObserver:selector:name:object: to the default notification center
-(an instance of the NSNotificationCenter class). The delegate of
-NSApplication is automatically registered to receive these
-notifications if it implements certain delegate methods. For example,
-NSApplication posts notifications when it’s about to be done launching
-the app and when it’s done launching the app
-(NSApplicationWillFinishLaunchingNotification and
-NSApplicationDidFinishLaunchingNotification). The delegate has an
-opportunity to respond to these notifications by implementing the
-methods applicationWillFinishLaunching: and
-applicationDidFinishLaunching:. If the delegate wants to be informed
-of both events, it implements both methods. If it needs to know only
-when the app is finished launching, it implements only
-applicationDidFinishLaunching:."
-  "System services
-======================
-`ns-application' interacts with the system services architecture to
-provide services to your app through the Services menu."
-  "Subclassing notes
-======================
-You rarely should find a real need to create a custom `ns-application'
-subclass. Unlike some object-oriented libraries, Cocoa doesn’t require
-you to subclass `ns-application' to customize app behavior. Instead it
-gives you many other ways to customize an app. This section discusses
-both some of the possible reasons to subclass `ns-application' and some
-of the reasons not to subclass `ns-application'.
-
-To use a custom subclass of `ns-application', send sharedApplication to
-your subclass rather than directly to `ns-application'. If you create
-your app in Xcode, you can accomplish this by setting your custom app
-class to be the principal class. In Xcode, double-click the app target
-in the Groups and Files list to open the Info window for the
-target. Then display the Properties pane of the window and replace
-“NSApplication” in the Principal Class field with the name of your
-custom class. The NSApplicationMain function sends sharedApplication
-to the principal class to obtain the global app instance (NSApp)—which
-in this case will be an instance of your custom subclass of
-`ns-application'.
-
-Important: Many AppKit classes rely on the `ns-application' class and may
-not work properly until this class is fully initialized. As a result,
-you should not, for example, attempt to invoke methods of other AppKit
-classes from an initialization method of an `ns-application' subclass.
-
-Methods to override:
-Generally, you subclass NSApplication to provide your own special
-responses to messages that are routinely sent to the global app object
-(NSApp). NSApplication doesn’t have primitive methods in the sense of
-methods that you must override in your subclass. Here are four methods
-that are possible candidates for overriding:
-+ Override `run' if you want the app to manage the main event loop
-  differently than it does by default. (This a critical and complex
-  task, however, that you should only attempt with good reason).
-+ Override `sendEvent:' if you want to change how events are dispatched
-  or perform some special event processing.
-+ Override `requestUserAttention:' if you want to modify how your app
-  attracts the attention of the user (for example, offering an
-  alternative to the bouncing app icon in the Dock).
-+ Override `targetForAction:' to substitute another object for the target
-  of an action message.
-
-Special considerations:
-The global app object uses @autorelease blocks in its run method; if
-you override this method, you’ll need to create your own @autorelease
-blocks.  Do not override sharedApplication. The default
-implementation, which is essential to app behavior, is too complex to
-duplicate on your own.
-
-Alternatives to subclassing:
-NSApplication defines numerous Delegation methods that offer
-opportunities for modifying specific aspects of app behavior. Instead
-of making a custom subclass of NSApplication, your app delegate may be
-able to implement one or more of these methods to accomplish your
-design goals. In general, a better design than subclassing
-NSApplication is to put the code that expresses your app’s special
-behavior into one or more custom objects called controllers. Methods
-defined in your controllers can be invoked from a small dispatcher
-object without being closely tied to the global app object."
-  "see https://developer.apple.com/documentation/appkit/nsapplication?language=objc")
-
-(declaim (type (or null ns-application) *ns-app*))
-(defparameter *ns-app* nil
-  "Global `ns-application' object after calling sharedApplication. ")
-
-(defmethod initialize-instance :after ((ns-app ns-application) &key)
-  "After [NSApplication sharedApplication], set global `*ns-app*'. "
-  (setf *ns-app* ns-app))
-
-(defun ns-app ()
-  "Returns the shared `ns-application'. "
-  (or *ns-app* (invoke 'ns-application "sharedApplication")))
-
-;; Managing the event loop
-
-(define-objc-const +ns-event-tracking-run-loop-mode+
-    ("NSEventTrackingRunLoopMode" :object appkit)
-  "The mode set when tracking events modally, such as a mouse-dragging loop.
-see https://developer.apple.com/documentation/appkit/nseventtrackingrunloopmode?language=objc")
-
-(define-objc-const +ns-modal-panel-run-loop-mode+
-    ("NSModalPanelRunLoopMode" :object appkit)
-  "The mode set when waiting for input from a modal panel, such as a save or open panel.
-see https://developer.apple.com/documentation/appkit/nsmodalpanelrunloopmode?language=objc")
-
-(defmethod next-event ((app ns-application)
-                       &key
-                         (mask  :any)
-                         (util  nil)
-                         (mode  +ns-default-run-loop-mode+)
-                         (deque t)
-                       &allow-other-keys)
-  "Returns the next event matching a given mask,
-or nil if no such event is found before a specified expiration date.
-
-Parameters:
-+ MASK: `ns-event-mask'
-+ UTIL: The expiration date for the current event request (default `ns-date-distant-future')
-+ MODE: The run loop mode in which to run while looking for events.
-  could be:
-  + `+ns-default-run-loop-mode+'
-  + `+ns-run-loop-common-modes+'
-  + `+ns-event-tracking-run-loop-mode+'
-  + `+ns-modal-panel-run-loop-mode+'
-  + `+ns-connnection-reply-mode+'
-+ DEQUEUE: Specify `t' (default) if you want the event removed from the queue.
-
-Dev Note:
-Invokes ObjC method nextEventMatchingMask:untilDate:inMode:dequeue:
-
-see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(matching:until:inmode:dequeue:)?language=objc"
-  (declare (type (or list ns-event-mask) mask)
-           (type (or null ns-date)       util)
-           (type (or ns-string string)   mode))
-  (invoke app
-          "nextEventMatchingMask:untilDate:inMode:dequeue:"
-          (apply #'ns-event-mask (coca.objc::listfy mask))
-          (or util (ns-date-distant-future))
-          mode
-          (and deque t)))
-
-(defmethod run ((app ns-application))
-  "Starts the main event loop. "
-  (invoke app "run"))
-
-(doc-objc-class "NSRunningApplication"  ; ns-running-application
-  "An object that can manipulate and provide information for a single instance of an app."
-  "see https://developer.apple.com/documentation/appkit/nsrunningapplication?language=objc")
-
-;;; Environment
-
-(doc-objc-class "NSWorkspace"           ; ns-workspace
-  "A workspace that can launch other apps and perform a variety of file-handling services."
-  "There is one shared NSWorkspace object per app.
-You use the class method sharedWorkspace to access it.
-For example, the following statement uses an `ns-workspace' object to request that
-a file be opened in the TextEdit app:
-
-    (invoke (invoke \"NSWorkspace\" \"sharedWorkspace\") \"openFile:withApplication:\" file application)
-
-You can use the workspace object to:
-+ Open, manipulate, and get information about files and devices.
-+ Track changes to the file system, devices, and the user database.
-+ Get and set Finder information for files.
-+ Launch apps."
-  "see https://developer.apple.com/documentation/appkit/nsworkspace?language=objc")
-
-(doc-objc-class "NSWorkspaceOpenConfiguration" ; ns-workspace-open-configuration
-  "The configuration options for opening URLs or launching apps. "
-  "Create an `ns-workspace-open-configuration' object before launching an app
-or opening a URL using the shared `ns-workspace' object.
-Use the properties of this object to customize the behavior of the launched app
-or the handling of the URLs.
-
-For example, you might tell the app to hide itself immediately after launch."
-  "see https://developer.apple.com/documentation/appkit/nsworkspace/openconfiguration?language=objc")
-
-;;; Handoff
-
-(doc-objc-class "NSUserActivity"        ; ns-user-activity
-  "A representation of the state of your app at a moment in time."
-  "see https://developer.apple.com/documentation/Foundation/NSUserActivity?language=objc")
-
-;;; App Services
-
-(doc-objc-class "NSSharingService"      ; ns-sharing-service
-  "An object that facilitates the sharing of content with social media services, or with apps like Mail or Safari."
-  "see https://developer.apple.com/documentation/appkit/nssharingservice?language=objc")
-
-(doc-objc-class "NSToolbarItem"         ; ns-toolbar-item
-  "A single item that appears in a window’s toolbar."
-  "see https://developer.apple.com/documentation/appkit/nstoolbaritem?language=objc")
-
-(doc-objc-class "NSSharingServicePickerToolbarItem" ; ns-sharing-service-picker-toolbar-item
-  "A toolbar item that displays the macOS share sheet."
-  "see https://developer.apple.com/documentation/appkit/nssharingservicepickertoolbaritem?language=objc")
-
-;;; App Help
-
-(doc-objc-class "NSHelpManager"         ; ns-help-manager
-  "An object for displaying online help for an app."
-  "see https://developer.apple.com/documentation/appkit/nshelpmanager?language=objc")
-
-;;; Errors
-
-;;; App Structure
 
 
 ;;;; Documents, Data, and Pasteboard
@@ -1768,41 +1480,6 @@ see https://developer.apple.com/documentation/appkit/nsevent/eventtypemask?langu
   "Creating an Event Mask"
   (:from-type                      4342827560 "Returns the event mask for the specified type."))
 
-(doc-objc-class "NSEvent"               ; ns-event
-  "An object that contains information about an input action,
-such as a mouse click or a key press."
-  "AppKit reports events that occur in a window to the app that created
-the window. Events include mouse clicks, key presses, and other types
-of input to the system. An NSEvent object contains pertinent
-information about each event, such as the event type and when the
-event occurred. The event type defines what other information is
-available in the event object. For example, a keyboard event contains
-information about the pressed keys.
-
-Although you can create NSEvent objects directly, you typically
-don’t. The system generates them automatically in response to input
-from the mouse, keyboard, trackpad, or other peripherals such as
-connected tablets. It enqueues those events in its event queue, and
-dequeues them when it’s ready to process them. The system delivers
-events to the most relevant NSResponder object, which might be the
-first responder or the object where the event occurred. For example,
-the system delivers mouse-click events to the view that contains the
-event location.
-
-To handle events, add support to your app’s NSResponder objects. You
-can also use gesture recognizers to handle some events for you and
-execute your app’s code at appropriate times. For more information,
-see the NSResponder reference.
-
-You can also monitor the events your app receives and modify or cancel
-some events as needed. Install a local monitor using the
-addLocalMonitorForEventsMatchingMask:handler: method to detect
-specific types of events and take action when your app receives
-them. Install a global monitor using the
-addGlobalMonitorForEventsMatchingMask:handler: method to monitor
-events systemwide, although without the ability to modify them."
-  "see https://developer.apple.com/documentation/appkit/nsevent?language=objc")
-
 (define-objc-enum ns-event-type
   "Constants for the types of events that responder objects can handle.
 see https://developer.apple.com/documentation/appkit/nsevent/eventtype?language=objc"
@@ -1845,53 +1522,6 @@ see https://developer.apple.com/documentation/appkit/nsevent/eventtype?language=
   (:quick-look          33 "An event that initiates a Quick Look request.")
   (:system-defined      14 "A system-related event occurred."))
 
-(defmethod event-type ((event ns-event))
-  "Get EVENT's type.
-Return `ns-event-type'.
-
-Invokes ObjC method type.
-see https://developer.apple.com/documentation/appkit/nsevent/type?language=objc"
-  (invoke event "type"))
-
-(defmethod event-type :around ((event ns-event))
-  (let ((type (call-next-method)))
-    (case type
-      (1  :left-mouse-down)
-      (6  :left-mouse-dragged)
-      (2  :left-mouse-up)
-      (3  :right-mouse-down)
-      (4  :right-mouse-up)
-      (7  :right-mouse-dragged)
-      (25 :other-mouse-down)
-      (27 :other-mouse-dragged)
-      (26 :other-mouse-up)
-      (5  :mouse-moved)
-      (8  :mouse-entered)
-      (9  :mouse-exited)
-      (10 :key-down)
-      (11 :key-up)
-      (19 :begin-gesture)
-      (20 :end-gesture)
-      (30 :magnify)
-      (32 :smart-magnify)
-      (31 :swipe)
-      (18 :rotate)
-      (29 :gesture)
-      (37 :direct-touch)
-      (23 :tablet-point)
-      (24 :tablet-proximity)
-      (34 :pressure)
-      (22 :scroll-wheel)
-      (38 :change-mode)
-      (13 :app-kit-defined)
-      (15 :application-defined)
-      (17 :cursor-update)
-      (12 :flags-changed)
-      (16 :periodic)
-      (33 :quick-look)
-      (14 :system-defined)
-      (otherwise type))))
-
 (define-objc-enum ns-event-subtype
   "Subtypes for various types of events.
 see https://developer.apple.com/documentation/appkit/nsevent/eventsubtype?language=objc"
@@ -1912,39 +1542,6 @@ These subtypes apply when the event type is `:system-defined'. "
   (:tablet-proximity          2 "A tablet-proximity event occurred.")
   (:touch                     3 "A touch event occurred."))
 
-(defmethod event-subtype ((event ns-event))
-  "Get EVENT's subtype.
-
-Invoke ObjC method subtype.
-see https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc"
-  (invoke event "subtype"))
-
-(defmethod event-subtype :around ((event ns-event))
-  (let ((type    (event-type event))
-        (subtype (call-next-method)))
-    (flet ((other (subtype)
-             (case subtype
-               (1 :tablet-point)
-               (2 :tablet-proximity)
-               (3 :touch)
-               (otherwise subtype))))
-      (case type
-        (:appkit-defined
-         (case subtype
-           (1 :application-activated)
-           (2 :application-deactivated)
-           (8 :screen-changed)
-           (0 :window-exposed)
-           (otherwise (other subtype))))
-        (:system-defined
-         (case subtype
-           (4 :window-moved)
-           (1 :power-off)
-           (0 :mouse-event)
-           (otherwise (other subtype))))
-        (otherwise
-         (other subtype))))))
-
 (define-objc-enum ns-event-modifier-flags
   "Flags that represent key states in an event object.
 see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.struct?language=objc"
@@ -1960,25 +1557,69 @@ see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift
   (:function                         8388608 "A function key has been pressed.")
   (:device-independent-flags-mask 4294901760 "Device-independent modifier flags are masked."))
 
-(defmethod modifier-flags ((event ns-event))
-  "Get EVENT's modifierFlags.
-Return a list of `ns-event-modifier-flags'.
+(doc-objc-class "NSEvent"               ; ns-event
+  (("type"
+    :reader event-type
+    :after  decode-ns-event-type
+    :documentation
+    "The event’s type.
+See https://developer.apple.com/documentation/appkit/nsevent/type?language=objc")
+   ("subtype"
+    :reader event-subtype
+    :after  decode-ns-event-subtype
+    :documentation
+    "The event’s subtype.
+See https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc")
+   ("modifierFlags"
+    :reader modifier-flags
+    :after  decode-ns-event-modifier-flags
+    :documentation
+    "https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc")
+   ("locationInWindow"
+    :reader location-in-window
+    :documentation
+    "The event location in the base coordinate system of the associated window.")
+   ("timestamp"
+    :reader timestamp
+    :documentation
+    "The time when the event occurred in seconds since system startup.")
+   ("window"
+    :reader window
+    :documentation
+    "The window object associated with the event. "))
+  "An object that contains information about an input action,
+such as a mouse click or a key press."
+  "AppKit reports events that occur in a window to the app that created
+the window. Events include mouse clicks, key presses, and other types
+of input to the system. An NSEvent object contains pertinent
+information about each event, such as the event type and when the
+event occurred. The event type defines what other information is
+available in the event object. For example, a keyboard event contains
+information about the pressed keys.
 
-Invoke ObjC method modifierFlags.
-see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc"
-  (invoke event "modifierFlags"))
+Although you can create NSEvent objects directly, you typically
+don’t. The system generates them automatically in response to input
+from the mouse, keyboard, trackpad, or other peripherals such as
+connected tablets. It enqueues those events in its event queue, and
+dequeues them when it’s ready to process them. The system delivers
+events to the most relevant NSResponder object, which might be the
+first responder or the object where the event occurred. For example,
+the system delivers mouse-click events to the view that contains the
+event location.
 
-(defmethod modifier-flags :around ((event ns-event))
-  (coca.objc::with-objc-enum-flags (call-next-method)
-    (:caps-lock                          65536)
-    (:shift                             131072)
-    (:control                           262144)
-    (:option                            524288)
-    (:command                          1048576)
-    (:numeric-pad                      2097152)
-    (:help                             4194304)
-    (:function                         8388608)
-    (:device-independent-flags-mask 4294901760)))
+To handle events, add support to your app’s NSResponder objects. You
+can also use gesture recognizers to handle some events for you and
+execute your app’s code at appropriate times. For more information,
+see the NSResponder reference.
+
+You can also monitor the events your app receives and modify or cancel
+some events as needed. Install a local monitor using the
+addLocalMonitorForEventsMatchingMask:handler: method to detect
+specific types of events and take action when your app receives
+them. Install a global monitor using the
+addGlobalMonitorForEventsMatchingMask:handler: method to monitor
+events systemwide, although without the ability to modify them."
+  "see https://developer.apple.com/documentation/appkit/nsevent?language=objc")
 
 
 ;;;; Menus, Cursors, and the Dock
@@ -2625,5 +2266,394 @@ without the overhead of a full `ns-view' subclass."
 
 ;;; Toolbar configuration
 
+
+;;;; App and Environment
+;; Learn about the objects that you use to interact with the system.
+;; see https://developer.apple.com/documentation/appkit/app-and-environment?language=objc
+
+;;; Life Cycle
+
+(doc-objc-class "NSApplication"         ; ns-application
+  (("currentEvent"
+    :reader current-event
+    :documentation "The last event object that the app retrieved from the event queue.
+See https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
+   ("running"
+    :reader running-p
+    :documentation "Test if the main event loop is running.
+See https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
+   ("active"
+    :reader activep
+    :documentation "Test if this is the active app.
+See https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc"))
+  "An object that manages an app’s main event loop and resources used by all of that app's objects."
+  "Every app uses a single instance of `ns-application' to control the main
+event loop, keep track of the app's windows and menus, distribute
+events to the appropriate objects (that’s, itself or one of its windows),
+set up autorelease pools, and receive notification of app-level events.
+
+An `ns-application' object has a delegate (an object that you assign)
+that’s notified when the app starts or terminates, is hidden or
+activated, should open a file selected by the user, and so forth. By
+setting the delegate and implementing the delegate methods, you
+customize the behavior of your app without having to subclass
+`ns-application'.
+
+In Lisp main thread, create the `ns-application' instance by calling
+function `ns-app'. An example of main thread function:
+
+    (defun ns-application-main ()
+      (let ((app (ns-app)))
+        ;; load nib or else
+        ;; set up window or else
+        (run app)))
+
+The `ns-app' function initializes the display environment
+and connects your program to the window server and the display
+server. The `ns-application' object maintains a list of all the
+`ns-window' objects the app uses, so it can retrieve any of the app’s
+`ns-view' objects.
+
+Dev Note:
+Use `ns-app' to retrive the global variable `coca.appkit::*ns-app*'."
+  "The shared `ns-application' object performs the important task of
+receiving events from the window server and distributing them to the
+proper `ns-responder' objects. `ns-app' translates an event into an
+`ns-event' object, then forwards the event object to the affected
+`ns-window' object. All keyboard and mouse events go directly to the
+`ns-window' object associated with the event. The only exception to
+this rule is if the Command key is pressed when a key-down event
+occurs; in this case, every `ns-window' object has an opportunity to
+respond to the event. When a window object receives an `ns-window'
+object from `ns-app', it distributes it to the objects in its view
+hierarchy.
+
+`ns-application' is also responsible for dispatching certain Apple
+events received by the app. For example, macOS sends Apple events to
+your app at various times, such as when the app is launched or
+reopened. `ns-application' installs Apple event handlers to handle
+these events by sending a message to the appropriate object. You can
+also use the `ns-apple-event-manager' class to register your own Apple
+event handlers. The applicationWillFinishLaunching: method is
+generally the best place to do so. For more information on how events
+are handled and how you can modify the default behavior, including
+information on working with Apple events in scriptable apps, see
+``How Cocoa Applications Handle Apple Events'' in ``Cocoa Scripting Guide''.
+
+The `ns-application' class sets up @autorelease block during
+initialization and inside the event loop-specifically, within its
+initialization and run methods. Similarly, the
+methods `Coca.AppKit' adds to `ns-bundle' employ @autorelease blocks
+during the loading of nib files. These @autorelease blocks aren’t
+accessible outside the scope of the respective `ns-application' and
+`ns-bundle' methods. Typically, an app creates objects either while
+the event loop is running or by loading objects from nib files, so
+this lack of access usually isn’t a problem. However, if you do need
+to use Cocoa classes within the main() function itself
+(other than to load nib files or to instantiate `ns-application'),
+you should create an @autorelease block to contain the code using
+the classes."
+  "The delegate and notifications
+=====================================
+You can assign a delegate to your `ns-application' object. The delegate
+responds to certain messages on behalf of the object. Some of these
+messages, such as application:openFile:, ask the delegate to perform
+an action. Another message, applicationShouldTerminate:, lets the
+delegate determine whether the app should be allowed to quit. The
+`ns-application' class sends these messages directly to its delegate.
+
+`ns-application' also posts notifications to the app’s default
+notification center. Any object may register to receive one or more of
+the notifications posted by NSApplication by sending the message
+addObserver:selector:name:object: to the default notification center
+(an instance of the NSNotificationCenter class). The delegate of
+NSApplication is automatically registered to receive these
+notifications if it implements certain delegate methods. For example,
+NSApplication posts notifications when it’s about to be done launching
+the app and when it’s done launching the app
+(NSApplicationWillFinishLaunchingNotification and
+NSApplicationDidFinishLaunchingNotification). The delegate has an
+opportunity to respond to these notifications by implementing the
+methods applicationWillFinishLaunching: and
+applicationDidFinishLaunching:. If the delegate wants to be informed
+of both events, it implements both methods. If it needs to know only
+when the app is finished launching, it implements only
+applicationDidFinishLaunching:."
+  "System services
+======================
+`ns-application' interacts with the system services architecture to
+provide services to your app through the Services menu."
+  "Subclassing notes
+======================
+You rarely should find a real need to create a custom `ns-application'
+subclass. Unlike some object-oriented libraries, Cocoa doesn’t require
+you to subclass `ns-application' to customize app behavior. Instead it
+gives you many other ways to customize an app. This section discusses
+both some of the possible reasons to subclass `ns-application' and some
+of the reasons not to subclass `ns-application'.
+
+To use a custom subclass of `ns-application', send sharedApplication to
+your subclass rather than directly to `ns-application'. If you create
+your app in Xcode, you can accomplish this by setting your custom app
+class to be the principal class. In Xcode, double-click the app target
+in the Groups and Files list to open the Info window for the
+target. Then display the Properties pane of the window and replace
+“NSApplication” in the Principal Class field with the name of your
+custom class. The NSApplicationMain function sends sharedApplication
+to the principal class to obtain the global app instance (NSApp)—which
+in this case will be an instance of your custom subclass of
+`ns-application'.
+
+Important: Many AppKit classes rely on the `ns-application' class and may
+not work properly until this class is fully initialized. As a result,
+you should not, for example, attempt to invoke methods of other AppKit
+classes from an initialization method of an `ns-application' subclass.
+
+Methods to override:
+Generally, you subclass NSApplication to provide your own special
+responses to messages that are routinely sent to the global app object
+(NSApp). NSApplication doesn’t have primitive methods in the sense of
+methods that you must override in your subclass. Here are four methods
+that are possible candidates for overriding:
++ Override `run' if you want the app to manage the main event loop
+  differently than it does by default. (This a critical and complex
+  task, however, that you should only attempt with good reason).
++ Override `sendEvent:' if you want to change how events are dispatched
+  or perform some special event processing.
++ Override `requestUserAttention:' if you want to modify how your app
+  attracts the attention of the user (for example, offering an
+  alternative to the bouncing app icon in the Dock).
++ Override `targetForAction:' to substitute another object for the target
+  of an action message.
+
+Special considerations:
+The global app object uses @autorelease blocks in its run method; if
+you override this method, you’ll need to create your own @autorelease
+blocks.  Do not override sharedApplication. The default
+implementation, which is essential to app behavior, is too complex to
+duplicate on your own.
+
+Alternatives to subclassing:
+NSApplication defines numerous Delegation methods that offer
+opportunities for modifying specific aspects of app behavior. Instead
+of making a custom subclass of NSApplication, your app delegate may be
+able to implement one or more of these methods to accomplish your
+design goals. In general, a better design than subclassing
+NSApplication is to put the code that expresses your app’s special
+behavior into one or more custom objects called controllers. Methods
+defined in your controllers can be invoked from a small dispatcher
+object without being closely tied to the global app object."
+  "see https://developer.apple.com/documentation/appkit/nsapplication?language=objc")
+
+;; Getting the shared app object
+
+(declaim (type (or null ns-application) *ns-app*))
+(defparameter *ns-app* nil
+  "Global `ns-application' object after calling sharedApplication. ")
+
+(defmethod initialize-instance :after ((ns-app ns-application) &key)
+  "After [NSApplication sharedApplication], set global `*ns-app*'. "
+  (setf *ns-app* ns-app))
+
+(defun ns-app ()
+  "Returns the shared `ns-application'. "
+  (or *ns-app* (invoke 'ns-application "sharedApplication")))
+
+;; Managing the event loop
+
+(define-objc-const +ns-event-tracking-run-loop-mode+
+    ("NSEventTrackingRunLoopMode" :object appkit)
+  "The mode set when tracking events modally, such as a mouse-dragging loop.
+see https://developer.apple.com/documentation/appkit/nseventtrackingrunloopmode?language=objc")
+
+(define-objc-const +ns-modal-panel-run-loop-mode+
+    ("NSModalPanelRunLoopMode" :object appkit)
+  "The mode set when waiting for input from a modal panel, such as a save or open panel.
+see https://developer.apple.com/documentation/appkit/nsmodalpanelrunloopmode?language=objc")
+
+(defmethod next-event ((app ns-application)
+                       &key
+                         (mask  :any)
+                         (util  nil)
+                         (mode  +ns-default-run-loop-mode+)
+                         (deque t)
+                       &allow-other-keys)
+  "Returns the next event matching a given mask,
+or nil if no such event is found before a specified expiration date.
+
+Parameters:
++ MASK: `ns-event-mask'
++ UTIL: The expiration date for the current event request (default `ns-date-distant-future')
++ MODE: The run loop mode in which to run while looking for events.
+  could be:
+  + `+ns-default-run-loop-mode+'
+  + `+ns-run-loop-common-modes+'
+  + `+ns-event-tracking-run-loop-mode+'
+  + `+ns-modal-panel-run-loop-mode+'
+  + `+ns-connnection-reply-mode+'
++ DEQUEUE: Specify `t' (default) if you want the event removed from the queue.
+
+Dev Note:
+Invokes ObjC method nextEventMatchingMask:untilDate:inMode:dequeue:
+
+see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(matching:until:inmode:dequeue:)?language=objc"
+  (declare (type (or list ns-event-mask) mask)
+           (type (or null ns-date)       util)
+           (type (or ns-string string)   mode))
+  (invoke app
+          "nextEventMatchingMask:untilDate:inMode:dequeue:"
+          (apply #'ns-event-mask (coca.objc::listfy mask))
+          (or util (ns-date-distant-future))
+          mode
+          (and deque t)))
+
+(defmethod run ((app ns-application))
+  "Starts the main event loop. "
+  (invoke app "run"))
+
+(defmethod finish-launching ((app ns-application))
+  "Activates the app,
+opens any files specified by the `ns-open' user default,
+and unhighlights the app’s icon.
+
+Parameter:
++ APP: `ns-application'
+
+The run method calls this method before it starts the event loop.
+When this method begins, it posts an
+NSApplicationWillFinishLaunchingNotification to the default
+notification center. If you override finishLaunching, the subclass
+method should invoke the superclass method.
+"
+  (invoke app "finishLaunching"))
+
+(defmethod send-event ((app ns-application) (event ns-event))
+  "Dispatches an event to other objects.
+
+Parameter:
++ APP: `ns-application'
++ EVENT: `ns-event' to dispatch
+
+You rarely invoke sendEvent: directly, although you might want to
+override this method to perform some action on every event. sendEvent:
+messages are sent from the main event loop (the run
+method). sendEvent: is the method that dispatches events to the
+appropriate responders—NSApp handles app events, the NSWindow object
+indicated in the event record handles window-related events, and mouse
+and key events are forwarded to the appropriate NSWindow object for
+further dispatching."
+  (invoke app "sendEvent:" event))
+
+;; Positing actions
+
+;; Terminating the app
+
+;; Activating and deactivating the app
+
+;; Managing relaunch on login
+
+;; Managing remote notifications
+
+;; Managing the app's apperance
+
+;; Managing windows, panels, and menus
+
+;; - App Windows
+
+(defmethod update-windows ((app ns-application))
+  "Sends an update message to each onscreen window. "
+  (invoke app "updateWindows"))
+
+;; User interface layout direction
+
+;; Accessing the dock tile
+
+;; Customizing the Touch Bar
+
+;; Managing user attension requests
+
+;; Providing help information
+
+;; Providing services
+
+;; Determining access to the keyboard
+
+;; Hiding apps
+
+;; Managing threads
+
+;; Logging exceptions
+
+;; Configuring the activation policy
+
+;; Scripting your app
+
+;; Notifications
+
+;; Loading Cocoa bundles
+
+;; Displaying high dynamic resolution (HDR) content
+
+(doc-objc-class "NSRunningApplication"  ; ns-running-application
+  "An object that can manipulate and provide information for a single instance of an app."
+  "see https://developer.apple.com/documentation/appkit/nsrunningapplication?language=objc")
+
+;;; Environment
+
+(doc-objc-class "NSWorkspace"           ; ns-workspace
+  "A workspace that can launch other apps and perform a variety of file-handling services."
+  "There is one shared NSWorkspace object per app.
+You use the class method sharedWorkspace to access it.
+For example, the following statement uses an `ns-workspace' object to request that
+a file be opened in the TextEdit app:
+
+    (invoke (invoke \"NSWorkspace\" \"sharedWorkspace\") \"openFile:withApplication:\" file application)
+
+You can use the workspace object to:
++ Open, manipulate, and get information about files and devices.
++ Track changes to the file system, devices, and the user database.
++ Get and set Finder information for files.
++ Launch apps."
+  "see https://developer.apple.com/documentation/appkit/nsworkspace?language=objc")
+
+(doc-objc-class "NSWorkspaceOpenConfiguration" ; ns-workspace-open-configuration
+  "The configuration options for opening URLs or launching apps. "
+  "Create an `ns-workspace-open-configuration' object before launching an app
+or opening a URL using the shared `ns-workspace' object.
+Use the properties of this object to customize the behavior of the launched app
+or the handling of the URLs.
+
+For example, you might tell the app to hide itself immediately after launch."
+  "see https://developer.apple.com/documentation/appkit/nsworkspace/openconfiguration?language=objc")
+
+;;; Handoff
+
+(doc-objc-class "NSUserActivity"        ; ns-user-activity
+  "A representation of the state of your app at a moment in time."
+  "see https://developer.apple.com/documentation/Foundation/NSUserActivity?language=objc")
+
+;;; App Services
+
+(doc-objc-class "NSSharingService"      ; ns-sharing-service
+  "An object that facilitates the sharing of content with social media services, or with apps like Mail or Safari."
+  "see https://developer.apple.com/documentation/appkit/nssharingservice?language=objc")
+
+(doc-objc-class "NSToolbarItem"         ; ns-toolbar-item
+  "A single item that appears in a window’s toolbar."
+  "see https://developer.apple.com/documentation/appkit/nstoolbaritem?language=objc")
+
+(doc-objc-class "NSSharingServicePickerToolbarItem" ; ns-sharing-service-picker-toolbar-item
+  "A toolbar item that displays the macOS share sheet."
+  "see https://developer.apple.com/documentation/appkit/nssharingservicepickertoolbaritem?language=objc")
+
+;;; App Help
+
+(doc-objc-class "NSHelpManager"         ; ns-help-manager
+  "An object for displaying online help for an app."
+  "see https://developer.apple.com/documentation/appkit/nshelpmanager?language=objc")
+
+;;; Errors
+
+;;; App Structure
 
 ;;;; appkit.lisp ends here

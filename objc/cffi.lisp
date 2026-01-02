@@ -412,6 +412,51 @@ see https://developer.apple.com/documentation/objectivec/property_getattributes(
   (property  :pointer))
 
 
+;;; Wrapper
+
+(defcfun (coca_objc_msgSend "coca_objc_msgSend") :pointer
+  "id coca_objc_msgSend (ffi_cif *cif, IMP imp, void* retval, void** args)
+
+Invoke ObjC method IMP via CIF, return NSException pointer if failed,
+otherwise, return NULL pointer.
+
+Parameters:
++ CIF: ffi_cif
++ IMP: ObjC method IMP
++ RETVAL: foreign memory as placeholder of return value
++ ARGS: foreign array of pointers to funcall arguments values
+"
+  (cif    :pointer)
+  (imp    :pointer)
+  (retval :pointer)
+  (args   :pointer))
+
+(defcfun (coca_alloc_ffi_cif "coca_alloc_ffi_cif") :pointer
+  "ffi_cif *coca_alloc_ffi_cif (size_t len, ffi_type* ret, ffi_type** atypes)
+
+Allocate ffi_cif for ObjC method calling.
+
+Parameters:
++ LEN: number of ATYPES
++ RET: ffi_type
++ ATYPES: pointer to foreign array of ffi_type
+"
+  (len    :size)
+  (ret    :pointer)
+  (atypes :pointer))
+
+(defcfun (coca_alloc_struct_ffi_type "coca_alloc_struct_ffi_type") :pointer
+  "ffi_type *coca_alloc_struct_ffi_type(ffi_type** elements)
+
+Allocate ffi_type for struct of elements.
+
+Parameter:
++ ELEMENTS: pointer to foreign array of ffi_type,
+  the last element should be NULL
+"
+  (elements :pointer))
+
+
 ;;; Highlevel
 
 (defclass objc-pointer ()
