@@ -9,6 +9,7 @@
                :coca/frameworks)
   :components ((:file "package")))
 
+
 (defsystem #:coca/objc
   :author ("凉凉")
   :license "LGPL"
@@ -26,13 +27,14 @@ as a reimplementation on portable CFFI. But the API may not exactly same as
 LispWorks' API."
   :depends-on (:str
                :cffi
-               :cffi-libffi
                :trivial-garbage
                :closer-mop
                :trivial-main-thread)
-  :defsystem-depends-on (:cffi-grovel)
+  :defsystem-depends-on (:coca-grovel)
   :pathname "objc"
+  :serial t
   :components
+<<<<<<< HEAD
   ((:file        "package"
     :description "Package definition of coca.objc")
    (:file        "utils"
@@ -205,7 +207,20 @@ The instance methods and class methods are seperately stored under `objc-class'
     :description "Define ObjC global variable as lisp const. "
     :long-description
     "Use `define-objc-const' to define ObjC global const. ")))
+=======
+  ((:file        "package")
+   (:objc-file   "wrapper")
+   (:file        "utils")
+   (:file        "cffi")
+   (:file        "sel")
+   (:file        "objc-class")
+   (:file        "objc-object")
+   (:file        "encoding")
+   (:file        "method")
+   (:file        "sugar")))
+>>>>>>> objc_exception
 
+
 (defsystem #:coca/frameworks
   :author ("凉凉")
   :license "LGPL"

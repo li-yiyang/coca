@@ -251,3 +251,4 @@ These API is not likely to be modified.
     + `standard-objc-object' like: test only instance method
   + METHOD: `sel' or things can be `coerce-to-selector'
   #+end_example
+

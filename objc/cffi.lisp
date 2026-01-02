@@ -411,6 +411,37 @@ Returns the attribute string of a property.
 see https://developer.apple.com/documentation/objectivec/property_getattributes(_:)?language=objc"
   (property  :pointer))
 
+<<<<<<< HEAD
+=======
+
+;;; Wrapper
+;; see coca/objc;wrapper.lisp for details
+
+(defcfun (set_coca_lisp_exception_handler "set_coca_lisp_exception_handler") :void
+  "Set ObjC NSException handler.
+
+Dev Note:
+should be only set once. "
+  (callback :pointer))
+
+(defcfun (coca_objc_msgSend "coca_objc_msgSend") :pointer
+  "A thin wrapper on ffi_call with NSException captured in @try..@catch. "
+  (ffi_cif :pointer)
+  (imp     :pointer)
+  (retval  :pointer)
+  (args    :pointer))
+
+(defcfun (coca_alloc_ffi_cif "coca_alloc_ffi_cif") :pointer
+  "Return a pointer to ffi_cif. "
+  (len     :size)
+  (ret     :pointer)
+  (atypes  :pointer))
+
+(defcfun (coca_alloc_struct_ffi_type "coca_alloc_struct_ffi_type") :pointer
+  "Return a pointer to ffi_type. "
+  (elements :pointer))
+
+>>>>>>> objc_exception
 
 ;;; Highlevel
 
@@ -440,6 +471,9 @@ and return the instance of `objc-pointer'. "))
 (defgeneric objc-object-pointer (objc-pointer)
   (:documentation
    "Returns the ObjC foreign pointer associated with a given Lisp object.")
+  (:method ((null null))
+    "Return NULL as nil. "
+    (null-pointer))
   (:method (foreign-pointer)
     "Return foreign-pointer directly. "
     (declare (type foreign-pointer foreign-pointer))

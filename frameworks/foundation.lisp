@@ -1486,7 +1486,8 @@ and application-specific information."
 ;;; Exceptions
 
 (doc-objc-class "NSException"           ; ns-exception
-  "An object that represents a special condition that interrupts the normal flow of program execution. "
+  "An object that represents a special condition that interrupts the
+normal flow of program execution."
   "see https://developer.apple.com/documentation/foundation/nsexception?language=objc")
 
 ;;; Diagonstics and Debugging
