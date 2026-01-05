@@ -32,19 +32,21 @@ LispWorks' API."
                :trivial-main-thread)
   :defsystem-depends-on (:coca-grovel)
   :pathname "objc"
-  :serial t
   :components
   ((:file        "package")
    ;; TODO: wrapper compile result should be cached
-   (:objc-file   "wrapper")
-   (:file        "utils")
-   (:file        "cffi")
-   (:file        "sel")
-   (:file        "objc-class")
-   (:file        "objc-object")
-   (:file        "encoding")
-   (:file        "method")
-   (:file        "sugar")))
+   (:objc-file   "wrapper"     :depends-on ("package"))
+   (:file        "utils"       :depends-on ("package"))
+   (:file        "cffi"        :depends-on ("wrapper"))
+   (:file        "sel"         :depends-on ("cffi"))
+   (:file        "objc-class"  :depends-on ("cffi"))
+   (:file        "objc-object" :depends-on ("cffi"))
+   (:file        "encoding"    :depends-on ("sel"
+                                            "objc-class"
+                                            "objc-object"))
+   (:file        "method"      :depends-on ("encoding"))
+   (:file        "sugar"       :depends-on ("encoding"
+                                            "method"))))
 
 
 (defsystem #:coca/frameworks
