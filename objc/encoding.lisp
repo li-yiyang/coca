@@ -95,6 +95,30 @@ Parameters:
     (svref struct offset)))
 
 
+;;; objc-anonymous-struct
+
+(defun objc-anonymous-struct (types)
+  "Generate anonymous struct like {?=...}. "
+  (let* ((encoding (format nil "{?=~A}" (encode-objc-type-encoding types)))
+         (name     (with-cached (encoding *objc-struct-names*)
+                     (let ((name     (intern encoding))
+                           (slots    (loop :repeat (length types)
+                                           :for i :from 0
+                                           :collect (intern (format nil "S~D" i))))
+                           (coerce-p (loop :repeat (length types)
+                                           :collect nil)))
+                       (eval `(defstruct  ,name ,@slots))
+                       (eval `(defcstruct ,name
+                                ,@(loop :for slot :in slots
+                                        :for type :in types
+                                        :collect (list slot
+                                                       (objc-encoding-cffi-type
+                                                        type)))))
+                       (regist-objc-struct name encoding slots types coerce-p)
+                       name))))
+    (objc-struct name)))
+
+
 ;;; objc-encoding
 
 (defparameter *objc-encoding-aliases* (make-hash-table)
@@ -123,7 +147,7 @@ VAL: `objc-basic-encoding'. ")
     @                        :object
     #                        :class
     :                        :sel
-    [array type]             (:array encoding)
+    [len type]               (:array len encoding)
     {NAME=type...}           (:struct NAME)
     (NAME=type...)           (:union  NAME)
     bNUM                     (:bits   NUM)
@@ -201,8 +225,14 @@ Return initial type (unevaled). "
       :long-long :unsigned-long-long)
      0)
     (:bits   0)
-    (:struct `(,(intern (str:concat "MAKE-" (symbol-name (second encoding)))
-                        (symbol-package (second encoding)))))))
+    (:array
+     `(make-array
+       ,(second encoding)
+       :element-type  ',(objc-encoding-lisp-type (third encoding))
+       :initial-value ,(objc-encoding-init-value (third encoding))))
+    (:struct
+     `(,(intern (str:concat "MAKE-" (symbol-name (second encoding)))
+                (symbol-package (second encoding)))))))
 
 (defun objc-encoding-cffi-type (encoding)
   "CFFI type for ObjC type encoding TYPE.
@@ -213,12 +243,13 @@ Return CFFI type. "
                ((:unknown :class :sel :object :pointer) :pointer)
                (otherwise encoding)))
     (list    (ecase (car encoding)
-               (:struct  encoding)))))
+               (:struct  encoding)
+               (:array   (error "Failed for :array"))))))
 
 (defun objc-encoding-lisp-type (type)
   "Lisp type for ObjC type encoding TYPE.
 Return lisp type declaration. "
-  (declare (type objc-basic-encoding type))
+  (declare (type (or objc-basic-encoding symbol) type))
   (etypecase type
     (keyword (case type
                ((:char :unsigned-char)                  'character)
@@ -242,6 +273,8 @@ Return lisp type declaration. "
     (list   (ecase (first type)
               (:struct  (and (objc-struct (second type))
                              (second type)))
+              (:array   `(simple-array ,(objc-encoding-lisp-type (third type))
+                                       ,(second type)))
               (:pointer 'foreign-pointer)))))
 
 
@@ -349,14 +382,14 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCR
                  ;;    ^
                  ;;    pos
                  (multiple-value-bind (type pos)
-                     (parse-type (1+ pos))
+                     (parse-type pos)
                    ;; [12^f]
                    ;;      ^
                    ;;      pos
-                   (assert (char= (aref encoding (1+ pos)) #\]))
+                   (assert (char= (aref encoding pos) #\]))
                    (values (list :array len type)
-                           (+ 2 pos)))))
-             (parse-name    (pos) ; (rx (not #\=))
+                           (1+ pos)))))
+             (parse-name    (pos) ; (rx (not (or #\= #\} #\))))
                (loop :for i :from pos :below len
                      :for chr := (aref encoding i)
                      :until (member chr '(#\= #\} #\)))
@@ -368,13 +401,24 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCR
                ;; (assert (char= (svref pos pos) #\{))
                (multiple-value-bind (name pos)
                    (parse-name (1+ pos))
-                 (let ((name (objc-struct-lisp-name (objc-struct name))))
-                   (loop :with (type pos*) := (list nil pos)
-                         :while (char/= (aref encoding pos*) #\})
-                         :do (multiple-value-setq (type pos*)
-                               (parse-type pos*))
-                         :finally (return (values (list :struct name)
-                                                  (1+ pos*)))))))
+                 (if (string= name "?") ;; anonymous struct
+                     (loop :with (type pos*) := (list nil pos)
+                           :while (char/= (aref encoding pos*) #\})
+                           :do (multiple-value-setq (type pos*)
+                                 (parse-type pos*))
+                           :collect type :into types
+                           :finally (return
+                                      (values (list :struct
+                                                    (objc-struct-lisp-name
+                                                     (objc-anonymous-struct types)))
+                                              (1+ pos*))))
+                     (let ((name (objc-struct-lisp-name (objc-struct name))))
+                       (loop :with (type pos*) := (list nil pos)
+                             :while (char/= (aref encoding pos*) #\})
+                             :do (multiple-value-setq (type pos*)
+                                   (parse-type pos*))
+                             :finally (return (values (list :struct name)
+                                                      (1+ pos*))))))))
              (parse-union   (pos) ; (name=type...) => (:union  name (type...))
                ;; (name=type...)
                ;; ^
@@ -399,7 +443,8 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCR
                ;; (assert (char= (svref pos pos) #\^))
                (multiple-value-bind (type pos)
                    (parse-type (1+ pos))
-                 (values (list :pointer type) pos)))
+                 (declare (ignore type))
+                 (values :pointer pos)))
              (parse-bits    (pos) ; b<num>         => (:bits num)
                ;; b8
                ;; ^

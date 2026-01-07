@@ -67,6 +67,49 @@ See https://developer.apple.com/documentation/objectivec/objc_getclasslist(_:_:)
   (buffer       :pointer)
   (buffer-count :int))
 
+(defcfun (objc_allocateClassPair "objc_allocateClassPair") :pointer
+  "extern Class objc_allocateClassPair(Class superclass, const char * name, size_t extraBytes);
+
+Creates a new class and metaclass.
+
+Parameters:
++ SUPERCLASS:
+  The class to use as the new class’s superclass,
+  or Nil to create a new root class.
++ NAME:
+  The string to use as the new class’s name. The string will be copied.
++ extraBytes:
+  The number of bytes to allocate for indexed ivars at the end of the
+  class and metaclass objects. This should usually be 0.
+
+Discussion:
+You can get a pointer to the new metaclass by calling
+object_getClass(newClass).
+
+To create a new class, start by calling objc_allocateClassPair. Then
+set the class’s attributes with functions like class_addMethod and
+class_addIvar. When you are done building the class, call
+objc_registerClassPair. The new class is now ready for use.
+
+Instance methods and instance variables should be added to the class
+itself. Class methods should be added to the metaclass.
+
+See: https://developer.apple.com/documentation/objectivec/objc_allocateclasspair(_:_:_:)?language=objc"
+  (superclass :pointer)
+  (name       :string)
+  (extrabytes :size))
+
+(defcfun (objc_registerClassPair "objc_registerClassPair") :void
+  "extern void objc_registerClassPair(Class cls);
+
+Registers a class that was allocated using objc_allocateClassPair.
+
+Parameter:
++ CLASS: class want to register
+
+See https://developer.apple.com/documentation/objectivec/objc_registerclasspair(_:)?language=objc"
+  (class :pointer))
+
 (defcfun (objc_getProtocol "objc_getProtocol") :pointer
   "extern Protocol * objc_getProtocol(const char * name);
 
@@ -199,6 +242,29 @@ See: https://developer.apple.com/documentation/objectivec/class_addmethod(_:_:_:
   (sel   :pointer)
   (imp   :pointer)
   (types :string))
+
+(defcfun (class_addIvar "class_addIvar") :bool
+  "extern BOOL class_addIvar(Class cls, const char * name, size_t size, uint8_t alignment, const char * types);
+
+Adds a new instance variable to a class.
+
+Return YES if the instance variable was added successfully, otherwise
+NO (for example, the class already contains an instance variable with
+that name).
+
+Parameters:
++ CLASS: pointer of ObjC class
++ NAME: string of ObjC ivar name
++ SIZE: sizeof(type)
++ ALIGNMENT: usually log2(sizeof(type))
++ TYPES: type encoding
+
+See https://developer.apple.com/documentation/objectivec/class_addivar(_:_:_:_:_:)?language=objc"
+  (class     :pointer)
+  (name      :string)
+  (size      :size)
+  (alignment :uint8)
+  (types     :string))
 
 (defcfun (class_replaceMethod "class_replaceMethod") :pointer
   "extern IMP class_replaceMethod(Class cls, SEL name, IMP imp, const char * types);
@@ -481,6 +547,12 @@ and return the instance of `objc-pointer'. "))
     (format stream "~S ~X"
             (class-name (class-of objc))
             (pointer-address (the foreign-pointer (objc-object-pointer objc))))))
+
+(defmethod initialize-instance :after ((pointer objc-pointer) &key)
+  "Check if `objc-object-pointer' is initialized for POINTER. "
+  (unless (slot-boundp pointer 'objc-object-pointer)
+    (error "Failed to initialize instance of ~S, unbounded OBJC-OBJECT-POINTER. "
+           (class-name (class-of pointer)))))
 
 (defgeneric objc-object-pointer (objc-pointer)
   (:documentation

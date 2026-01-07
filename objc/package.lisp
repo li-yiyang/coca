@@ -14,6 +14,7 @@
    #:objc-class
    #:coerce-to-objc-class
    #:doc-objc-class
+   #:ignore-objc-properties
 
    ;; ObjC sel
    #:sel

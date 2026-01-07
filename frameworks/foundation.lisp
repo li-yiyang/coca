@@ -387,9 +387,35 @@ see https://developer.apple.com/documentation/ObjectiveC/NSInteger?language=objc
   "Describes an unsigned integer.
 see https://developer.apple.com/documentation/objectivec/nsuinteger?language=objc")
 
-(doc-objc-class "NSNumber"              ; ns-number
-  "An object wrapper for primitive scalar numeric values."
-  "see https://developer.apple.com/documentation/foundation/nsnumber?language=objc")
+(define-objc-struct (ca-transform-3d "CATransform3D")
+  (m11 :double)
+  (m12 :double)
+  (m13 :double)
+  (m14 :double)
+  (m21 :double)
+  (m22 :double)
+  (m23 :double)
+  (m24 :double)
+  (m31 :double)
+  (m32 :double)
+  (m33 :double)
+  (m34 :double)
+  (m41 :double)
+  (m42 :double)
+  (m43 :double)
+  (m44 :double))
+
+(define-objc-struct (cg-affine-transform "CGAffineTransform")
+  (a  :double)
+  (b  :double)
+  (c  :double)
+  (d  :double)
+  (tx :double)
+  (ty :double))
+
+(define-objc-struct (ns-range "_NSRange")
+  (location :unsigned-long)
+  (length   :unsigned-long))
 
 (doc-objc-class "NSValue"               ; ns-value
   "A simple container for a single C or Objective-C data item."
@@ -730,17 +756,10 @@ instances.
   (w :double :type real)
   (h :double :type real))
 
-(define-objc-struct (cg-affine-transform "CGAffineTransform")
-  (a  :double)
-  (b  :double)
-  (c  :double)
-  (d  :double)
-  (tx :double)
-  (ty :double))
-
 (define-objc-struct (cps-process-serial-number "CPSProcessSerNum")
   (hi :unsigned-int)
   (lo :unsigned-int))
+
 
 (doc-objc-class "NSAffineTransform"     ; ns-affine-transform
   "A graphics coordinate transformation."
@@ -751,9 +770,6 @@ instances.
 ;; A structure used to describe a portion of a series,
 ;; such as characters in a string or objects in an array.
 ;; see https://developer.apple.com/documentation/foundation/nsrange-c.struct?language=objc
-(define-objc-struct (ns-range "_NSRange")
-  (location :unsigned-long)
-  (length   :unsigned-long))
 
 
 ;;;; Strings and Text
