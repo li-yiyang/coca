@@ -1034,6 +1034,7 @@ see `ns-window-init'. ")
                                  (style   *ns-window-style*)
                                  (backing *ns-backing-store*)
                                  (defer   t)
+                                 (class   'ns-window)
                                  screen
                        &allow-other-keys)
   "Initializes the window with the specified values.
@@ -1079,15 +1080,16 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
            (type (satisfies ns-window-style-mask-p)  style)
            (type (satisfies ns-backing-store-type-p) backing)
            (type (or null ns-screen)                 screen))
+  (assert (subtypep class 'ns-window))
   (if screen
-      (invoke (alloc 'ns-window)
+      (invoke (alloc class)
               "initWithContentRect:styleMask:backing:defer:screen:"
               ns-rect
               (ns-window-style-mask style)
               (ns-backing-store-type backing)
               (and defer t)
               screen)
-      (invoke (alloc 'ns-window)
+      (invoke (alloc class)
               "initWithContentRect:styleMask:backing:defer:"
               ns-rect
               (ns-window-style-mask style)

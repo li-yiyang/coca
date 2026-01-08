@@ -5,6 +5,7 @@
 
 ;;; objc-encoding
 
+(trivial-indent:define-indentation define-objc-typedef (4 4 &body))
 (defmacro define-objc-typedef (name objc-encoding &body body)
   "Define ObjC type alias of NAME for OBJC-ENCODING.
 
@@ -43,6 +44,7 @@ Parameters:
        (set-objc-encoding-alias ',name ',objc-encoding)
        ',name)))
 
+(trivial-indent:define-indentation define-objc-struct (4 &body))
 (defmacro define-objc-struct ((lisp-name objc-name) &body slot-definitions)
   "Define ObjC struct.
 
@@ -233,6 +235,7 @@ Syntax:
              ((= ,cnts 1)   (car ,flags))
              (t             ,flags)))))
 
+(trivial-indent:define-indentation define-objc-const (4 &lambda &body))
 (defmacro define-objc-const (name (objc-name objc-encoding &optional (library :default))
                              &optional documentation
                              &aux (encoding (as-objc-encoding objc-encoding)))
@@ -286,7 +289,5 @@ Parameters:
             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
                           ,(objc-encoding-cffi-type encoding))
             ,documentation)))))
-
-;; (trivial-indent:define-indentation define-objc-const (2 4 &body))
 
 ;;;; sugar.lisp ends here

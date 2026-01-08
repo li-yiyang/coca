@@ -198,7 +198,10 @@ This is equal to generating below C code:
             :for arg  := (gensym name)
             :for sym  := (gensym (str:concat "FOREIGN-" name))
             :for hint := (case (atomize type)
-                           (:object   '(or standard-objc-object objc-class null))
+                           (:object   `(or standard-objc-object
+                                           objc-class
+                                           foreign-pointer
+                                           null))
                            (:struct   `(or ,(objc-encoding-lisp-type type)
                                            simple-vector))
                            (otherwise (objc-encoding-lisp-type  type)))
@@ -439,5 +442,80 @@ Use with caution. "
               :do (setf sel (str:concat sel (str:pascal-case key) ":"))
                   (push arg args)
               :finally (return `(invoke ,object ,sel ,@(reverse args)))))))
+
+
+;;; define-objc-method
+
+(defun %define-objc-method (class sel callback objc-type)
+  "Define ObjC CLASS method of SEL with CALLBACK and OBJC-TYPE encoding.
+
+Parameters:
++ CLASS: `objc-class'
++ SEL: `sel'
++ CALLBACK: ObjC method callback name symbol
++ OBJC-TYPE: ObjC method type encoding string
+"
+  (declare (type objc-class class)
+           (type sel        sel)
+           (type symbol     callback)
+           (type string     objc-type))
+  (class_replaceMethod (objc-object-pointer class)
+                       (objc-object-pointer sel)
+                       (get-callback callback)
+                       objc-type)
+  (with-slots (objc-instance-methods) class
+    (setf (gethash sel objc-instance-methods) nil)))
+
+(trivial-indent:define-indentation define-objc-method (4 4 &lambda &body))
+(defmacro define-objc-method ((class method &optional name) ret lambda-list &body body)
+  "Define ObjC instance METHOD for CLASS.
+
+Syntax:
+
+    (define-objc-method (CLASS METHOD &optional NAME) RET
+        ( { (VAR OBJC-ENCODING) }* )
+      &body)
+
++ CLASS: symbol or string of ObjC class
++ METHOD: string of method SEL name
++ NAME: optional callback name
++ RET: ObjC type encoding
++ LAMBDA-LIST:
+  VAR: symbol of argument
+  OBJC-ENCODING: ObjC type encoding for argument
++ BODY: method body
+
+Example:
+
+    (define-objc-method (ns-window \"foo\") :void ()
+      foo)
+"
+  (declare (type (or symbol string) class)
+           (type string method)
+           (type symbol name)
+           (type objc-encoding ret))
+  (let ((class (coerce-to-objc-class class))
+        (name  (or name
+                   (intern (format nil "%~A-~A" (objc-class-name class) method)))))
+    (declare (type symbol name))
+    `(progn
+       (defcallback ,name ,(objc-encoding-cffi-type ret)
+           ,(loop :for (var enc) :in lambda-list
+                  :collect (list var (objc-encoding-cffi-type enc)))
+         (let ,(loop :for (var enc) :in lambda-list
+                     :for type := (atomize enc)
+                     :if (eql type :object)
+                       :collect `(,var (coerce-to-objc-object          ,var))
+                     :if (eql type :class)
+                       :collect `(,var (pointer-to-objc-class-nullable ,var))
+                     :if (eql type :sel)
+                       :collect `(,var (coerce-to-selector             ,var)))
+           ,@body))
+       (%define-objc-method ,class
+                            (coerce-to-selector ,method)
+                            ',name
+                            (encode-objc-type-encoding
+                             ',(cons ret (mapcar #'second lambda-list))))
+       ',name)))
 
 ;;;; method.lisp ends here

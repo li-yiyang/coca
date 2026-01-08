@@ -27,6 +27,7 @@ as a reimplementation on portable CFFI. But the API may not exactly same as
 LispWorks' API."
   :depends-on (:str
                :cffi
+               :trivial-indent
                :trivial-garbage
                :closer-mop
                :trivial-main-thread)

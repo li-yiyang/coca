@@ -548,11 +548,11 @@ and return the instance of `objc-pointer'. "))
             (class-name (class-of objc))
             (pointer-address (the foreign-pointer (objc-object-pointer objc))))))
 
-(defmethod initialize-instance :after ((pointer objc-pointer) &key)
-  "Check if `objc-object-pointer' is initialized for POINTER. "
-  (unless (slot-boundp pointer 'objc-object-pointer)
-    (error "Failed to initialize instance of ~S, unbounded OBJC-OBJECT-POINTER. "
-           (class-name (class-of pointer)))))
+;; (defmethod initialize-instance :after ((pointer objc-pointer) &key)
+;;   "Check if `objc-object-pointer' is initialized for POINTER. "
+;;   (unless (slot-boundp pointer 'objc-object-pointer)
+;;     (error "Failed to initialize instance of ~S, unbounded OBJC-OBJECT-POINTER. "
+;;            (class-name (class-of pointer)))))
 
 (defgeneric objc-object-pointer (objc-pointer)
   (:documentation

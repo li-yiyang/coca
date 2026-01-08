@@ -298,7 +298,7 @@ Return form should be able to use as :direct-slots. "
                :if (and
                     (not (gethash name super-slots))
                     (not (gethash name *objc-property-blacklist*))
-                    ;; if failed to parse encoding, ignore them... 
+                    ;; if failed to parse encoding, ignore them...
                     (ignore-errors
                      (multiple-value-bind
                            (lisp-name objc-name encoding reader writer)
@@ -494,11 +494,11 @@ Parameters:
 
 (defmethod initialize-instance :after ((class objc-class) &key)
   "If `objc-object-pointer' of CLASS is not bound, regist it. "
-  (unless (objc-object-pointer class)
+  (unless (slot-boundp class 'objc-object-pointer)
     (let* ((objc-name  (objc-class-name class))
            ;; select only ObjC property slot
            (dslots     (mapcar #'objc-property-slot-p
-                               (c2mop:class-direct-superclasses class)))
+                               (c2mop:class-direct-slots class)))
            (objc-super (remove-if-not #'objc-class-p
                                       (c2mop:class-direct-superclasses class))))
       (when (< 1 (length objc-super))
