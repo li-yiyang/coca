@@ -494,9 +494,10 @@ Example:
            (type string method)
            (type symbol name)
            (type objc-encoding ret))
-  (let ((class (coerce-to-objc-class class))
-        (name  (or name
-                   (intern (format nil "%~A-~A" (objc-class-name class) method)))))
+  (let* ((class (coerce-to-objc-class class))
+         (name  (or name (intern (format nil "%~A-~A"
+                                         (objc-class-name class)
+                                         method)))))
     (declare (type symbol name))
     `(progn
        (defcallback ,name ,(objc-encoding-cffi-type ret)

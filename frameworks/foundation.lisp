@@ -349,20 +349,25 @@ https://developer.apple.com/documentation/foundation?language=objc")
 
 ;;; Object Basics
 
-(doc-objc-class "NSObject"              ; ns-object
-  (("description" :reader description
-                  :after  ns-string-to-string
-                  :documentation
-                  "Returns a string that represents the contents of the receiving class.
+(define-objc-class "NSObject" ()              ; ns-object
+  (("description"
+    :reader description
+    :after  ns-string-to-string
+    :documentation
+    "Returns a string that represents the contents of the receiving class.
+
 Dev Note:
 Internally this is equal to calling (ns-string-to-string (invoke ns-object \"description\")).
 See https://developer.apple.com/documentation/objectivec/nsobject-swift.class/description()?language=objc"))
-  "The root class of most Objective-C class hierarchies,
+  (:documentation
+   "The root class of most Objective-C class hierarchies,
 from which subclasses inherit a basic interface to the runtime system and
-the ability to behave as Objective-C objects."
-  "Use `description' to print readable inspection string for `ns-object'.
-See also `print-object' implementation for `ns-object'. "
-  "See https://developer.apple.com/documentation/ObjectiveC/NSObject-swift.class?language=objc. ")
+the ability to behave as Objective-C objects.
+
+Use `description' to print readable inspection string for `ns-object'.
+See also `print-object' implementation for `ns-object'.
+
+See https://developer.apple.com/documentation/ObjectiveC/NSObject-swift.class?language=objc. "))
 
 (defun copy (ns-object)
   "Returns the object returned by copy(with:).
@@ -417,13 +422,19 @@ see https://developer.apple.com/documentation/objectivec/nsuinteger?language=obj
   (location :unsigned-long)
   (length   :unsigned-long))
 
-(doc-objc-class "NSValue"               ; ns-value
-  "A simple container for a single C or Objective-C data item."
-  "see https://developer.apple.com/documentation/foundation/nsvalue?language=objc")
+(define-objc-class "NSValue" ()               ; ns-value
+  ()
+  (:documentation
+   "A simple container for a single C or Objective-C data item.
 
-(doc-objc-class "NSValueTransformer"    ; ns-value-transformer
-  "An abstract class used to transform values from one representation to another."
-  "see https://developer.apple.com/documentation/foundation/valuetransformer?language=objc")
+see https://developer.apple.com/documentation/foundation/nsvalue?language=objc"))
+
+(define-objc-class "NSValueTransformer" ()    ; ns-value-transformer
+  ()
+  (:documentation
+   "An abstract class used to transform values from one representation to another.
+
+see https://developer.apple.com/documentation/foundation/valuetransformer?language=objc"))
 
 ;;; Swift Support
 
