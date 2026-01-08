@@ -488,7 +488,7 @@ Syntax:
 Example:
 
     (define-objc-method (ns-window \"foo\") :void ()
-      foo)
+      (foo))
 "
   (declare (type (or symbol string) class)
            (type string method)

@@ -357,3 +357,33 @@ LispWorks' API.
     + `standard-objc-object' like: test only instance method
   + METHOD: `sel' or things can be `coerce-to-selector'
   #+end_example
++ =define-objc-method=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-method) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC instance METHOD for CLASS.
+
+  Syntax:
+
+      (define-objc-method (CLASS METHOD &optional NAME) RET
+          ( { (VAR OBJC-ENCODING) }* )
+        &body)
+
+  + CLASS: symbol or string of ObjC class
+  + METHOD: string of method SEL name
+  + NAME: optional callback name
+  + RET: ObjC type encoding
+  + LAMBDA-LIST:
+    VAR: symbol of argument
+    OBJC-ENCODING: ObjC type encoding for argument
+  + BODY: method body
+
+  Example:
+
+      (define-objc-method (ns-window "foo") :void ()
+        (foo))
+  #+end_example
