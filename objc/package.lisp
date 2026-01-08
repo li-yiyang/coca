@@ -13,8 +13,6 @@
    ;; ObjC class
    #:objc-class
    #:coerce-to-objc-class
-   #:doc-objc-class
-   #:ignore-objc-properties
    #:define-objc-class
 
    ;; ObjC sel

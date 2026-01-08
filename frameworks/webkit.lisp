@@ -51,9 +51,11 @@
 
 ;;; Web views
 
-(doc-objc-class "WKWebView"             ; wk-web-view
-  "An object that displays interactive web content, such as for an in-app browser."
-  "A WKWebView object is a platform-native view that you use to
+(define-objc-class "WKWebView" ()
+  ()
+  (:documentation
+   "An object that displays interactive web content, such as for an in-app browser.
+A WKWebView object is a platform-native view that you use to
 incorporate web content seamlessly into your app's UI. A web view
 supports a full web-browsing experience, and presents HTML, CSS, and
 JavaScript content alongside your app's native views. Use it when web
@@ -95,8 +97,8 @@ to change the default data detector behavior.
 
 You can also use setMagnification:centeredAtPoint: to programmatically
 set the scale of web content the first time it appears in a web
-view. Thereafter, the user can change the scale using gestures."
-  "Manage the navigation through your web content
+view. Thereafter, the user can change the scale using gestures.
+Manage the navigation through your web content
 ====================================================
 WKWebView provides a complete browsing experience, including the
 ability to navigate between different webpages using links, forward
@@ -114,8 +116,8 @@ your app’s interface. For example, if your UI includes forward and
 back buttons, connect those buttons to the goBack: and goForward:
 methods of your web view to trigger the corresponding web
 navigation. Use the canGoBack and canGoForward properties to determine
-when to enable or disable your buttons."
-  "Provide sharing options
+when to enable or disable your buttons.
+Provide sharing options
 =============================
 People may want to share the contents of your web view with an app or
 other people. Use a UIActivityViewController to present a share sheet
@@ -129,126 +131,174 @@ WKWebView instance in the activityItems array when you call
 initWithActivityItems:applicationActivities: to create the
 UIActivityViewController. For more information about building a
 browser app, see Preparing your app to be the default web browser.
-see https://developer.apple.com/documentation/Xcode/preparing-your-app-to-be-the-default-browser?language=objc"
-  "see https://developer.apple.com/documentation/webkit/wkwebview?language=objc")
+see https://developer.apple.com/documentation/Xcode/preparing-your-app-to-be-the-default-browser?language=objc
+see https://developer.apple.com/documentation/webkit/wkwebview?language=objc"))
 
 ;;; Web view configuration
 
-(doc-objc-class "WKPreferences"         ; wk-preferences
-  "An object that encapsulates the standard behaviors to apply to websites."
-  "see https://developer.apple.com/documentation/webkit/wkpreferences?language=objc")
+(define-objc-class "WKPreferences" ()
+  ()
+  (:documentation
+   "An object that encapsulates the standard behaviors to apply to websites.
+see https://developer.apple.com/documentation/webkit/wkpreferences?language=objc"))
 
-(doc-objc-class "WKWebpagePreferences"  ; wk-webpage-preferences
-  "An object that specifies the behaviors to use when loading and rendering page content."
-  "see https://developer.apple.com/documentation/webkit/wkwebpagepreferences?language=objc")
+(define-objc-class "WKWebpagePreferences" ()
+  ()
+  (:documentation
+   "An object that specifies the behaviors to use when loading and rendering page content.
+see https://developer.apple.com/documentation/webkit/wkwebpagepreferences?language=objc"))
 
 ;;; Web data management
 
-(doc-objc-class "WKWebsiteDataStore"    ; wk-website-data-store
-  "An object that manages cookies, disk and memory caches, and other types of data for a web view."
-  "see https://developer.apple.com/documentation/webkit/wkwebsitedatastore?language=objc")
+(define-objc-class "WKWebsiteDataStore" ()
+  ()
+  (:documentation
+   "An object that manages cookies, disk and memory caches, and other types of data for a web view.
+see https://developer.apple.com/documentation/webkit/wkwebsitedatastore?language=objc"))
 
-(doc-objc-class "WKWebsiteDataRecord"   ; wk-website-data-record
-  "A record of the data that a particular website stores persistently."
-  "see https://developer.apple.com/documentation/webkit/wkwebsitedatarecord?language=objc")
+(define-objc-class "WKWebsiteDataRecord" ()
+  ()
+  (:documentation
+   "A record of the data that a particular website stores persistently.
+see https://developer.apple.com/documentation/webkit/wkwebsitedatarecord?language=objc"))
 
-(doc-objc-class "WKHTTPCookieStore"     ; wk-http-cookie-store
-  "An object that manages the HTTP cookies associated with a particular web view."
-  "see https://developer.apple.com/documentation/webkit/wkhttpcookiestore?language=objc")
+(define-objc-class "WKHTTPCookieStore" ()
+  ()
+  (:documentation
+   "An object that manages the HTTP cookies associated with a particular web view.
+see https://developer.apple.com/documentation/webkit/wkhttpcookiestore?language=objc"))
 
 ;;; Navigation
 
-(doc-objc-class "WKBackForwardList"     ; wk-back-forward-list
-  "An object that manages the list of previously loaded webpages,
-which the web view uses for forward and backward navigation."
-  "see https://developer.apple.com/documentation/webkit/wkbackforwardlist?language=objc")
+(define-objc-class "WKBackForwardList" ()
+  ()
+  (:documentation
+   "An object that manages the list of previously loaded webpages,
+which the web view uses for forward and backward navigation.
+see https://developer.apple.com/documentation/webkit/wkbackforwardlist?language=objc"))
 
-(doc-objc-class "WKBackForwardListItem" ; wk-back-forward-list-item
-  "A representation of a webpage that the web view previously visited."
-  "see https://developer.apple.com/documentation/webkit/wkbackforwardlistitem?language=objc")
+(define-objc-class "WKBackForwardListItem" ()
+  ()
+  (:documentation
+   "A representation of a webpage that the web view previously visited.
+see https://developer.apple.com/documentation/webkit/wkbackforwardlistitem?language=objc"))
 
-(doc-objc-class "WKNavigation"          ; wk-navigation
-  "An object that tracks the loading progress of a webpage."
-  "see https://developer.apple.com/documentation/webkit/wknavigation?language=objc")
+(define-objc-class "WKNavigation" ()
+  ()
+  (:documentation
+   "An object that tracks the loading progress of a webpage.
+see https://developer.apple.com/documentation/webkit/wknavigation?language=objc"))
 
-(doc-objc-class "WKNavigationAction"    ; wk-navigation-action
-  "An object that contains information about an action that causes navigation to occur."
-  "see https://developer.apple.com/documentation/webkit/wknavigationaction?language=objc")
+(define-objc-class "WKNavigationAction" ()
+  ()
+  (:documentation
+   "An object that contains information about an action that causes navigation to occur.
+see https://developer.apple.com/documentation/webkit/wknavigationaction?language=objc"))
 
-(doc-objc-class "WKNavigationResponse"  ; wk-navigation-response
-  "An object that contains the response to a navigation request,
-and which you use to make navigation-related policy decisions."
-  "see https://developer.apple.com/documentation/webkit/wknavigationresponse?language=objc")
+(define-objc-class "WKNavigationResponse" ()
+  ()
+  (:documentation
+   "An object that contains the response to a navigation request,
+and which you use to make navigation-related policy decisions.
+see https://developer.apple.com/documentation/webkit/wknavigationresponse?language=objc"))
 
 ;;; Downloads
 
-(doc-objc-class "WKDownload"            ; wk-download
-  "An object that represents the download of a web resource."
-  "see https://developer.apple.com/documentation/webkit/wkdownload?language=objc")
+(define-objc-class "WKDownload" ()
+  ()
+  (:documentation
+   "An object that represents the download of a web resource.
+see https://developer.apple.com/documentation/webkit/wkdownload?language=objc"))
 
 ;;; Page content
 
-(doc-objc-class "WKUserContentController" ; wk-user-content-controller
-  "An object for managing interactions between JavaScript code and your web view,
-and for filtering content in your web view."
-  "see https://developer.apple.com/documentation/webkit/wkusercontentcontroller?language=objc")
+(define-objc-class "WKUserContentController" ()
+  ()
+  (:documentation
+   "An object for managing interactions between JavaScript code and your web view,
+and for filtering content in your web view.
+see https://developer.apple.com/documentation/webkit/wkusercontentcontroller?language=objc"))
 
-(doc-objc-class "WKContentRuleListStore" ; wk-content-rule-list-store
-  "An object that contains the rules for how to load and filter content in the web view."
-  "see https://developer.apple.com/documentation/webkit/wkcontentruleliststore?language=objc")
+(define-objc-class "WKContentRuleListStore" ()
+  ()
+  (:documentation
+   "An object that contains the rules for how to load and filter content in the web view.
+see https://developer.apple.com/documentation/webkit/wkcontentruleliststore?language=objc"))
 
-(doc-objc-class "WKContentWorld"        ; wk-content-world
-  "An object that defines a scope of execution for JavaScript code,
-and which you use to prevent conflicts between different scripts."
-  "see https://developer.apple.com/documentation/webkit/wkcontentworld?language=objc")
+(define-objc-class "WKContentWorld" ()
+  ()
+  (:documentation
+   "An object that defines a scope of execution for JavaScript code,
+and which you use to prevent conflicts between different scripts.
+see https://developer.apple.com/documentation/webkit/wkcontentworld?language=objc"))
 
-(doc-objc-class "WKFrameInfo"           ; wk-frame-info
-  "An object that contains information about a frame on a webpage."
-  "see https://developer.apple.com/documentation/webkit/wkframeinfo?language=objc")
+(define-objc-class "WKFrameInfo" ()
+  ()
+  (:documentation
+   "An object that contains information about a frame on a webpage.
+see https://developer.apple.com/documentation/webkit/wkframeinfo?language=objc"))
 
-(doc-objc-class "WKSecurityOrigin"      ; wk-security-origin
-  "An object that identifies the origin of a particular resource."
-  "see https://developer.apple.com/documentation/webkit/wksecurityorigin?language=objc")
+(define-objc-class "WKSecurityOrigin" ()
+  ()
+  (:documentation
+   "An object that identifies the origin of a particular resource.
+see https://developer.apple.com/documentation/webkit/wksecurityorigin?language=objc"))
 
-(doc-objc-class "WKUserScript"          ; wk-user-script
-  "A script that the web view injects into a webpage."
-  "see https://developer.apple.com/documentation/webkit/wkuserscript?language=objc")
+(define-objc-class "WKUserScript" ()
+  ()
+  (:documentation
+   "A script that the web view injects into a webpage.
+see https://developer.apple.com/documentation/webkit/wkuserscript?language=objc"))
 
 ;;; Page-level search
 
-(doc-objc-class "WKFindConfiguration"   ; wk-find-configuration
-  "The configuration parameters to use when searching the contents of the web view."
-  "see https://developer.apple.com/documentation/webkit/wkfindconfiguration?language=objc")
+(define-objc-class "WKFindConfiguration" ()
+  ()
+  (:documentation
+   "The configuration parameters to use when searching the contents of the web view.
+see https://developer.apple.com/documentation/webkit/wkfindconfiguration?language=objc"))
 
-(doc-objc-class "WKFindResult"          ; wk-find-result
-  "An object that contains the results of searching the web view’s contents."
-  "see https://developer.apple.com/documentation/webkit/wkfindresult?language=objc")
+(define-objc-class "WKFindResult" ()
+  ()
+  (:documentation
+   "An object that contains the results of searching the web view’s contents.
+see https://developer.apple.com/documentation/webkit/wkfindresult?language=objc"))
 
 ;;; Contextual menus
 
 ;;; Snapshots
 
-(doc-objc-class "WKSnapshotConfiguration" ; wk-snapshot-configuration
-  "The configuration data to use when generating an image from a web view’s contents."
-  "see https://developer.apple.com/documentation/webkit/wksnapshotconfiguration?language=objc")
+(define-objc-class "WKSnapshotConfiguration" ()
+  ()
+  (:documentation
+   "The configuration data to use when generating an image from a web view’s contents.
+see https://developer.apple.com/documentation/webkit/wksnapshotconfiguration?language=objc"))
 
-(doc-objc-class "WKPDFConfiguration"    ; wk-pdf-configuration
-  "The configuration data to use when generating a PDF representation of a web view’s contents."
-  "see https://developer.apple.com/documentation/webkit/wkpdfconfiguration?language=objc")
+(define-objc-class "WKPDFConfiguration" ()
+  ()
+  (:documentation
+   "The configuration data to use when generating a PDF representation of a web view’s contents.
+see https://developer.apple.com/documentation/webkit/wkpdfconfiguration?language=objc"))
 
 ;;; Web extensions
 
-(doc-objc-class "WKWebExtension"        ; wk-web-extension
-  "An object that encapsulates a web extension’s resources that the manifest file defines."
-  "see https://developer.apple.com/documentation/webkit/wkwebextension?language=objc")
+(define-objc-class "WKWebExtension" ()
+  ()
+  (:documentation
+   "An object that encapsulates a web extension’s resources that the manifest file defines.
+see https://developer.apple.com/documentation/webkit/wkwebextension?language=objc"))
 
-(doc-objc-class "WKWebExtensionContext" ; wk-web-extension-context
-  "An object that represents the runtime environment for a web extension."
-  "see https://developer.apple.com/documentation/webkit/wkwebextensioncontext?language=objc")
+(define-objc-class "WKWebExtensionContext" ()
+  ()
+  (:documentation
+   "An object that represents the runtime environment for a web extension.
+see https://developer.apple.com/documentation/webkit/wkwebextensioncontext?language=objc"))
 
-(doc-objc-class "WKWebExtensionController" ; wk-web-extension-controller
-  "An object that manages a set of loaded extension contexts."
-  "see https://developer.apple.com/documentation/webkit/wkwebextensioncontroller?language=objc")
+(define-objc-class "WKWebExtensionController" ()
+  ()
+  (:documentation
+   "An object that manages a set of loaded extension contexts.
+see https://developer.apple.com/documentation/webkit/wkwebextensioncontroller?language=objc"))
 
 ;;; Errors
 

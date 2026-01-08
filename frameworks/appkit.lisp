@@ -361,9 +361,11 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 
 ;;; Documents
 
-(doc-objc-class "NSDocument"            ; ns-document
-  "An abstract class that defines the interface for macOS documents."
-  "A document is an object that can internally represent data
+(define-objc-class "NSDocument" ()
+  ()
+  (:documentation
+   "An abstract class that defines the interface for macOS documents.
+A document is an object that can internally represent data
 displayed in a window and that can read data from and write data to a
 file or file package. Documents create and manage one or more window
 controllers and are in turn managed by a document
@@ -391,12 +393,14 @@ architectural basis for document-based apps (the others being
 
 For more information about using `ns-document' in a document-based app,
 see Developing a Document-Based App.
-see https://developer.apple.com/documentation/appkit/developing-a-document-based-app?language=objc"
-  "see https://developer.apple.com/documentation/appkit/nsdocument?language=objc")
+see https://developer.apple.com/documentation/appkit/developing-a-document-based-app?language=objc
+see https://developer.apple.com/documentation/appkit/nsdocument?language=objc"))
 
-(doc-objc-class "NSDocumentController"  ; ns-document-controller
-  "An object that manages an app’s documents."
-  "As the first-responder target of New and Open menu commands,
+(define-objc-class "NSDocumentController" ()
+  ()
+  (:documentation
+   "An object that manages an app’s documents.
+As the first-responder target of New and Open menu commands,
 `ns-document-controller' creates and opens documents and tracks them
 throughout a session of the app. When opening documents, a document
 controller runs and manages the modal Open panel. `ns-document-controller'
@@ -414,30 +418,38 @@ display name, and document class.
 In some situations, it’s worthwhile to subclass `ns-document-controller'
 in non-`ns-document'-based apps to get some of its features. For example,
 the NSDocument management of the Open Recent menu is useful
-in apps that don’t use subclasses of `ns-document'."
-  "see https://developer.apple.com/documentation/appkit/nsdocumentcontroller?language=objc")
+in apps that don’t use subclasses of `ns-document'.
+see https://developer.apple.com/documentation/appkit/nsdocumentcontroller?language=objc"))
 
-(doc-objc-class "NSPersistentDocument"  ; ns-persistent-document
-  "A document object that can integrate with Core Data."
-  "see https://developer.apple.com/documentation/appkit/nspersistentdocument?language=objc")
+(define-objc-class "NSPersistentDocument" ()
+  ()
+  (:documentation
+   "A document object that can integrate with Core Data.
+see https://developer.apple.com/documentation/appkit/nspersistentdocument?language=objc"))
 
 ;;; User Preferences
 
 ;;; Pasteboard
 
-(doc-objc-class "NSPasteboard"          ; ns-pasteboard
-  "An object that transfers data to and from the pasteboard server."
-  "see https://developer.apple.com/documentation/appkit/nspasteboard?language=objc")
+(define-objc-class "NSPasteboard" ()
+  ()
+  (:documentation
+   "An object that transfers data to and from the pasteboard server.
+see https://developer.apple.com/documentation/appkit/nspasteboard?language=objc"))
 
 ;;; File Promises
 
-(doc-objc-class "NSFilePromiseProvider" ; ns-file-promise-provider
-  "An object that provides a promise for the pasteboard."
-  "see https://developer.apple.com/documentation/appkit/nsfilepromiseprovider?language=objc")
+(define-objc-class "NSFilePromiseProvider" ()
+  ()
+  (:documentation
+   "An object that provides a promise for the pasteboard.
+see https://developer.apple.com/documentation/appkit/nsfilepromiseprovider?language=objc"))
 
-(doc-objc-class "NSFilePromiseReceiver" ; ns-file-promise-receiver
-  "An object that receives a file promise from the pasteboard."
-  "see https://developer.apple.com/documentation/appkit/nsfilepromisereceiver?language=objc")
+(define-objc-class "NSFilePromiseReceiver" ()
+  ()
+  (:documentation
+   "An object that receives a file promise from the pasteboard.
+see https://developer.apple.com/documentation/appkit/nsfilepromisereceiver?language=objc"))
 
 ;;; Object Editing
 
@@ -448,40 +460,54 @@ in apps that don’t use subclasses of `ns-document'."
 
 ;;; Core Controllers
 
-(doc-objc-class "NSObjectController"    ; ns-object-controller
-  "A controller that can manage an object’s properties referenced by key-value paths."
-  "see https://developer.apple.com/documentation/appkit/nsobjectcontroller?language=objc")
+(define-objc-class "NSObjectController" ()
+  ()
+  (:documentation
+   "A controller that can manage an object’s properties referenced by key-value paths.
+see https://developer.apple.com/documentation/appkit/nsobjectcontroller?language=objc"))
 
-(doc-objc-class "NSController"          ; ns-controller
-  "An abstract class that implements the NSEditor and NSEditorRegistration informal protocols required for controller classes."
-  "see https://developer.apple.com/documentation/appkit/nscontroller?language=objc")
+(define-objc-class "NSController" ()
+  ()
+  (:documentation
+   "An abstract class that implements the NSEditor and NSEditorRegistration informal protocols required for controller classes.
+see https://developer.apple.com/documentation/appkit/nscontroller?language=objc"))
 
 ;;; Tree-Based Data
 
-(doc-objc-class "NSTreeController"      ; ns-tree-controller
-  "A bindings-compatible controller that manages a tree of objects."
-  "see https://developer.apple.com/documentation/appkit/nstreecontroller?language=objc")
+(define-objc-class "NSTreeController" ()
+  ()
+  (:documentation
+   "A bindings-compatible controller that manages a tree of objects.
+see https://developer.apple.com/documentation/appkit/nstreecontroller?language=objc"))
 
-(doc-objc-class "NSTreeNode"            ; ns-tree-node
-  "A node in a tree of nodes."
-  "see https://developer.apple.com/documentation/appkit/nstreenode?language=objc")
+(define-objc-class "NSTreeNode" ()
+  ()
+  (:documentation
+   "A node in a tree of nodes.
+see https://developer.apple.com/documentation/appkit/nstreenode?language=objc"))
 
 ;;; Array-Based Data
 
-(doc-objc-class "NSArrayController"     ; ns-array-controller
-  "A bindings-compatible controller that manages a collection of objects."
-  "see https://developer.apple.com/documentation/appkit/nsarraycontroller?language=objc")
+(define-objc-class "NSArrayController" ()
+  ()
+  (:documentation
+   "A bindings-compatible controller that manages a collection of objects.
+see https://developer.apple.com/documentation/appkit/nsarraycontroller?language=objc"))
 
 ;;; Key-Value Data
 
-(doc-objc-class "NSDictionaryController" ; ns-dictionary-controller
-  "A bindings-compatible controller that manages the display and editing of
-a dictionary of key-value pairs."
-  "see https://developer.apple.com/documentation/appkit/nsdictionarycontroller?language=objc")
+(define-objc-class "NSDictionaryController" ()
+  ()
+  (:documentation
+   "A bindings-compatible controller that manages the display and editing of
+a dictionary of key-value pairs.
+see https://developer.apple.com/documentation/appkit/nsdictionarycontroller?language=objc"))
 
-(doc-objc-class "NSDictionaryControllerKeyValuePair" ; ns-dictionary-controller-key-value-pair
-  "A set of methods implemented by arranged objects to give access to information about those objects."
-  "see https://developer.apple.com/documentation/appkit/nsdictionarycontrollerkeyvaluepair?language=objc")
+(define-objc-class "NSDictionaryControllerKeyValuePair" ()
+  ()
+  (:documentation
+   "A set of methods implemented by arranged objects to give access to information about those objects.
+see https://developer.apple.com/documentation/appkit/nsdictionarycontrollerkeyvaluepair?language=objc"))
 
 ;;; Data Placeholders
 
@@ -493,38 +519,52 @@ a dictionary of key-value pairs."
 
 ;;; Storyboard
 
-(doc-objc-class "NSStoryboard"          ; ns-storyboard
-  "An encapsulation of the design-time view controller and window controller
-graph represented in an Interface Builder storyboard resource file."
-  "see https://developer.apple.com/documentation/appkit/nsstoryboard?language=objc")
+(define-objc-class "NSStoryboard" ()
+  ()
+  (:documentation
+   "An encapsulation of the design-time view controller and window controller
+graph represented in an Interface Builder storyboard resource file.
+see https://developer.apple.com/documentation/appkit/nsstoryboard?language=objc"))
 
-(doc-objc-class "NSStoryboardSegue"     ; ns-storyboard-segue
-  "A transition or containment relationship between two scenes in a storyboard."
-  "see https://developer.apple.com/documentation/appkit/nsstoryboardsegue?language=objc")
+(define-objc-class "NSStoryboardSegue" ()
+  ()
+  (:documentation
+   "A transition or containment relationship between two scenes in a storyboard.
+see https://developer.apple.com/documentation/appkit/nsstoryboardsegue?language=objc"))
 
 ;;; Assets
 
-(doc-objc-class "NSDataAsset"           ; ns-data-asset
-  "An object from a data set type stored in an asset catalog."
-  "see https://developer.apple.com/documentation/appkit/nsdataasset?language=objc")
+(define-objc-class "NSDataAsset" ()
+  ()
+  (:documentation
+   "An object from a data set type stored in an asset catalog.
+see https://developer.apple.com/documentation/appkit/nsdataasset?language=objc"))
 
 ;;; Nib Files
 
-(doc-objc-class "NSNib"                 ; ns-nib
-  "An object wrapper, or container, for an Interface Builder nib file."
-  "see https://developer.apple.com/documentation/appkit/nsnib?language=objc")
+(define-objc-class "NSNib" ()
+  ()
+  (:documentation
+   "An object wrapper, or container, for an Interface Builder nib file.
+see https://developer.apple.com/documentation/appkit/nsnib?language=objc"))
 
-(doc-objc-class "NSNibConnector"        ; ns-nib-connector
-  "A connection between two nibs."
-  "see https://developer.apple.com/documentation/appkit/nsnibconnector?language=objc")
+(define-objc-class "NSNibConnector" ()
+  ()
+  (:documentation
+   "A connection between two nibs.
+see https://developer.apple.com/documentation/appkit/nsnibconnector?language=objc"))
 
-(doc-objc-class "NSNibControlConnector" ; ns-nib-control-connector
-  "A control connection between two Interface Builder objects."
-  "see https://developer.apple.com/documentation/appkit/nsnibcontrolconnector?language=objc")
+(define-objc-class "NSNibControlConnector" ()
+  ()
+  (:documentation
+   "A control connection between two Interface Builder objects.
+see https://developer.apple.com/documentation/appkit/nsnibcontrolconnector?language=objc"))
 
-(doc-objc-class "NSNibOutletConnector"  ; ns-nib-outlet-connector
-  "An outlet connection between Interface Builder objects."
-  "see https://developer.apple.com/documentation/appkit/nsniboutletconnector?language=objc")
+(define-objc-class "NSNibOutletConnector" ()
+  ()
+  (:documentation
+   "An outlet connection between Interface Builder objects.
+see https://developer.apple.com/documentation/appkit/nsniboutletconnector?language=objc"))
 
 
 ;;;; App Extensions
@@ -546,122 +586,174 @@ graph represented in an Interface Builder storyboard resource file."
 
 ;;; View fundamentals
 
-(doc-objc-class "NSView"                ; ns-view
-  "The infrastructure for drawing, printing, and handling events in an app."
-  "see https://developer.apple.com/documentation/appkit/nsview?language=objc")
+(define-objc-class "NSView" ()
+  ()
+  (:documentation
+   "The infrastructure for drawing, printing, and handling events in an app.
+see https://developer.apple.com/documentation/appkit/nsview?language=objc"))
 
-(doc-objc-class "NSControl"             ; ns-control
-  "A specialized view, such as a button or text field, that notifies your app of relevant events using the target-action design pattern."
-  "see https://developer.apple.com/documentation/appkit/nscontrol?language=objc")
+(define-objc-class "NSControl" ()
+  ()
+  (:documentation
+   "A specialized view, such as a button or text field, that notifies your app of relevant events using the target-action design pattern.
+see https://developer.apple.com/documentation/appkit/nscontrol?language=objc"))
 
-(doc-objc-class "NSCell"                ; ns-cell
-  "A mechanism for displaying text or images in a view object without
-the overhead of a full NSView subclass."
-  "see https://developer.apple.com/documentation/appkit/nscell?language=objc")
+(define-objc-class "NSCell" ()
+  ()
+  (:documentation
+   "A mechanism for displaying text or images in a view object without
+the overhead of a full NSView subclass.
+see https://developer.apple.com/documentation/appkit/nscell?language=objc"))
 
-(doc-objc-class "NSActionCell"          ; ns-action-cell
-  "An active area inside a control."
-  "see https://developer.apple.com/documentation/appkit/nsactioncell?language=objc")
+(define-objc-class "NSActionCell" ()
+  ()
+  (:documentation
+   "An active area inside a control.
+see https://developer.apple.com/documentation/appkit/nsactioncell?language=objc"))
 
 ;;; Container views
 
-(doc-objc-class "NSSplitView"           ; ns-split-view
-  "A view that arranges two or more views in a linear stack running horizontally or vertically."
-  "see https://developer.apple.com/documentation/appkit/nssplitview?language=objc")
+(define-objc-class "NSSplitView" ()
+  ()
+  (:documentation
+   "A view that arranges two or more views in a linear stack running horizontally or vertically.
+see https://developer.apple.com/documentation/appkit/nssplitview?language=objc"))
 
-(doc-objc-class "NSStackView"           ; ns-stack-view
-  "A view that arranges an array of views horizontally or vertically and updates their placement and sizing when the window size changes."
-  "see https://developer.apple.com/documentation/appkit/nsstackview?language=objc")
+(define-objc-class "NSStackView" ()
+  ()
+  (:documentation
+   "A view that arranges an array of views horizontally or vertically and updates their placement and sizing when the window size changes.
+see https://developer.apple.com/documentation/appkit/nsstackview?language=objc"))
 
-(doc-objc-class "NSTabView"             ; ns-tab-view
-  "A multipage interface that displays one page at a time."
-  "see https://developer.apple.com/documentation/appkit/nstabview?language=objc")
+(define-objc-class "NSTabView" ()
+  ()
+  (:documentation
+   "A multipage interface that displays one page at a time.
+see https://developer.apple.com/documentation/appkit/nstabview?language=objc"))
 
 ;;; Content views
 
-(doc-objc-class "NSTextView"            ; ns-text-view
-  "A view that draws text and handles user interactions with that text."
-  "see https://developer.apple.com/documentation/appkit/nstextview?language=objc")
+(define-objc-class "NSTextView" ()
+  ()
+  (:documentation
+   "A view that draws text and handles user interactions with that text.
+see https://developer.apple.com/documentation/appkit/nstextview?language=objc"))
 
 ;;; Controls
 
-(doc-objc-class "NSButton"              ; ns-button
-  "A control that defines an area on the screen that a user clicks to trigger an action."
-  "see https://developer.apple.com/documentation/appkit/nsbutton?language=objc")
+(define-objc-class "NSButton" ()
+  ()
+  (:documentation
+   "A control that defines an area on the screen that a user clicks to trigger an action.
+see https://developer.apple.com/documentation/appkit/nsbutton?language=objc"))
 
-(doc-objc-class "NSColorWell"           ; ns-color-well
-  "A control that displays a color value and lets the user change that color value."
-  "see https://developer.apple.com/documentation/appkit/nscolorwell?language=objc")
+(define-objc-class "NSColorWell" ()
+  ()
+  (:documentation
+   "A control that displays a color value and lets the user change that color value.
+see https://developer.apple.com/documentation/appkit/nscolorwell?language=objc"))
 
-(doc-objc-class "NSComboButton"         ; ns-combo-button
-  "A button with a pull-down menu and a default action."
-  "see https://developer.apple.com/documentation/appkit/nscombobutton?language=objc")
+(define-objc-class "NSComboButton" ()
+  ()
+  (:documentation
+   "A button with a pull-down menu and a default action.
+see https://developer.apple.com/documentation/appkit/nscombobutton?language=objc"))
 
-(doc-objc-class "NSImageView"           ; ns-image-view
-  "A display of image data in a frame."
-  "see https://developer.apple.com/documentation/appkit/nsimageview?language=objc")
+(define-objc-class "NSImageView" ()
+  ()
+  (:documentation
+   "A display of image data in a frame.
+see https://developer.apple.com/documentation/appkit/nsimageview?language=objc"))
 
-(doc-objc-class "NSLevelIndicator"      ; ns-level-indicator
-  "A visual representation of a level or quantity, using discrete values."
-  "see https://developer.apple.com/documentation/appkit/nslevelindicator?language=objc")
+(define-objc-class "NSLevelIndicator" ()
+  ()
+  (:documentation
+   "A visual representation of a level or quantity, using discrete values.
+see https://developer.apple.com/documentation/appkit/nslevelindicator?language=objc"))
 
-(doc-objc-class "NSPopUpButton"         ; ns-pop-up-button
-  "A control for selecting an item from a list."
-  "see https://developer.apple.com/documentation/appkit/nspopupbutton?language=objc")
+(define-objc-class "NSPopUpButton" ()
+  ()
+  (:documentation
+   "A control for selecting an item from a list.
+see https://developer.apple.com/documentation/appkit/nspopupbutton?language=objc"))
 
-(doc-objc-class "NSProgressIndicator"   ; ns-progress-indicator
-  "An interface that provides visual feedback to the user about the status of an ongoing task."
-  "see https://developer.apple.com/documentation/appkit/nsprogressindicator?language=objc")
+(define-objc-class "NSProgressIndicator" ()
+  ()
+  (:documentation
+   "An interface that provides visual feedback to the user about the status of an ongoing task.
+see https://developer.apple.com/documentation/appkit/nsprogressindicator?language=objc"))
 
-(doc-objc-class "NSRuleEditor"          ; ns-rule-editor
-  "An interface for configuring a rule-based list of options."
-  "see https://developer.apple.com/documentation/appkit/nsruleeditor?language=objc")
+(define-objc-class "NSRuleEditor" ()
+  ()
+  (:documentation
+   "An interface for configuring a rule-based list of options.
+see https://developer.apple.com/documentation/appkit/nsruleeditor?language=objc"))
 
-(doc-objc-class "NSPredicateEditor"     ; ns-predicate-editor
-  "A defined set of rules that allows the editing of predicate objects."
-  "see https://developer.apple.com/documentation/appkit/nspredicateeditor?language=objc")
+(define-objc-class "NSPredicateEditor" ()
+  ()
+  (:documentation
+   "A defined set of rules that allows the editing of predicate objects.
+see https://developer.apple.com/documentation/appkit/nspredicateeditor?language=objc"))
 
-(doc-objc-class "NSSegmentedControl"    ; ns-segmented-control
-  "Display one or more buttons in a single horizontal group."
-  "see https://developer.apple.com/documentation/appkit/nssegmentedcontrol?language=objc")
+(define-objc-class "NSSegmentedControl" ()
+  ()
+  (:documentation
+   "Display one or more buttons in a single horizontal group.
+see https://developer.apple.com/documentation/appkit/nssegmentedcontrol?language=objc"))
 
-(doc-objc-class "NSStepper"             ; ns-stepper
-  "An interface with up and down arrow buttons for incrementing or decrementing a value."
-  "see https://developer.apple.com/documentation/appkit/nsstepper?language=objc")
+(define-objc-class "NSStepper" ()
+  ()
+  (:documentation
+   "An interface with up and down arrow buttons for incrementing or decrementing a value.
+see https://developer.apple.com/documentation/appkit/nsstepper?language=objc"))
 
-(doc-objc-class "NSSwitch"              ; ns-switch
-  "A control that offers a binary choice."
-  "see https://developer.apple.com/documentation/appkit/nsswitch?language=objc")
+(define-objc-class "NSSwitch" ()
+  ()
+  (:documentation
+   "A control that offers a binary choice.
+see https://developer.apple.com/documentation/appkit/nsswitch?language=objc"))
 
-(doc-objc-class "NSMatrix"              ; ns-matrix
-  "A legacy interface for grouping radio buttons or other types of cells together."
-  "see https://developer.apple.com/documentation/appkit/nsmatrix?language=objc")
+(define-objc-class "NSMatrix" ()
+  ()
+  (:documentation
+   "A legacy interface for grouping radio buttons or other types of cells together.
+see https://developer.apple.com/documentation/appkit/nsmatrix?language=objc"))
 
 ;;; Liquid Glass effects
 
-(doc-objc-class "NSGlassEffectView"     ; ns-glass-effect-view
-  "A view that embeds its content view in a dynamic glass effect."
-  "see https://developer.apple.com/documentation/appkit/nsglasseffectview?language=objc")
+(define-objc-class "NSGlassEffectView" ()
+  ()
+  (:documentation
+   "A view that embeds its content view in a dynamic glass effect.
+see https://developer.apple.com/documentation/appkit/nsglasseffectview?language=objc"))
 
-(doc-objc-class "NSGlassEffectContainerView" ; ns-glass-effect-container-view
-  "A view that efficiently merges descendant glass effect views together when they are within a specified proximity to each other."
-  "see https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview?language=objc")
+(define-objc-class "NSGlassEffectContainerView" ()
+  ()
+  (:documentation
+   "A view that efficiently merges descendant glass effect views together when they are within a specified proximity to each other.
+see https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview?language=objc"))
 
 ;;; Interacting with adjacent views
 
-(doc-objc-class "NSBackgroundExtensionView" ; ns-background-extension-view
-  "A view that extends content to fill its own bounds."
-  "see https://developer.apple.com/documentation/appkit/nsbackgroundextensionview?language=objc")
+(define-objc-class "NSBackgroundExtensionView" ()
+  ()
+  (:documentation
+   "A view that extends content to fill its own bounds.
+see https://developer.apple.com/documentation/appkit/nsbackgroundextensionview?language=objc"))
 
 ;;; Visual adornments
 
-(doc-objc-class "NSVisualEffectView"    ; ns-visual-effect-view
-  "A view that adds translucency and vibrancy effects to the views in your interface."
-  "see https://developer.apple.com/documentation/appkit/nsvisualeffectview?language=objc")
+(define-objc-class "NSVisualEffectView" ()
+  ()
+  (:documentation
+   "A view that adds translucency and vibrancy effects to the views in your interface.
+see https://developer.apple.com/documentation/appkit/nsvisualeffectview?language=objc"))
 
-(doc-objc-class "NSBox"                 ; ns-box
-  "A stylized rectangular box with an optional title."
-  "see https://developer.apple.com/documentation/appkit/nsbox?language=objc")
+(define-objc-class "NSBox" ()
+  ()
+  (:documentation
+   "A stylized rectangular box with an optional title.
+see https://developer.apple.com/documentation/appkit/nsbox?language=objc"))
 
 ;;; UI validation
 
@@ -677,66 +769,90 @@ the overhead of a full NSView subclass."
 
 ;;; Content Controllers
 
-(doc-objc-class "NSWindowController"    ; ns-window-controller
-  "A controller that manages a window, usually a window stored in a nib file."
-  "see https://developer.apple.com/documentation/appkit/nswindowcontroller?language=objc")
+(define-objc-class "NSWindowController" ()
+  ()
+  (:documentation
+   "A controller that manages a window, usually a window stored in a nib file.
+see https://developer.apple.com/documentation/appkit/nswindowcontroller?language=objc"))
 
-(doc-objc-class "NSViewController"      ; ns-view-controller
-  "A controller that manages a view, typically loaded from a nib file."
-  "see https://developer.apple.com/documentation/appkit/nsviewcontroller?language=objc")
+(define-objc-class "NSViewController" ()
+  ()
+  (:documentation
+   "A controller that manages a view, typically loaded from a nib file.
+see https://developer.apple.com/documentation/appkit/nsviewcontroller?language=objc"))
 
-(doc-objc-class "NSTitlebarAccessoryViewController" ; ns-titlebar-accessory-view-controller
-  "An object that manages a custom view—known as an accessory view-in
-the title bar–toolbar area of a window."
-  "see https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller?language=objc")
+(define-objc-class "NSTitlebarAccessoryViewController" ()
+  ()
+  (:documentation
+   "An object that manages a custom view—known as an accessory view-in
+the title bar–toolbar area of a window.
+see https://developer.apple.com/documentation/appkit/nstitlebaraccessoryviewcontroller?language=objc"))
 
 ;;; Split View Interface
 
-(doc-objc-class "NSSplitViewController" ; ns-split-view-controller
-  "An object that manages an array of adjacent child views, and has a split view object for managing dividers between those views."
-  "see https://developer.apple.com/documentation/appkit/nssplitviewcontroller?language=objc")
+(define-objc-class "NSSplitViewController" ()
+  ()
+  (:documentation
+   "An object that manages an array of adjacent child views, and has a split view object for managing dividers between those views.
+see https://developer.apple.com/documentation/appkit/nssplitviewcontroller?language=objc"))
 
-(doc-objc-class "NSSplitView"           ; ns-split-view
-  "A view that arranges two or more views in a linear stack running horizontally or vertically."
-  "see https://developer.apple.com/documentation/appkit/nssplitview?language=objc")
+(define-objc-class "NSSplitView" ()
+  ()
+  (:documentation
+   "A view that arranges two or more views in a linear stack running horizontally or vertically.
+see https://developer.apple.com/documentation/appkit/nssplitview?language=objc"))
 
-(doc-objc-class "NSSplitViewItem"       ; ns-split-view-item
-  "An item in a split view controller."
-  "see https://developer.apple.com/documentation/appkit/nssplitviewitem?language=objc")
+(define-objc-class "NSSplitViewItem" ()
+  ()
+  (:documentation
+   "An item in a split view controller.
+see https://developer.apple.com/documentation/appkit/nssplitviewitem?language=objc"))
 
 ;;; Stack View Interface
 
-(doc-objc-class "NSStackView"           ; ns-stack-view
-  "A view that arranges an array of views horizontally or vertically
-and updates their placement and sizing when the window size changes."
-  "see https://developer.apple.com/documentation/appkit/nsstackview?language=objc")
+(define-objc-class "NSStackView" ()
+  ()
+  (:documentation
+   "A view that arranges an array of views horizontally or vertically
+and updates their placement and sizing when the window size changes.
+see https://developer.apple.com/documentation/appkit/nsstackview?language=objc"))
 
 ;;; Tab View Interface
 
-(doc-objc-class "NSTabViewController"   ; ns-tab-view-controller
-  "A container view controller that manages a tab view interface,
-which organizes multiple pages of content but displays only one page at a time."
-  "see https://developer.apple.com/documentation/appkit/nstabviewcontroller?language=objc")
+(define-objc-class "NSTabViewController" ()
+  ()
+  (:documentation
+   "A container view controller that manages a tab view interface,
+which organizes multiple pages of content but displays only one page at a time.
+see https://developer.apple.com/documentation/appkit/nstabviewcontroller?language=objc"))
 
-(doc-objc-class "NSTabView"             ; ns-tab-view
-  "A multipage interface that displays one page at a time."
-  "see https://developer.apple.com/documentation/appkit/nstabview?language=objc")
+(define-objc-class "NSTabView" ()
+  ()
+  (:documentation
+   "A multipage interface that displays one page at a time.
+see https://developer.apple.com/documentation/appkit/nstabview?language=objc"))
 
-(doc-objc-class "NSTabViewItem"         ; ns-tab-view-item
-  "An item in a tab view."
-  "see https://developer.apple.com/documentation/appkit/nstabviewitem?language=objc")
+(define-objc-class "NSTabViewItem" ()
+  ()
+  (:documentation
+   "An item in a tab view.
+see https://developer.apple.com/documentation/appkit/nstabviewitem?language=objc"))
 
 ;;; Paged Interface
 
-(doc-objc-class "NSPageController"      ; ns-page-controller
-  "An object that controls swipe navigation and animations between views or view content."
-  "see https://developer.apple.com/documentation/appkit/nspagecontroller?language=objc")
+(define-objc-class "NSPageController" ()
+  ()
+  (:documentation
+   "An object that controls swipe navigation and animations between views or view content.
+see https://developer.apple.com/documentation/appkit/nspagecontroller?language=objc"))
 
 ;;; Media Library Interface
 
-(doc-objc-class "NSMediaLibraryBrowserController" ; ns-media-library-browser-controller
-  "An object that configures and displays a Media Library Browser panel."
-  "see https://developer.apple.com/documentation/appkit/nsmedialibrarybrowsercontroller?language=objc")
+(define-objc-class "NSMediaLibraryBrowserController" ()
+  ()
+  (:documentation
+   "An object that configures and displays a Media Library Browser panel.
+see https://developer.apple.com/documentation/appkit/nsmedialibrarybrowsercontroller?language=objc"))
 
 
 ;;;; View Layout
@@ -745,41 +861,55 @@ which organizes multiple pages of content but displays only one page at a time."
 
 ;;; Stack View
 
-(doc-objc-class "NSStackView"           ; ns-stack-view
-  "A view that arranges an array of views horizontally or vertically
-and updates their placement and sizing when the window size changes."
-  "see https://developer.apple.com/documentation/appkit/nsstackview?language=objc")
+(define-objc-class "NSStackView" ()
+  ()
+  (:documentation
+   "A view that arranges an array of views horizontally or vertically
+and updates their placement and sizing when the window size changes.
+see https://developer.apple.com/documentation/appkit/nsstackview?language=objc"))
 
 ;;; Auto Layout Constraints
 
-(doc-objc-class "NSLayoutConstraint"    ; ns-layout-constraint
-  "The relationship between two user interface objects that must be satisfied by
-the constraint-based layout system."
-  "see https://developer.apple.com/documentation/appkit/nslayoutconstraint?language=objc")
+(define-objc-class "NSLayoutConstraint" ()
+  ()
+  (:documentation
+   "The relationship between two user interface objects that must be satisfied by
+the constraint-based layout system.
+see https://developer.apple.com/documentation/appkit/nslayoutconstraint?language=objc"))
 
 ;;; Layout Guides
 
-(doc-objc-class "NSLayoutGuide"         ; ns-layout-guide
-  "A rectangular area that can interact with Auto Layout."
-  "see https://developer.apple.com/documentation/appkit/nslayoutguide?language=objc")
+(define-objc-class "NSLayoutGuide" ()
+  ()
+  (:documentation
+   "A rectangular area that can interact with Auto Layout.
+see https://developer.apple.com/documentation/appkit/nslayoutguide?language=objc"))
 
-(doc-objc-class "NSLayoutDimension"     ; ns-layout-dimension
-  "A factory class for creating size-based layout constraint objects using a fluent API."
-  "see https://developer.apple.com/documentation/appkit/nslayoutdimension?language=objc")
+(define-objc-class "NSLayoutDimension" ()
+  ()
+  (:documentation
+   "A factory class for creating size-based layout constraint objects using a fluent API.
+see https://developer.apple.com/documentation/appkit/nslayoutdimension?language=objc"))
 
 ;;; Anchors
 
-(doc-objc-class "NSLayoutAnchor"        ; ns-layout-anchor
-  "A factory class for creating layout constraint objects using a fluent API."
-  "see https://developer.apple.com/documentation/appkit/nslayoutanchor?language=objc")
+(define-objc-class "NSLayoutAnchor" ()
+  ()
+  (:documentation
+   "A factory class for creating layout constraint objects using a fluent API.
+see https://developer.apple.com/documentation/appkit/nslayoutanchor?language=objc"))
 
-(doc-objc-class "NSLayoutXAxisAnchor"   ; ns-layout-x-axis-anchor
-  "A factory class for creating horizontal layout constraint objects using a fluent API."
-  "see https://developer.apple.com/documentation/appkit/nslayoutxaxisanchor?language=objc")
+(define-objc-class "NSLayoutXAxisAnchor" ()
+  ()
+  (:documentation
+   "A factory class for creating horizontal layout constraint objects using a fluent API.
+see https://developer.apple.com/documentation/appkit/nslayoutxaxisanchor?language=objc"))
 
-(doc-objc-class "NSLayoutYAxisAnchor"   ; ns-layout-y-axis-anchor
-  "A factory class for creating vertical layout constraint objects using a fluent API."
-  "see https://developer.apple.com/documentation/appkit/nslayoutyaxisanchor?language=objc")
+(define-objc-class "NSLayoutYAxisAnchor" ()
+  ()
+  (:documentation
+   "A factory class for creating vertical layout constraint objects using a fluent API.
+see https://developer.apple.com/documentation/appkit/nslayoutyaxisanchor?language=objc"))
 
 ;;; View Compression
 
@@ -792,9 +922,11 @@ the constraint-based layout system."
 
 ;;; Appearance System
 
-(doc-objc-class "NSAppearance"          ; ns-appearance
-  "An object that manages standard appearance attributes for UI elements in an app."
-  "see https://developer.apple.com/documentation/appkit/nsappearance?language=objc")
+(define-objc-class "NSAppearance" ()
+  ()
+  (:documentation
+   "An object that manages standard appearance attributes for UI elements in an app.
+see https://developer.apple.com/documentation/appkit/nsappearance?language=objc"))
 
 
 ;;;; Animation
@@ -803,22 +935,28 @@ the constraint-based layout system."
 
 ;;; View-Based Animations
 
-(doc-objc-class "NSViewAnimation"       ; ns-view-animation
-  "An animation of an app’s views, limited to changes in frame location and size,
-and to fade-in and fade-out effects."
-  "see https://developer.apple.com/documentation/appkit/nsviewanimation?language=objc")
+(define-objc-class "NSViewAnimation" ()
+  ()
+  (:documentation
+   "An animation of an app’s views, limited to changes in frame location and size,
+and to fade-in and fade-out effects.
+see https://developer.apple.com/documentation/appkit/nsviewanimation?language=objc"))
 
-(doc-objc-class "NSAnimationContext"    ; ns-animation-context
-  "An animation context, which contains information about environment and state."
-  "see https://developer.apple.com/documentation/appkit/nsanimationcontext?language=objc")
+(define-objc-class "NSAnimationContext" ()
+  ()
+  (:documentation
+   "An animation context, which contains information about environment and state.
+see https://developer.apple.com/documentation/appkit/nsanimationcontext?language=objc"))
 
 ;;; Presentations
 
 ;;; Custom Animations
 
-(doc-objc-class "NSAnimation"           ; ns-animation
-  "An object that manages the timing and progress of animations in the user interface."
-  "see https://developer.apple.com/documentation/appkit/nsanimation?language=objc")
+(define-objc-class "NSAnimation" ()
+  ()
+  (:documentation
+   "An object that manages the timing and progress of animations in the user interface.
+see https://developer.apple.com/documentation/appkit/nsanimation?language=objc"))
 
 ;;; System Animations
 
@@ -862,10 +1000,11 @@ See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.st
                               "that does not activate the owning app.")
   (:hud-window                (ash 1 13) "The window is a HUD panel. "))
 
-(doc-objc-class "NSWindow"              ; ns-window
+(define-objc-class "NSWindow" ()
   (("contentViewController"
     :reader content-view-controller
-    :documentation "Get the main content view controller for the window.
+    :documentation
+    "Get the main content view controller for the window.
 
 The value of this property provides the content view of the
 window. Setting this value removes the existing value of `content-view'
@@ -890,7 +1029,8 @@ value clears out the root view controller.
 see https://developer.apple.com/documentation/appkit/nswindow/contentviewcontroller?language=objc")
    ("contentView"
     :reader content-view
-    :documentation "Get the window’s content view,
+    :documentation
+    "Get the window’s content view,
 the highest accessible view object in the window’s view hierarchy.
 
 The window retains the new content view and owns it thereafter. The
@@ -907,9 +1047,10 @@ to release it as appropriate when adding it to another `ns-window' or
 see https://developer.apple.com/documentation/appkit/nswindow/contentview?language=objc")
    ("styleMask"
     :accessor style-mask
-    :after  decode-ns-window-style-mask
+    :after decode-ns-window-style-mask
     :before ns-window-style-mask
-    :documentation "Flags that describe the window’s current style,
+    :documentation
+    "Flags that describe the window’s current style,
 such as if it’s resizable or in full-screen mode.
 
 The styleMask is settable on macOS 10.6 and later. Setting this
@@ -923,15 +1064,18 @@ see `ns-window-style-mask'.
 see https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.property?language=objc")
    ("alphaValue"
     :accessor alpha-value
-    :documentation "The window's alpha value.
+    :documentation
+    "The window's alpha value.
 see https://developer.apple.com/documentation/appkit/nswindow/alphavalue?language=objc")
    ("backgroundColor"
     :accessor background-color
-    :documentation "The color of window's background.
+    :documentation
+    "The color of window's background.
 see https://developer.apple.com/documentation/appkit/nswindow/backgroundcolor?language=objc")
    ("colorSpace"
     :accessor color-space
-    :documentation "The window’s color space.
+    :documentation
+    "The window’s color space.
 
 The value of this property is nil if the window does not have a
 backing store, and is off-screen.
@@ -939,7 +1083,8 @@ backing store, and is off-screen.
 see https://developer.apple.com/documentation/appkit/nswindow/colorspace?language=objc")
    ("canHide"
     :accessor can-hide
-    :documentation "A Boolean value that indicates whether the window can hide
+    :documentation
+    "A Boolean value that indicates whether the window can hide
 when its application becomes hidden.
 
 The value of this property is true if the window can hide when its
@@ -950,7 +1095,8 @@ By default, the value of the property is `t'.
 see https://developer.apple.com/documentation/appkit/nswindow/canhide?language=objc")
    ("onActiveSpace"
     :accessor on-active-space
-    :documentation "Whether the window is on the currently active space.
+    :documentation
+    "Whether the window is on the currently active space.
 
 The value of this property is true if the window is on the currently
 active space; otherwise, false. For visible windows, this property
@@ -961,7 +1107,8 @@ window onscreen would cause it to be on the active space.
 see https://developer.apple.com/documentation/appkit/nswindow/isonactivespace?language=objc")
    ("hidesOnDeactivate"
     :reader hides-on-deactivate
-    :documentation "Whether the window is removed from the screen
+    :documentation
+    "Whether the window is removed from the screen
 when its application becomes inactive.
 
 The value of this property is true if the window is removed from the
@@ -972,40 +1119,45 @@ for NSPanel is true.
 see https://developer.apple.com/documentation/appkit/nswindow/hidesondeactivate?language=objc")
    ("collectionBehavior"
     :accessor collection-behavior
-    :documentation "A value that identifies the window’s behavior in window collections.
+    :documentation
+    "A value that identifies the window’s behavior in window collections.
 
 The possible values for this property are listed in `ns-window-collection-behavior'.
 
 see https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.property?language=objc")
    ("opaque"
     :accessor opaque
-    :documentation "Whether the window is opaque.
+    :documentation
+    "Whether the window is opaque.
 see https://developer.apple.com/documentation/appkit/nswindow/isopaque?language=objc")
    ("hasShadow"
     :accessor has-shadow
-    :documentation "Whether the window has a shadow.
+    :documentation
+    "Whether the window has a shadow.
 see https://developer.apple.com/documentation/appkit/nswindow/hasshadow?language=objc")
    ("visible"
     :accessor visible
-    :setter  "setIsVisible:"
-    :documentation "If window is visible on screen.
+    :setter "setIsVisible:"
+    :documentation
+    "If window is visible on screen.
 
 Dev Note:
 Using (setf visible-p) would invoke setIsVisible: method.
 
 see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language=objc"))
-  "A window that an app displays on the screen. "
-  "A single `ns-window' object corresponds to, at most, one on-screen window.
+  (:documentation
+   "A window that an app displays on the screen.
+A single `ns-window' object corresponds to, at most, one on-screen window.
 Windows perform two principal functions:
 + To place views in a provided area
-+ To accept and distribute mouse and keyboard events the user generates to the appropriate views"
-  "Notes:
++ To accept and distribute mouse and keyboard events the user generates to the appropriate views
+Notes:
 Although the `ns-window' class inherits the `ns-coding' protocol from `ns-responder',
 the class doesn't support coding. Legacy support for archivers exists, but its use is
 deprecated and may not work. Any attempt to archive or unarchive a window object using a
 keyed coding object raises an `ns-invalid-argument-exception' exception.
-For details about window restoration, see restorationClass."
-  "see https://developer.apple.com/documentation/appkit/nswindow?language=objc")
+For details about window restoration, see restorationClass.
+see https://developer.apple.com/documentation/appkit/nswindow?language=objc"))
 
 ;; Creating a window
 
@@ -1222,20 +1374,24 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Notifications
 
-(doc-objc-class "NSPanel"               ; ns-panel
-  "A special kind of window that typically performs a function that is auxiliary to the main window. "
-  "For details about how panels work,
+(define-objc-class "NSPanel" ()
+  ()
+  (:documentation
+   "A special kind of window that typically performs a function that is auxiliary to the main window.
+For details about how panels work,
 especially to find out how their behavior differs from window behavior, see How Panels Work:
-https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPanel/Concepts/UsingPanels.html#//apple_ref/doc/uid/20000224"
-  "see https://developer.apple.com/documentation/appkit/nspanel?language=objc")
+https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPanel/Concepts/UsingPanels.html#//apple_ref/doc/uid/20000224
+see https://developer.apple.com/documentation/appkit/nspanel?language=objc"))
 
 ;; Configuring Panels
 
 ;; Constants
 
-(doc-objc-class "NSWindowTab"           ; ns-window-tab
-  "A tab associated with a window that is part of a tabbing group. "
-  "see https://developer.apple.com/documentation/appkit/nswindowtab?language=objc")
+(define-objc-class "NSWindowTab" ()
+  ()
+  (:documentation
+   "A tab associated with a window that is part of a tabbing group.
+see https://developer.apple.com/documentation/appkit/nswindowtab?language=objc"))
 
 ;; Customizing the Title
 
@@ -1245,9 +1401,11 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPa
 
 ;; Relationships
 
-(doc-objc-class "NSWindowTabGroup"      ; ns-window-tab-group
-  "A group of windows that display together as a single tabbed window."
-  "see https://developer.apple.com/documentation/appkit/nswindowtabgroup?language=objc")
+(define-objc-class "NSWindowTabGroup" ()
+  ()
+  (:documentation
+   "A group of windows that display together as a single tabbed window.
+see https://developer.apple.com/documentation/appkit/nswindowtabgroup?language=objc"))
 
 ;; Checking the Group Identifier
 
@@ -1259,25 +1417,27 @@ https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/WinPa
 
 ;;; Screens
 
-(doc-objc-class "NSScreen"              ; ns-screen
-  "An object that describes the attributes of a computer’s monitor or screen. "
-  "An app may use an NSScreen object to retrieve information about a
+(define-objc-class "NSScreen" ()
+  ()
+  (:documentation
+   "An object that describes the attributes of a computer’s monitor or screen.
+An app may use an NSScreen object to retrieve information about a
 screen and use this information to decide what to display on that
 screen. For example, an app may use the deepestScreen method to find
 out which of the available screens can best represent color and then
-might choose to display all of its windows on that screen."
-  "Create the application object before you use the methods in this
+might choose to display all of its windows on that screen.
+Create the application object before you use the methods in this
 class, so that the application object can make the necessary
 connection to the window system. You can make sure the application
 object exists by invoking the sharedApplication method of
 NSApplication. If you created your app with Xcode, the application
-object is automatically created for you during initialization."
-  "Note
+object is automatically created for you during initialization.
+Note
 The NSScreen class is only for getting information about the available
 displays. If you need additional information or want to change the
 attributes relating to a display, you must use Quartz Services. For
-more information, see Quartz Display Services."
-  "see https://developer.apple.com/documentation/appkit/nsscreen?language=objc")
+more information, see Quartz Display Services.
+see https://developer.apple.com/documentation/appkit/nsscreen?language=objc"))
 
 ;; Getting Screen Objects
 
@@ -1299,9 +1459,11 @@ more information, see Quartz Display Services."
 
 ;;; Popovers
 
-(doc-objc-class "NSPopover"             ; ns-popover
-  "A means to display additional content related to existing content on the screen. "
-  "The popover is positioned relative to the existing content and an
+(define-objc-class "NSPopover" ()
+  ()
+  (:documentation
+   "A means to display additional content related to existing content on the screen.
+The popover is positioned relative to the existing content and an
 anchor is used to express the relation between these two units of
 content. A popover has an appearance that specifies its visual
 characteristics, as well as a behavior that determines which user
@@ -1318,8 +1480,8 @@ moves. A positioning rectangle within the positioning view can be
 specified for additional granularity.
 
 Popovers can be detached to become a separate window when they are
-dragged by implementing the appropriate delegate method."
-  "see https://developer.apple.com/documentation/appkit/nspopover?language=objc")
+dragged by implementing the appropriate delegate method.
+see https://developer.apple.com/documentation/appkit/nspopover?language=objc"))
 
 ;; Accessing a Popover's Content View Controller
 
@@ -1343,52 +1505,70 @@ dragged by implementing the appropriate delegate method."
 
 ;;; Alerts
 
-(doc-objc-class "NSAlert"               ; ns-alert
-  "A modal dialog or sheet attached to a document window. "
-  "see https://developer.apple.com/documentation/appkit/nsalert?language=objc")
+(define-objc-class "NSAlert" ()
+  ()
+  (:documentation
+   "A modal dialog or sheet attached to a document window.
+see https://developer.apple.com/documentation/appkit/nsalert?language=objc"))
 
 ;;; Open and Save Panels
 
-(doc-objc-class "NSOpenPanel"           ; ns-open-panel
-  "A panel that prompts the user to select a file to open. "
-  "see https://developer.apple.com/documentation/appkit/nsopenpanel?language=objc")
+(define-objc-class "NSOpenPanel" ()
+  ()
+  (:documentation
+   "A panel that prompts the user to select a file to open.
+see https://developer.apple.com/documentation/appkit/nsopenpanel?language=objc"))
 
-(doc-objc-class "NSSavePanel"           ; ns-save-panel
-  "A panel that prompts the user for information about where to save a file. "
-  "see https://developer.apple.com/documentation/appkit/nssavepanel?language=objc")
+(define-objc-class "NSSavePanel" ()
+  ()
+  (:documentation
+   "A panel that prompts the user for information about where to save a file.
+see https://developer.apple.com/documentation/appkit/nssavepanel?language=objc"))
 
 ;;; Share Panel
 
-(doc-objc-class "NSSharingServicePicker" ; ns-sharing-service-picker
-  "A list of sharing services that the user can choose from. "
-  "see https://developer.apple.com/documentation/appkit/nssharingservicepicker?language=objc")
+(define-objc-class "NSSharingServicePicker" ()
+  ()
+  (:documentation
+   "A list of sharing services that the user can choose from.
+see https://developer.apple.com/documentation/appkit/nssharingservicepicker?language=objc"))
 
-(doc-objc-class "NSPreviewRepresentingActivityItem" ; ns-preview-representing-activity-item
-  "A type that adds metadata to an item you share using the macOS share sheet. "
-  "see https://developer.apple.com/documentation/appkit/nspreviewrepresentingactivityitem?language=objc")
+(define-objc-class "NSPreviewRepresentingActivityItem" ()
+  ()
+  (:documentation
+   "A type that adds metadata to an item you share using the macOS share sheet.
+see https://developer.apple.com/documentation/appkit/nspreviewrepresentingactivityitem?language=objc"))
 
 ;;; Print and PDF Panels
 
-(doc-objc-class "NSPDFPanel"            ; ns-pdf-panel
-  "A Save or Export as PDF panel that’s consistent with the macOS user interface."
-  "see https://developer.apple.com/documentation/appkit/nspdfpanel?language=objc")
+(define-objc-class "NSPDFPanel" ()
+  ()
+  (:documentation
+   "A Save or Export as PDF panel that’s consistent with the macOS user interface.
+see https://developer.apple.com/documentation/appkit/nspdfpanel?language=objc"))
 
 ;;; Color Panels
 
-(doc-objc-class "NSColorPanel"          ; ns-color-panel
-  "A standard user interface for selecting color in an app. "
-  "see https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc")
+(define-objc-class "NSColorPanel" ()
+  ()
+  (:documentation
+   "A standard user interface for selecting color in an app.
+see https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc"))
 
-(doc-objc-class "NSColorPicker"         ; ns-color-picker
-  "An abstract superclass that implements the default color picking protocol."
-  "see https://developer.apple.com/documentation/appkit/nscolorpicker?language=objc")
+(define-objc-class "NSColorPicker" ()
+  ()
+  (:documentation
+   "An abstract superclass that implements the default color picking protocol.
+see https://developer.apple.com/documentation/appkit/nscolorpicker?language=objc"))
 
 ;;; Font Panels
 
-(doc-objc-class "NSFontPanel"           ; ns-font-panel
-  "The Font panel a user interface object that displays a list of available fonts,
-letting the user preview them and change the font used to display text. "
-  "see https://developer.apple.com/documentation/appkit/nsfontpanel?language=objc")
+(define-objc-class "NSFontPanel" ()
+  ()
+  (:documentation
+   "The Font panel a user interface object that displays a list of available fonts,
+letting the user preview them and change the font used to display text.
+see https://developer.apple.com/documentation/appkit/nsfontpanel?language=objc"))
 
 ;;; User Interface
 
@@ -1400,29 +1580,39 @@ letting the user preview them and change the font used to display text. "
 
 ;;; Sounds
 
-(doc-objc-class "NSSound"               ; ns-sound
-  "A simple interface for loading and playing audio files."
-  "see https://developer.apple.com/documentation/appkit/nssound?language=objc")
+(define-objc-class "NSSound" ()
+  ()
+  (:documentation
+   "A simple interface for loading and playing audio files.
+see https://developer.apple.com/documentation/appkit/nssound?language=objc"))
 
 ;;; Speech
 
-(doc-objc-class "NSSpeechRecognizer"    ; ns-speech-recognizer
-  "The Cocoa interface to speech recognition in macOS."
-  "see https://developer.apple.com/documentation/appkit/nsspeechrecognizer?language=objc")
+(define-objc-class "NSSpeechRecognizer" ()
+  ()
+  (:documentation
+   "The Cocoa interface to speech recognition in macOS.
+see https://developer.apple.com/documentation/appkit/nsspeechrecognizer?language=objc"))
 
-(doc-objc-class "NSSpeechSynthesizer"   ; ns-speech-synthesizer
-  "The Cocoa interface to speech synthesis in macOS."
-  "see https://developer.apple.com/documentation/appkit/nsspeechsynthesizer?language=objc")
+(define-objc-class "NSSpeechSynthesizer" ()
+  ()
+  (:documentation
+   "The Cocoa interface to speech synthesis in macOS.
+see https://developer.apple.com/documentation/appkit/nsspeechsynthesizer?language=objc"))
 
 ;;; Haptics
 
-(doc-objc-class "NSHapticFeedbackManager" ; ns-haptic-feedback-manager
-  "An object that provides access to the haptic feedback management attributes on a system with a Force Touch trackpad."
-  "see https://developer.apple.com/documentation/appkit/nshapticfeedbackmanager?language=objc")
+(define-objc-class "NSHapticFeedbackManager" ()
+  ()
+  (:documentation
+   "An object that provides access to the haptic feedback management attributes on a system with a Force Touch trackpad.
+see https://developer.apple.com/documentation/appkit/nshapticfeedbackmanager?language=objc"))
 
-(doc-objc-class "NSAlignmentFeedbackFilter" ; ns-alignment-feedback-filter
-  "An object that can filter the movement of an object and provides haptic feedback when alignment occurs."
-  "see https://developer.apple.com/documentation/appkit/nsalignmentfeedbackfilter?language=objc")
+(define-objc-class "NSAlignmentFeedbackFilter" ()
+  ()
+  (:documentation
+   "An object that can filter the movement of an object and provides haptic feedback when alignment occurs.
+see https://developer.apple.com/documentation/appkit/nsalignmentfeedbackfilter?language=objc"))
 
 
 ;;;; Supporting Continuity Camera in Your Mac App
@@ -1559,22 +1749,22 @@ see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift
   (:function                         8388608 "A function key has been pressed.")
   (:device-independent-flags-mask 4294901760 "Device-independent modifier flags are masked."))
 
-(doc-objc-class "NSEvent"               ; ns-event
+(define-objc-class "NSEvent" ()
   (("type"
     :reader event-type
-    :after  decode-ns-event-type
+    :after decode-ns-event-type
     :documentation
     "The event’s type.
 See https://developer.apple.com/documentation/appkit/nsevent/type?language=objc")
    ("subtype"
     :reader event-subtype
-    :after  decode-ns-event-subtype
+    :after decode-ns-event-subtype
     :documentation
     "The event’s subtype.
 See https://developer.apple.com/documentation/appkit/nsevent/subtype?language=objc")
    ("modifierFlags"
     :reader modifier-flags
-    :after  decode-ns-event-modifier-flags
+    :after decode-ns-event-modifier-flags
     :documentation
     "https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.property?language=objc")
    ("locationInWindow"
@@ -1589,9 +1779,10 @@ See https://developer.apple.com/documentation/appkit/nsevent/subtype?language=ob
     :reader window
     :documentation
     "The window object associated with the event. "))
-  "An object that contains information about an input action,
-such as a mouse click or a key press."
-  "AppKit reports events that occur in a window to the app that created
+  (:documentation
+   "An object that contains information about an input action,
+such as a mouse click or a key press.
+AppKit reports events that occur in a window to the app that created
 the window. Events include mouse clicks, key presses, and other types
 of input to the system. An NSEvent object contains pertinent
 information about each event, such as the event type and when the
@@ -1620,8 +1811,8 @@ addLocalMonitorForEventsMatchingMask:handler: method to detect
 specific types of events and take action when your app receives
 them. Install a global monitor using the
 addGlobalMonitorForEventsMatchingMask:handler: method to monitor
-events systemwide, although without the ability to modify them."
-  "see https://developer.apple.com/documentation/appkit/nsevent?language=objc")
+events systemwide, although without the ability to modify them.
+see https://developer.apple.com/documentation/appkit/nsevent?language=objc"))
 
 
 ;;;; Menus, Cursors, and the Dock
@@ -1631,49 +1822,67 @@ events systemwide, although without the ability to modify them."
 
 ;;; Menus
 
-(doc-objc-class "NSMenu"                ; ns-menu
-  "An object that manages an app’s menus."
-  "see https://developer.apple.com/documentation/appkit/nsmenu?language=objc")
+(define-objc-class "NSMenu" ()
+  ()
+  (:documentation
+   "An object that manages an app’s menus.
+see https://developer.apple.com/documentation/appkit/nsmenu?language=objc"))
 
-(doc-objc-class "NSMenuItem"            ; ns-menu-item
-  "A command item in an app menu."
-  "see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc")
+(define-objc-class "NSMenuItem" ()
+  ()
+  (:documentation
+   "A command item in an app menu.
+see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc"))
 
-(doc-objc-class "NSMenuItemBadge"       ; ns-menu-item-badge
-  "A control that provides additional quantitative information specific to a menu item, such as the number of available updates."
-  "see https://developer.apple.com/documentation/appkit/nsmenuitembadge?language=objc")
+(define-objc-class "NSMenuItemBadge" ()
+  ()
+  (:documentation
+   "A control that provides additional quantitative information specific to a menu item, such as the number of available updates.
+see https://developer.apple.com/documentation/appkit/nsmenuitembadge?language=objc"))
 
 ;;; Menu Validation
 
 ;;; Menu Bar Items
 
-(doc-objc-class "NSStatusBar"           ; ns-status-bar
-  "An object that manages a collection of status items displayed within the system-wide menu bar."
-  "see https://developer.apple.com/documentation/appkit/nsstatusbar?language=objc")
+(define-objc-class "NSStatusBar" ()
+  ()
+  (:documentation
+   "An object that manages a collection of status items displayed within the system-wide menu bar.
+see https://developer.apple.com/documentation/appkit/nsstatusbar?language=objc"))
 
-(doc-objc-class "NSStatusItem"          ; ns-status-item
-  "An individual element displayed in the system menu bar."
-  "see https://developer.apple.com/documentation/appkit/nsstatusitem?language=objc")
+(define-objc-class "NSStatusItem" ()
+  ()
+  (:documentation
+   "An individual element displayed in the system menu bar.
+see https://developer.apple.com/documentation/appkit/nsstatusitem?language=objc"))
 
-(doc-objc-class "NSStatusBarButton"     ; ns-status-bar-button
-  "The appearance and behavior of an item in the systemwide menu bar."
-  "see https://developer.apple.com/documentation/appkit/nsstatusbarbutton?language=objc")
+(define-objc-class "NSStatusBarButton" ()
+  ()
+  (:documentation
+   "The appearance and behavior of an item in the systemwide menu bar.
+see https://developer.apple.com/documentation/appkit/nsstatusbarbutton?language=objc"))
 
 ;;; Cursors
 
-(doc-objc-class "NSCursor"              ; ns-cursor
-  "A pointer (also called a cursor)."
-  "see https://developer.apple.com/documentation/appkit/nscursor?language=objc")
+(define-objc-class "NSCursor" ()
+  ()
+  (:documentation
+   "A pointer (also called a cursor).
+see https://developer.apple.com/documentation/appkit/nscursor?language=objc"))
 
-(doc-objc-class "NSTrackingArea"        ; ns-tracking-area
-  "A region of a view that generates mouse-tracking and cursor-update events when the pointer is over that region."
-  "see https://developer.apple.com/documentation/appkit/nstrackingarea?language=objc")
+(define-objc-class "NSTrackingArea" ()
+  ()
+  (:documentation
+   "A region of a view that generates mouse-tracking and cursor-update events when the pointer is over that region.
+see https://developer.apple.com/documentation/appkit/nstrackingarea?language=objc"))
 
 ;;; The Dock
 
-(doc-objc-class "NSDockTile"            ; ns-dock-tile
-  "The visual representation of your app’s miniaturized windows and app icon as they appear in the Dock."
-  "see https://developer.apple.com/documentation/appkit/nsdocktile?language=objc")
+(define-objc-class "NSDockTile" ()
+  ()
+  (:documentation
+   "The visual representation of your app’s miniaturized windows and app icon as they appear in the Dock.
+see https://developer.apple.com/documentation/appkit/nsdocktile?language=objc"))
 
 
 ;;;; Gestures
@@ -1683,31 +1892,43 @@ events systemwide, although without the ability to modify them."
 
 ;;; Standard Gestures
 
-(doc-objc-class "NSClickGestureRecognizer" ; ns-click-gesture-recognizer
-  "A discrete gesture recognizer that tracks a specified number of mouse clicks."
-  "see https://developer.apple.com/documentation/appkit/nsclickgesturerecognizer?language=objc")
+(define-objc-class "NSClickGestureRecognizer" ()
+  ()
+  (:documentation
+   "A discrete gesture recognizer that tracks a specified number of mouse clicks.
+see https://developer.apple.com/documentation/appkit/nsclickgesturerecognizer?language=objc"))
 
-(doc-objc-class "NSPressGestureRecognizer" ; ns-press-gesture-recognizer
-  "A discrete gesture recognizer that tracks whether the user holds down a mouse button for a minimum amount of time before releasing it."
-  "see https://developer.apple.com/documentation/appkit/nspressgesturerecognizer?language=objc")
+(define-objc-class "NSPressGestureRecognizer" ()
+  ()
+  (:documentation
+   "A discrete gesture recognizer that tracks whether the user holds down a mouse button for a minimum amount of time before releasing it.
+see https://developer.apple.com/documentation/appkit/nspressgesturerecognizer?language=objc"))
 
-(doc-objc-class "NSPanGestureRecognizer" ; ns-pan-gesture-recognizer
-  "A continuous gesture recognizer for panning gestures."
-  "see https://developer.apple.com/documentation/appkit/nspangesturerecognizer?language=objc")
+(define-objc-class "NSPanGestureRecognizer" ()
+  ()
+  (:documentation
+   "A continuous gesture recognizer for panning gestures.
+see https://developer.apple.com/documentation/appkit/nspangesturerecognizer?language=objc"))
 
-(doc-objc-class "NSRotationGestureRecognizer" ; ns-rotation-gesture-recognizer
-  "A continuous gesture recognizer that tracks two trackpad touches moving opposite each other in a circular motion."
-  "see https://developer.apple.com/documentation/appkit/nsrotationgesturerecognizer?language=objc")
+(define-objc-class "NSRotationGestureRecognizer" ()
+  ()
+  (:documentation
+   "A continuous gesture recognizer that tracks two trackpad touches moving opposite each other in a circular motion.
+see https://developer.apple.com/documentation/appkit/nsrotationgesturerecognizer?language=objc"))
 
-(doc-objc-class "NSMagnificationGestureRecognizer" ; ns-magnification-gesture-recognizer
-  "A continuous gesture recognizer that tracks a pinch gesture that magnifies content."
-  "see https://developer.apple.com/documentation/appkit/nsmagnificationgesturerecognizer?language=objc")
+(define-objc-class "NSMagnificationGestureRecognizer" ()
+  ()
+  (:documentation
+   "A continuous gesture recognizer that tracks a pinch gesture that magnifies content.
+see https://developer.apple.com/documentation/appkit/nsmagnificationgesturerecognizer?language=objc"))
 
 ;;; Custom Gestures
 
-(doc-objc-class "NSGestureRecognizer"   ; ns-gesture-recognizer
-  "An object that monitors events and calls its action method when a predefined sequence of events occur."
-  "see https://developer.apple.com/documentation/appkit/nsgesturerecognizer?language=objc")
+(define-objc-class "NSGestureRecognizer" ()
+  ()
+  (:documentation
+   "An object that monitors events and calls its action method when a predefined sequence of events occur.
+see https://developer.apple.com/documentation/appkit/nsgesturerecognizer?language=objc"))
 
 
 ;;;; Touch Bar
@@ -1716,109 +1937,157 @@ events systemwide, although without the ability to modify them."
 
 ;;; Essentials
 
-(doc-objc-class "NSTouchBar"            ; ns-touch-bar
-  "An object that provides dynamic contextual controls in the Touch Bar of supported models of MacBook Pro."
-  "see https://developer.apple.com/documentation/appkit/nstouchbar?language=objc")
+(define-objc-class "NSTouchBar" ()
+  ()
+  (:documentation
+   "An object that provides dynamic contextual controls in the Touch Bar of supported models of MacBook Pro.
+see https://developer.apple.com/documentation/appkit/nstouchbar?language=objc"))
 
 ;;; Touch Bar items
 
-(doc-objc-class "NSTouchBarItem"        ; ns-touch-bar-item
-  "A UI control shown in the Touch Bar on supported models of MacBook Pro."
-  "see https://developer.apple.com/documentation/appkit/nstouchbaritem?language=objc")
+(define-objc-class "NSTouchBarItem" ()
+  ()
+  (:documentation
+   "A UI control shown in the Touch Bar on supported models of MacBook Pro.
+see https://developer.apple.com/documentation/appkit/nstouchbaritem?language=objc"))
 
-(doc-objc-class "NSCandidateListTouchBarItem" ; ns-candidate-list-touch-bar-item
-  "A bar item that, along with its delegate, provides a list of textual suggestions for the current text view."
-  "see https://developer.apple.com/documentation/appkit/nscandidatelisttouchbaritem?language=objc")
+(define-objc-class "NSCandidateListTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that, along with its delegate, provides a list of textual suggestions for the current text view.
+see https://developer.apple.com/documentation/appkit/nscandidatelisttouchbaritem?language=objc"))
 
-(doc-objc-class "NSColorPickerTouchBarItem" ; ns-color-picker-touch-bar-item
-  "A bar item that provides a system-defined color picker."
-  "see https://developer.apple.com/documentation/appkit/nscolorpickertouchbaritem?language=objc")
+(define-objc-class "NSColorPickerTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a system-defined color picker.
+see https://developer.apple.com/documentation/appkit/nscolorpickertouchbaritem?language=objc"))
 
-(doc-objc-class "NSCustomTouchBarItem"  ; ns-custom-touch-bar-item
-  "A bar item that contains a responder of your choice, such as a view, a button, or a scrubber."
-  "see https://developer.apple.com/documentation/appkit/nscustomtouchbaritem?language=objc")
+(define-objc-class "NSCustomTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that contains a responder of your choice, such as a view, a button, or a scrubber.
+see https://developer.apple.com/documentation/appkit/nscustomtouchbaritem?language=objc"))
 
-(doc-objc-class "NSGroupTouchBarItem"   ; ns-group-touch-bar-item
-  "A bar item that provides a bar to contain other items."
-  "see https://developer.apple.com/documentation/appkit/nsgrouptouchbaritem?language=objc")
+(define-objc-class "NSGroupTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a bar to contain other items.
+see https://developer.apple.com/documentation/appkit/nsgrouptouchbaritem?language=objc"))
 
-(doc-objc-class "NSPopoverTouchBarItem" ; ns-popover-touch-bar-item
-  "A bar item that provides a two-state control that can expand into its second state, showing the contents of a bar that it owns."
-  "see https://developer.apple.com/documentation/appkit/nspopovertouchbaritem?language=objc")
+(define-objc-class "NSPopoverTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a two-state control that can expand into its second state, showing the contents of a bar that it owns.
+see https://developer.apple.com/documentation/appkit/nspopovertouchbaritem?language=objc"))
 
-(doc-objc-class "NSSharingServicePickerTouchBarItem" ; ns-sharing-service-picker-touch-bar-item
-  "A bar item that, along with its delegate, provides a list of objects eligible for sharing."
-  "see https://developer.apple.com/documentation/appkit/nssharingservicepickertouchbaritem?language=objc")
+(define-objc-class "NSSharingServicePickerTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that, along with its delegate, provides a list of objects eligible for sharing.
+see https://developer.apple.com/documentation/appkit/nssharingservicepickertouchbaritem?language=objc"))
 
-(doc-objc-class "NSSliderTouchBarItem"  ; ns-slider-touch-bar-item
-  "A bar item that provides a slider control for choosing a value in a range."
-  "see https://developer.apple.com/documentation/appkit/nsslidertouchbaritem?language=objc")
+(define-objc-class "NSSliderTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a slider control for choosing a value in a range.
+see https://developer.apple.com/documentation/appkit/nsslidertouchbaritem?language=objc"))
 
-(doc-objc-class "NSStepperTouchBarItem" ; ns-stepper-touch-bar-item
-  "A bar item that provides a stepper control for incrementing or decrementing a value."
-  "see https://developer.apple.com/documentation/appkit/nssteppertouchbaritem?language=objc")
+(define-objc-class "NSStepperTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a stepper control for incrementing or decrementing a value.
+see https://developer.apple.com/documentation/appkit/nssteppertouchbaritem?language=objc"))
 
-(doc-objc-class "NSUserInterfaceCompressionOptions" ; ns-user-interface-compression-options
-  "An object that specifies how user interface elements resize themselves when space is constrained."
-  "see https://developer.apple.com/documentation/appkit/nsuserinterfacecompressionoptions?language=objc")
+(define-objc-class "NSUserInterfaceCompressionOptions" ()
+  ()
+  (:documentation
+   "An object that specifies how user interface elements resize themselves when space is constrained.
+see https://developer.apple.com/documentation/appkit/nsuserinterfacecompressionoptions?language=objc"))
 
-(doc-objc-class "NSButtonTouchBarItem"  ; ns-button-touch-bar-item
-  "A bar item that provides a button."
-  "see https://developer.apple.com/documentation/appkit/nsbuttontouchbaritem?language=objc")
+(define-objc-class "NSButtonTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a button.
+see https://developer.apple.com/documentation/appkit/nsbuttontouchbaritem?language=objc"))
 
-(doc-objc-class "NSPickerTouchBarItem"  ; ns-picker-touch-bar-item
-  "A bar item that provides a picker control with multiple options."
-  "see https://developer.apple.com/documentation/appkit/nspickertouchbaritem?language=objc")
+(define-objc-class "NSPickerTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a picker control with multiple options.
+see https://developer.apple.com/documentation/appkit/nspickertouchbaritem?language=objc"))
 
 ;;; Scrubbers
 
-(doc-objc-class "NSScrubber"            ; ns-scrubber
-  "A customizable item picker control for the Touch Bar."
-  "see https://developer.apple.com/documentation/appkit/nsscrubber?language=objc")
+(define-objc-class "NSScrubber" ()
+  ()
+  (:documentation
+   "A customizable item picker control for the Touch Bar.
+see https://developer.apple.com/documentation/appkit/nsscrubber?language=objc"))
 
 ;;; Scrubber items
 
-(doc-objc-class "NSScrubberItemView"    ; ns-scrubber-item-view
-  "An item at a specific index position in the scrubber."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberitemview?language=objc")
+(define-objc-class "NSScrubberItemView" ()
+  ()
+  (:documentation
+   "An item at a specific index position in the scrubber.
+see https://developer.apple.com/documentation/appkit/nsscrubberitemview?language=objc"))
 
-(doc-objc-class "NSScrubberArrangedView" ; ns-scrubber-arranged-view
-  "An abstract base class for the views whose layout is managed by a scrubber."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberarrangedview?language=objc")
+(define-objc-class "NSScrubberArrangedView" ()
+  ()
+  (:documentation
+   "An abstract base class for the views whose layout is managed by a scrubber.
+see https://developer.apple.com/documentation/appkit/nsscrubberarrangedview?language=objc"))
 
-(doc-objc-class "NSScrubberImageItemView" ; ns-scrubber-image-item-view
-  "A concrete view subclass for displaying images in a scrubber items."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberimageitemview?language=objc")
+(define-objc-class "NSScrubberImageItemView" ()
+  ()
+  (:documentation
+   "A concrete view subclass for displaying images in a scrubber items.
+see https://developer.apple.com/documentation/appkit/nsscrubberimageitemview?language=objc"))
 
-(doc-objc-class "NSScrubberSelectionStyle" ; ns-scrubber-selection-style
-  "An abstract class that provides decorative accessory views for selected and highlighted items within a scrubber control."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberselectionstyle?language=objc")
+(define-objc-class "NSScrubberSelectionStyle" ()
+  ()
+  (:documentation
+   "An abstract class that provides decorative accessory views for selected and highlighted items within a scrubber control.
+see https://developer.apple.com/documentation/appkit/nsscrubberselectionstyle?language=objc"))
 
-(doc-objc-class "NSScrubberSelectionView" ; ns-scrubber-selection-view
-  "An abstract base class for specifying the appearance of a highlighted or selected item in a scrubber."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberselectionview?language=objc")
+(define-objc-class "NSScrubberSelectionView" ()
+  ()
+  (:documentation
+   "An abstract base class for specifying the appearance of a highlighted or selected item in a scrubber.
+see https://developer.apple.com/documentation/appkit/nsscrubberselectionview?language=objc"))
 
-(doc-objc-class "NSScrubberTextItemView" ; ns-scrubber-text-item-view
-  "A concrete view subclass for displaying text for an item in a scrubber."
-  "see https://developer.apple.com/documentation/appkit/nsscrubbertextitemview?language=objc")
+(define-objc-class "NSScrubberTextItemView" ()
+  ()
+  (:documentation
+   "A concrete view subclass for displaying text for an item in a scrubber.
+see https://developer.apple.com/documentation/appkit/nsscrubbertextitemview?language=objc"))
 
 ;;; Scrubber layouts
 
-(doc-objc-class "NSScrubberFlowLayout"  ; ns-scrubber-flow-layout
-  "A concrete layout object that arranges items end-to-end in a linear strip."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberflowlayout?language=objc")
+(define-objc-class "NSScrubberFlowLayout" ()
+  ()
+  (:documentation
+   "A concrete layout object that arranges items end-to-end in a linear strip.
+see https://developer.apple.com/documentation/appkit/nsscrubberflowlayout?language=objc"))
 
-(doc-objc-class "NSScrubberProportionalLayout" ; ns-scrubber-proportional-layout
-  "A concrete layout object that sizes each item to some fraction of the scrubber’s visible size."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberproportionallayout?language=objc")
+(define-objc-class "NSScrubberProportionalLayout" ()
+  ()
+  (:documentation
+   "A concrete layout object that sizes each item to some fraction of the scrubber’s visible size.
+see https://developer.apple.com/documentation/appkit/nsscrubberproportionallayout?language=objc"))
 
-(doc-objc-class "NSScrubberLayoutAttributes" ; ns-scrubber-layout-attributes
-  "The layout of a scrubber item."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberlayoutattributes?language=objc")
+(define-objc-class "NSScrubberLayoutAttributes" ()
+  ()
+  (:documentation
+   "The layout of a scrubber item.
+see https://developer.apple.com/documentation/appkit/nsscrubberlayoutattributes?language=objc"))
 
-(doc-objc-class "NSScrubberLayout"      ; ns-scrubber-layout
-  "An abstract class that describes the layout of items within a scrubber control."
-  "see https://developer.apple.com/documentation/appkit/nsscrubberlayout?language=objc")
+(define-objc-class "NSScrubberLayout" ()
+  ()
+  (:documentation
+   "An abstract class that describes the layout of items within a scrubber control.
+see https://developer.apple.com/documentation/appkit/nsscrubberlayout?language=objc"))
 
 
 ;;;; Drag and Drop
@@ -1827,17 +2096,23 @@ events systemwide, although without the ability to modify them."
 
 ;;; Drag Sources
 
-(doc-objc-class "NSDraggingItem"        ; ns-dragging-item
-  "A single dragged item within a dragging session."
-  "see https://developer.apple.com/documentation/appkit/nsdraggingitem?language=objc")
+(define-objc-class "NSDraggingItem" ()
+  ()
+  (:documentation
+   "A single dragged item within a dragging session.
+see https://developer.apple.com/documentation/appkit/nsdraggingitem?language=objc"))
 
-(doc-objc-class "NSDraggingSession"     ; ns-dragging-session
-  "The encapsulation of a drag-and-drop action that supports modification of the drag while in progress."
-  "see https://developer.apple.com/documentation/appkit/nsdraggingsession?language=objc")
+(define-objc-class "NSDraggingSession" ()
+  ()
+  (:documentation
+   "The encapsulation of a drag-and-drop action that supports modification of the drag while in progress.
+see https://developer.apple.com/documentation/appkit/nsdraggingsession?language=objc"))
 
-(doc-objc-class "NSDraggingImageComponent" ; ns-dragging-image-component
-  "A single object in a dragging item."
-  "see https://developer.apple.com/documentation/appkit/nsdraggingimagecomponent?language=objc")
+(define-objc-class "NSDraggingImageComponent" ()
+  ()
+  (:documentation
+   "A single object in a dragging item.
+see https://developer.apple.com/documentation/appkit/nsdraggingimagecomponent?language=objc"))
 
 ;;; Drop Targets
 
@@ -1854,9 +2129,11 @@ events systemwide, although without the ability to modify them."
 
 ;;; Custom Elements
 
-(doc-objc-class "NSAccessibilityElement" ; ns-accessibility-element
-  "The basic infrastructure necessary for interacting with an assistive app."
-  "see https://developer.apple.com/documentation/appkit/nsaccessibilityelement-swift.class?language=objc")
+(define-objc-class "NSAccessibilityElement" ()
+  ()
+  (:documentation
+   "The basic infrastructure necessary for interacting with an assistive app.
+see https://developer.apple.com/documentation/appkit/nsaccessibilityelement-swift.class?language=objc"))
 
 ;;; Accessibility Types
 
@@ -1867,47 +2144,65 @@ events systemwide, although without the ability to modify them."
 
 ;;; Images
 
-(doc-objc-class "NSImage"               ; ns-image
-  "A high-level interface for manipulating image data."
-  "see https://developer.apple.com/documentation/appkit/nsimage?language=objc")
+(define-objc-class "NSImage" ()
+  ()
+  (:documentation
+   "A high-level interface for manipulating image data.
+see https://developer.apple.com/documentation/appkit/nsimage?language=objc"))
 
-(doc-objc-class "NSImageRep"            ; ns-image-rep
-  "A semiabstract superclass that provides subclasses that you use to draw an image from a particular type of source data."
-  "see https://developer.apple.com/documentation/appkit/nsimagerep?language=objc")
+(define-objc-class "NSImageRep" ()
+  ()
+  (:documentation
+   "A semiabstract superclass that provides subclasses that you use to draw an image from a particular type of source data.
+see https://developer.apple.com/documentation/appkit/nsimagerep?language=objc"))
 
 ;;; Bitmap Formats
 
-(doc-objc-class "NSBitmapImageRep"      ; ns-bitmap-image-rep
-  "An object that renders an image from bitmap data."
-  "see https://developer.apple.com/documentation/appkit/nsbitmapimagerep?language=objc")
+(define-objc-class "NSBitmapImageRep" ()
+  ()
+  (:documentation
+   "An object that renders an image from bitmap data.
+see https://developer.apple.com/documentation/appkit/nsbitmapimagerep?language=objc"))
 
-(doc-objc-class "NSCIImageRep"          ; ns-ci-image-rep
-  "An object that can render an image from a Core Image object."
-  "see https://developer.apple.com/documentation/appkit/nsciimagerep?language=objc")
+(define-objc-class "NSCIImageRep" ()
+  ()
+  (:documentation
+   "An object that can render an image from a Core Image object.
+see https://developer.apple.com/documentation/appkit/nsciimagerep?language=objc"))
 
-(doc-objc-class "NSPICTImageRep"        ; ns-pict-image-rep
-  "An object that renders an image from a PICT format data stream of version 1, version 2, and extended version 2."
-  "see https://developer.apple.com/documentation/appkit/nspictimagerep?language=objc")
+(define-objc-class "NSPICTImageRep" ()
+  ()
+  (:documentation
+   "An object that renders an image from a PICT format data stream of version 1, version 2, and extended version 2.
+see https://developer.apple.com/documentation/appkit/nspictimagerep?language=objc"))
 
 ;;; Vector Formats
 
-(doc-objc-class "NSPDFImageRep"         ; ns-pdf-image-rep
-  "An object that can render an image from a PDF format data stream."
-  "see https://developer.apple.com/documentation/appkit/nspdfimagerep?language=objc")
+(define-objc-class "NSPDFImageRep" ()
+  ()
+  (:documentation
+   "An object that can render an image from a PDF format data stream.
+see https://developer.apple.com/documentation/appkit/nspdfimagerep?language=objc"))
 
-(doc-objc-class "NSPDFInfo"             ; ns-pdf-info
-  "An object that stores information associated with the creation of a PDF file, such as its URL, tag names, page orientation, and paper size."
-  "see https://developer.apple.com/documentation/appkit/nspdfinfo?language=objc")
+(define-objc-class "NSPDFInfo" ()
+  ()
+  (:documentation
+   "An object that stores information associated with the creation of a PDF file, such as its URL, tag names, page orientation, and paper size.
+see https://developer.apple.com/documentation/appkit/nspdfinfo?language=objc"))
 
-(doc-objc-class "NSEPSImageRep"         ; ns-eps-image-rep
-  "An object that can render an image from encapsulated PostScript (EPS) code."
-  "see https://developer.apple.com/documentation/appkit/nsepsimagerep?language=objc")
+(define-objc-class "NSEPSImageRep" ()
+  ()
+  (:documentation
+   "An object that can render an image from encapsulated PostScript (EPS) code.
+see https://developer.apple.com/documentation/appkit/nsepsimagerep?language=objc"))
 
 ;;; Custom Formats
 
-(doc-objc-class "NSCustomImageRep"      ; ns-custom-image-rep
-  "An object that uses a delegate object to render an image from a custom format."
-  "see https://developer.apple.com/documentation/appkit/nscustomimagerep?language=objc")
+(define-objc-class "NSCustomImageRep" ()
+  ()
+  (:documentation
+   "An object that uses a delegate object to render an image from a custom format.
+see https://developer.apple.com/documentation/appkit/nscustomimagerep?language=objc"))
 
 
 ;;;; Drawing
@@ -1916,33 +2211,43 @@ events systemwide, although without the ability to modify them."
 
 ;;; Drawing Contexts
 
-(doc-objc-class "NSGraphicsContext"     ; ns-graphics-context
-  "An object that represents a graphics context."
-  "see https://developer.apple.com/documentation/appkit/nsgraphicscontext?language=objc")
+(define-objc-class "NSGraphicsContext" ()
+  ()
+  (:documentation
+   "An object that represents a graphics context.
+see https://developer.apple.com/documentation/appkit/nsgraphicscontext?language=objc"))
 
 ;;; Shapes and Paths
 
-(doc-objc-class "NSBezierPath"          ; ns-bezier-path
-  "An object that can create paths using PostScript-style commands."
-  "see https://developer.apple.com/documentation/appkit/nsbezierpath?language=objc")
+(define-objc-class "NSBezierPath" ()
+  ()
+  (:documentation
+   "An object that can create paths using PostScript-style commands.
+see https://developer.apple.com/documentation/appkit/nsbezierpath?language=objc"))
 
 ;;; Strings
 
-(doc-objc-class "NSStringDrawingContext" ; ns-string-drawing-context
-  "An object that manages metrics for drawing attributed strings."
-  "see https://developer.apple.com/documentation/appkit/nsstringdrawingcontext?language=objc")
+(define-objc-class "NSStringDrawingContext" ()
+  ()
+  (:documentation
+   "An object that manages metrics for drawing attributed strings.
+see https://developer.apple.com/documentation/appkit/nsstringdrawingcontext?language=objc"))
 
 ;;; Gradients
 
-(doc-objc-class "NSGradient"            ; ns-gradient
-  "An object that can draw gradient fill colors"
-  "see https://developer.apple.com/documentation/appkit/nsgradient?language=objc")
+(define-objc-class "NSGradient" ()
+  ()
+  (:documentation
+   "An object that can draw gradient fill colors
+see https://developer.apple.com/documentation/appkit/nsgradient?language=objc"))
 
 ;;; Shadows
 
-(doc-objc-class "NSShadow"              ; ns-shadow
-  "An object you use to specify attributes to create and style a drop shadow during drawing operations."
-  "see https://developer.apple.com/documentation/appkit/nsshadow?language=objc")
+(define-objc-class "NSShadow" ()
+  ()
+  (:documentation
+   "An object you use to specify attributes to create and style a drop shadow during drawing operations.
+see https://developer.apple.com/documentation/appkit/nsshadow?language=objc"))
 
 
 ;;;; Color
@@ -1952,38 +2257,52 @@ events systemwide, although without the ability to modify them."
 
 ;;; Colors
 
-(doc-objc-class "NSColor"               ; ns-color
-  "An object that stores color data and sometimes opacity (alpha value)."
-  "see https://developer.apple.com/documentation/appkit/nscolor?language=objc")
+(define-objc-class "NSColor" ()
+  ()
+  (:documentation
+   "An object that stores color data and sometimes opacity (alpha value).
+see https://developer.apple.com/documentation/appkit/nscolor?language=objc"))
 
-(doc-objc-class "NSColorList"           ; ns-color-list
-  "An ordered list of color objects, identified by keys."
-  "see https://developer.apple.com/documentation/appkit/nscolorlist?language=objc")
+(define-objc-class "NSColorList" ()
+  ()
+  (:documentation
+   "An ordered list of color objects, identified by keys.
+see https://developer.apple.com/documentation/appkit/nscolorlist?language=objc"))
 
-(doc-objc-class "NSColorSpace"          ; ns-color-space
-  "An object that represents a custom color space."
-  "see https://developer.apple.com/documentation/appkit/nscolorspace?language=objc")
+(define-objc-class "NSColorSpace" ()
+  ()
+  (:documentation
+   "An object that represents a custom color space.
+see https://developer.apple.com/documentation/appkit/nscolorspace?language=objc"))
 
 ;;; Color Selection
 
-(doc-objc-class "NSColorPicker"         ; ns-color-picker
-  "An abstract superclass that implements the default color picking protocol."
-  "see https://developer.apple.com/documentation/appkit/nscolorpicker?language=objc")
+(define-objc-class "NSColorPicker" ()
+  ()
+  (:documentation
+   "An abstract superclass that implements the default color picking protocol.
+see https://developer.apple.com/documentation/appkit/nscolorpicker?language=objc"))
 
-(doc-objc-class "NSColorWell"           ; ns-color-well
-  "A control that displays a color value and lets the user change that color value."
-  "see https://developer.apple.com/documentation/appkit/nscolorwell?language=objc")
+(define-objc-class "NSColorWell" ()
+  ()
+  (:documentation
+   "A control that displays a color value and lets the user change that color value.
+see https://developer.apple.com/documentation/appkit/nscolorwell?language=objc"))
 
-(doc-objc-class "NSColorPickerTouchBarItem" ; ns-color-picker-touch-bar-item
-  "A bar item that provides a system-defined color picker."
-  "see https://developer.apple.com/documentation/appkit/nscolorpickertouchbaritem?language=objc")
+(define-objc-class "NSColorPickerTouchBarItem" ()
+  ()
+  (:documentation
+   "A bar item that provides a system-defined color picker.
+see https://developer.apple.com/documentation/appkit/nscolorpickertouchbaritem?language=objc"))
 
 ;;; Color Sampler
 
-(doc-objc-class "NSColorSampler"        ; ns-color-sampler
-  "An object that displays the system’s color-sampling interface and
-returns the selected color to your app."
-  "see https://developer.apple.com/documentation/appkit/nscolorsampler?language=objc")
+(define-objc-class "NSColorSampler" ()
+  ()
+  (:documentation
+   "An object that displays the system’s color-sampling interface and
+returns the selected color to your app.
+see https://developer.apple.com/documentation/appkit/nscolorsampler?language=objc"))
 
 
 ;;;; Printing
@@ -1992,27 +2311,37 @@ returns the selected color to your app."
 
 ;;; Print Panels
 
-(doc-objc-class "NSPrintPanel"          ; ns-print-panel
-  "The Print panel that queries the user for information about a print job."
-  "see https://developer.apple.com/documentation/appkit/nsprintpanel?language=objc")
+(define-objc-class "NSPrintPanel" ()
+  ()
+  (:documentation
+   "The Print panel that queries the user for information about a print job.
+see https://developer.apple.com/documentation/appkit/nsprintpanel?language=objc"))
 
-(doc-objc-class "NSPageLayout"          ; ns-page-layout
-  "A panel that queries the user for information such as paper type and orientation."
-  "see https://developer.apple.com/documentation/appkit/nspagelayout?language=objc")
+(define-objc-class "NSPageLayout" ()
+  ()
+  (:documentation
+   "A panel that queries the user for information such as paper type and orientation.
+see https://developer.apple.com/documentation/appkit/nspagelayout?language=objc"))
 
 ;;; Print Information
 
-(doc-objc-class "NSPrinter"             ; ns-printer
-  "An object that describes a printer’s capabilities."
-  "see https://developer.apple.com/documentation/appkit/nsprinter?language=objc")
+(define-objc-class "NSPrinter" ()
+  ()
+  (:documentation
+   "An object that describes a printer’s capabilities.
+see https://developer.apple.com/documentation/appkit/nsprinter?language=objc"))
 
-(doc-objc-class "NSPrintInfo"           ; ns-print-info
-  "An object that stores information that’s used to generate printed output."
-  "see https://developer.apple.com/documentation/appkit/nsprintinfo?language=objc")
+(define-objc-class "NSPrintInfo" ()
+  ()
+  (:documentation
+   "An object that stores information that’s used to generate printed output.
+see https://developer.apple.com/documentation/appkit/nsprintinfo?language=objc"))
 
-(doc-objc-class "NSPrintOperation"      ; ns-print-operation
-  "An object that controls operations that generate Encapsulated PostScript (EPS) code, Portable Document Format (PDF) code, or print jobs."
-  "see https://developer.apple.com/documentation/appkit/nsprintoperation?language=objc")
+(define-objc-class "NSPrintOperation" ()
+  ()
+  (:documentation
+   "An object that controls operations that generate Encapsulated PostScript (EPS) code, Portable Document Format (PDF) code, or print jobs.
+see https://developer.apple.com/documentation/appkit/nsprintoperation?language=objc"))
 
 
 ;;;; Text Display
@@ -2021,36 +2350,48 @@ returns the selected color to your app."
 
 ;;; Text views
 
-(doc-objc-class "NSTextField"           ; ns-text-field
-  "Text the user can select or edit to send an action message to a target
-when the user presses the Return key."
-  "see https://developer.apple.com/documentation/appkit/nstextfield?language=objc")
+(define-objc-class "NSTextField" ()
+  ()
+  (:documentation
+   "Text the user can select or edit to send an action message to a target
+when the user presses the Return key.
+see https://developer.apple.com/documentation/appkit/nstextfield?language=objc"))
 
-(doc-objc-class "NSTextView"            ; ns-text-view
-  "A view that draws text and handles user interactions with that text."
-  "see https://developer.apple.com/documentation/appkit/nstextview?language=objc")
+(define-objc-class "NSTextView" ()
+  ()
+  (:documentation
+   "A view that draws text and handles user interactions with that text.
+see https://developer.apple.com/documentation/appkit/nstextview?language=objc"))
 
-(doc-objc-class "NSText"                ; ns-text
-  "The most general programmatic interface for objects that manage text."
-  "see https://developer.apple.com/documentation/appkit/nstext?language=objc")
+(define-objc-class "NSText" ()
+  ()
+  (:documentation
+   "The most general programmatic interface for objects that manage text.
+see https://developer.apple.com/documentation/appkit/nstext?language=objc"))
 
 ;;; Text input
 
-(doc-objc-class "NSTextInputContext"    ; ns-text-input-context
-  "An object that represents the Cocoa text input system."
-  "see https://developer.apple.com/documentation/appkit/nstextinputcontext?language=objc")
+(define-objc-class "NSTextInputContext" ()
+  ()
+  (:documentation
+   "An object that represents the Cocoa text input system.
+see https://developer.apple.com/documentation/appkit/nstextinputcontext?language=objc"))
 
-(doc-objc-class "NSTextInsertionIndicator" ; ns-text-insertion-indicator
-  "A view that represents the insertion indicator in text."
-  "see https://developer.apple.com/documentation/appkit/nstextinsertionindicator?language=objc")
+(define-objc-class "NSTextInsertionIndicator" ()
+  ()
+  (:documentation
+   "A view that represents the insertion indicator in text.
+see https://developer.apple.com/documentation/appkit/nstextinsertionindicator?language=objc"))
 
 ;;; Text-checking
 
 ;;; Spell-checking
 
-(doc-objc-class "NSSpellChecker"        ; ns-spell-checker
-  "An interface to the Cocoa spell-checking service."
-  "see https://developer.apple.com/documentation/appkit/nsspellchecker?language=objc")
+(define-objc-class "NSSpellChecker" ()
+  ()
+  (:documentation
+   "An interface to the Cocoa spell-checking service.
+see https://developer.apple.com/documentation/appkit/nsspellchecker?language=objc"))
 
 ;;; Deprecated
 
@@ -2061,152 +2402,218 @@ when the user presses the Return key."
 
 ;;; Text management
 
-(doc-objc-class "NSTextContentStorage"  ; ns-text-content-storage
-  "A concrete object for managing your view’s text content and generating the
-text elements necessary for layout."
-  "see https://developer.apple.com/documentation/appkit/nstextcontentstorage?language=objc")
+(define-objc-class "NSTextContentStorage" ()
+  ()
+  (:documentation
+   "A concrete object for managing your view’s text content and generating the
+text elements necessary for layout.
+see https://developer.apple.com/documentation/appkit/nstextcontentstorage?language=objc"))
 
-(doc-objc-class "NSTextContentManager"  ; ns-text-content-manager
-  "An abstract class that defines the interface and a default implementation for managing the text document contents."
-  "see https://developer.apple.com/documentation/appkit/nstextcontentmanager?language=objc")
+(define-objc-class "NSTextContentManager" ()
+  ()
+  (:documentation
+   "An abstract class that defines the interface and a default implementation for managing the text document contents.
+see https://developer.apple.com/documentation/appkit/nstextcontentmanager?language=objc"))
 
-(doc-objc-class "NSAttributedString"    ; ns-attributed-string
-  "A string of text that manages data, layout, and stylistic information for ranges of characters to support rendering."
-  "see https://developer.apple.com/documentation/Foundation/NSAttributedString?language=objc")
+(define-objc-class "NSAttributedString" ()
+  ()
+  (:documentation
+   "A string of text that manages data, layout, and stylistic information for ranges of characters to support rendering.
+see https://developer.apple.com/documentation/Foundation/NSAttributedString?language=objc"))
 
-(doc-objc-class "NSMutableAttributedString" ; ns-mutable-attributed-string
-  "A mutable string with associated attributes (such as visual style, hyperlinks, or accessibility data) for portions of its text."
-  "see https://developer.apple.com/documentation/Foundation/NSMutableAttributedString?language=objc")
+(define-objc-class "NSMutableAttributedString" ()
+  ()
+  (:documentation
+   "A mutable string with associated attributes (such as visual style, hyperlinks, or accessibility data) for portions of its text.
+see https://developer.apple.com/documentation/Foundation/NSMutableAttributedString?language=objc"))
 
 ;;; Formatting and attributes
 
-(doc-objc-class "NSParagraphStyle"      ; ns-paragraph-style
-  "see https://developer.apple.com/documentation/appkit/nsparagraphstyle?language=objc")
+(define-objc-class "NSParagraphStyle" ()
+  ()
+  (:documentation
+   "see https://developer.apple.com/documentation/appkit/nsparagraphstyle?language=objc"))
 
-(doc-objc-class "NSMutableParagraphStyle" ; ns-mutable-paragraph-style
-  "An object for changing the values of the subattributes in a paragraph style attribute."
-  "see https://developer.apple.com/documentation/appkit/nsmutableparagraphstyle?language=objc")
+(define-objc-class "NSMutableParagraphStyle" ()
+  ()
+  (:documentation
+   "An object for changing the values of the subattributes in a paragraph style attribute.
+see https://developer.apple.com/documentation/appkit/nsmutableparagraphstyle?language=objc"))
 
-(doc-objc-class "NSTextTab"             ; ns-text-tab
-  "A tab in a paragraph."
-  "see https://developer.apple.com/documentation/appkit/nstexttab?language=objc")
+(define-objc-class "NSTextTab" ()
+  ()
+  (:documentation
+   "A tab in a paragraph.
+see https://developer.apple.com/documentation/appkit/nstexttab?language=objc"))
 
-(doc-objc-class "NSTextList"            ; ns-text-list
-  "A section of text that forms a single list."
-  "see https://developer.apple.com/documentation/appkit/nstextlist?language=objc")
+(define-objc-class "NSTextList" ()
+  ()
+  (:documentation
+   "A section of text that forms a single list.
+see https://developer.apple.com/documentation/appkit/nstextlist?language=objc"))
 
-(doc-objc-class "NSTextTable"           ; ns-text-table
-  "An object that represents a text table as a whole."
-  "see https://developer.apple.com/documentation/appkit/nstexttable?language=objc")
+(define-objc-class "NSTextTable" ()
+  ()
+  (:documentation
+   "An object that represents a text table as a whole.
+see https://developer.apple.com/documentation/appkit/nstexttable?language=objc"))
 
-(doc-objc-class "NSTextTableBlock"      ; ns-text-table-block
-  "A text block that appears as a cell in a text table."
-  "see https://developer.apple.com/documentation/appkit/nstexttableblock?language=objc")
+(define-objc-class "NSTextTableBlock" ()
+  ()
+  (:documentation
+   "A text block that appears as a cell in a text table.
+see https://developer.apple.com/documentation/appkit/nstexttableblock?language=objc"))
 
-(doc-objc-class "NSTextBlock"           ; ns-text-block
-  "A block of text laid out in a subregion of the text container."
-  "see https://developer.apple.com/documentation/appkit/nstextblock?language=objc")
+(define-objc-class "NSTextBlock" ()
+  ()
+  (:documentation
+   "A block of text laid out in a subregion of the text container.
+see https://developer.apple.com/documentation/appkit/nstextblock?language=objc"))
 
 ;;; Content elements
 
-(doc-objc-class "NSTextParagraph"       ; ns-text-paragraph
-  "A class that represents a single paragraph backed by an attributed string as the contents."
-  "see https://developer.apple.com/documentation/appkit/nstextparagraph?language=objc")
+(define-objc-class "NSTextParagraph" ()
+  ()
+  (:documentation
+   "A class that represents a single paragraph backed by an attributed string as the contents.
+see https://developer.apple.com/documentation/appkit/nstextparagraph?language=objc"))
 
-(doc-objc-class "NSTextListElement"     ; ns-text-list-element
-  "A class that represents a text list node."
-  "see https://developer.apple.com/documentation/appkit/nstextlistelement?language=objc")
+(define-objc-class "NSTextListElement" ()
+  ()
+  (:documentation
+   "A class that represents a text list node.
+see https://developer.apple.com/documentation/appkit/nstextlistelement?language=objc"))
 
-(doc-objc-class "NSTextElement"         ; ns-text-element
-  "An abstract base class that represents the smallest units of text layout such as paragraphs or attachments."
-  "see https://developer.apple.com/documentation/appkit/nstextelement?language=objc")
+(define-objc-class "NSTextElement" ()
+  ()
+  (:documentation
+   "An abstract base class that represents the smallest units of text layout such as paragraphs or attachments.
+see https://developer.apple.com/documentation/appkit/nstextelement?language=objc"))
 
 ;;; Location and selection
 
-(doc-objc-class "NSTextRange"           ; ns-text-range
-  "A class that represents a contiguous range between two locations inside document contents."
-  "see https://developer.apple.com/documentation/appkit/nstextrange?language=objc")
+(define-objc-class "NSTextRange" ()
+  ()
+  (:documentation
+   "A class that represents a contiguous range between two locations inside document contents.
+see https://developer.apple.com/documentation/appkit/nstextrange?language=objc"))
 
-(doc-objc-class "NSTextSelection"       ; ns-text-selection
-  "A class that represents a single logical selection context that corresponds to an insertion point."
-  "see https://developer.apple.com/documentation/appkit/nstextselection?language=objc")
+(define-objc-class "NSTextSelection" ()
+  ()
+  (:documentation
+   "A class that represents a single logical selection context that corresponds to an insertion point.
+see https://developer.apple.com/documentation/appkit/nstextselection?language=objc"))
 
-(doc-objc-class "NSTextSelectionNavigation" ; ns-text-selection-navigation
-  "An interface you use to expose methods for obtaining results from actions performed on text selections."
-  "see https://developer.apple.com/documentation/appkit/nstextselectionnavigation?language=objc")
+(define-objc-class "NSTextSelectionNavigation" ()
+  ()
+  (:documentation
+   "An interface you use to expose methods for obtaining results from actions performed on text selections.
+see https://developer.apple.com/documentation/appkit/nstextselectionnavigation?language=objc"))
 
 ;;; Layout
 
-(doc-objc-class "NSTextLayoutManager"   ; ns-text-layout-manager
-  "The primary class that you use to manage text layout and presentation for custom text displays."
-  "see https://developer.apple.com/documentation/appkit/nstextlayoutmanager?language=objc")
+(define-objc-class "NSTextLayoutManager" ()
+  ()
+  (:documentation
+   "The primary class that you use to manage text layout and presentation for custom text displays.
+see https://developer.apple.com/documentation/appkit/nstextlayoutmanager?language=objc"))
 
-(doc-objc-class "NSTextContainer"       ; ns-text-container
-  "A region where text layout occurs."
-  "see https://developer.apple.com/documentation/appkit/nstextcontainer?language=objc")
+(define-objc-class "NSTextContainer" ()
+  ()
+  (:documentation
+   "A region where text layout occurs.
+see https://developer.apple.com/documentation/appkit/nstextcontainer?language=objc"))
 
-(doc-objc-class "NSTextLayoutFragment"  ; ns-text-layout-fragment
-  "A class that represents the layout fragment typically corresponding to a rendering surface, such as a layer or view subclass."
-  "see https://developer.apple.com/documentation/appkit/nstextlayoutfragment?language=objc")
+(define-objc-class "NSTextLayoutFragment" ()
+  ()
+  (:documentation
+   "A class that represents the layout fragment typically corresponding to a rendering surface, such as a layer or view subclass.
+see https://developer.apple.com/documentation/appkit/nstextlayoutfragment?language=objc"))
 
-(doc-objc-class "NSTextLineFragment"    ; ns-text-line-fragment
-  "A class that represents a line fragment as a single textual layout and rendering unit inside a text layout fragment."
-  "see https://developer.apple.com/documentation/appkit/nstextlinefragment?language=objc")
+(define-objc-class "NSTextLineFragment" ()
+  ()
+  (:documentation
+   "A class that represents a line fragment as a single textual layout and rendering unit inside a text layout fragment.
+see https://developer.apple.com/documentation/appkit/nstextlinefragment?language=objc"))
 
-(doc-objc-class "NSTextViewportLayoutController" ; ns-text-viewport-layout-controller
-  "Manages the layout process inside the viewport interacting with its delegate."
-  "see https://developer.apple.com/documentation/appkit/nstextviewportlayoutcontroller?language=objc")
+(define-objc-class "NSTextViewportLayoutController" ()
+  ()
+  (:documentation
+   "Manages the layout process inside the viewport interacting with its delegate.
+see https://developer.apple.com/documentation/appkit/nstextviewportlayoutcontroller?language=objc"))
 
 ;;; Attachments
 
-(doc-objc-class "NSTextAttachment"      ; ns-text-attachment
-  "The values for the attachment characteristics of attributed strings and related objects."
-  "see https://developer.apple.com/documentation/appkit/nstextattachment?language=objc")
+(define-objc-class "NSTextAttachment" ()
+  ()
+  (:documentation
+   "The values for the attachment characteristics of attributed strings and related objects.
+see https://developer.apple.com/documentation/appkit/nstextattachment?language=objc"))
 
-(doc-objc-class "NSTextAttachmentViewProvider" ; ns-text-attachment-view-provider
-  "A container object that associates a text attachment at a particular document location with a view object."
-  "see https://developer.apple.com/documentation/appkit/nstextattachmentviewprovider?language=objc")
+(define-objc-class "NSTextAttachmentViewProvider" ()
+  ()
+  (:documentation
+   "A container object that associates a text attachment at a particular document location with a view object.
+see https://developer.apple.com/documentation/appkit/nstextattachmentviewprovider?language=objc"))
 
-(doc-objc-class "NSAdaptiveImageGlyph"  ; ns-adaptive-image-glyph
-  "A data object for an emoji-like image that can appear in attributed text."
-  "see https://developer.apple.com/documentation/appkit/nsadaptiveimageglyph?language=objc")
+(define-objc-class "NSAdaptiveImageGlyph" ()
+  ()
+  (:documentation
+   "A data object for an emoji-like image that can appear in attributed text.
+see https://developer.apple.com/documentation/appkit/nsadaptiveimageglyph?language=objc"))
 
-(doc-objc-class "NSCell"                ; ns-cell
-  "A mechanism for displaying text or images in a view object
-without the overhead of a full `ns-view' subclass."
-  "see https://developer.apple.com/documentation/appkit/nscell?language=objc")
+(define-objc-class "NSCell" ()
+  ()
+  (:documentation
+   "A mechanism for displaying text or images in a view object
+without the overhead of a full `ns-view' subclass.
+see https://developer.apple.com/documentation/appkit/nscell?language=objc"))
 
-(doc-objc-class "NSTextAttachmentCell"  ; ns-text-attachment-cell
-  "An object that implements the functionality of the text attachment cell protocol."
-  "see https://developer.apple.com/documentation/appkit/nstextattachmentcell-swift.class?language=objc")
+(define-objc-class "NSTextAttachmentCell" ()
+  ()
+  (:documentation
+   "An object that implements the functionality of the text attachment cell protocol.
+see https://developer.apple.com/documentation/appkit/nstextattachmentcell-swift.class?language=objc"))
 
 ;;; Glyphs
 
-(doc-objc-class "NSGlyphGenerator"      ; ns-glyph-generator
-  "An object that performs the initial, nominal glyph generation phase in the layout process."
-  "see https://developer.apple.com/documentation/appkit/nsglyphgenerator?language=objc")
+(define-objc-class "NSGlyphGenerator" ()
+  ()
+  (:documentation
+   "An object that performs the initial, nominal glyph generation phase in the layout process.
+see https://developer.apple.com/documentation/appkit/nsglyphgenerator?language=objc"))
 
-(doc-objc-class "NSGlyphInfo"           ; ns-glyph-info
-  "A glyph attribute in an attributed string."
-  "see https://developer.apple.com/documentation/appkit/nsglyphinfo?language=objc")
+(define-objc-class "NSGlyphInfo" ()
+  ()
+  (:documentation
+   "A glyph attribute in an attributed string.
+see https://developer.apple.com/documentation/appkit/nsglyphinfo?language=objc"))
 
 ;;; TextKit 1
 
-(doc-objc-class "NSTextStorage"         ; ns-text-storage
-  "The fundamental storage mechanism of TextKit that contains the text managed by the system."
-  "see https://developer.apple.com/documentation/appkit/nstextstorage?language=objc")
+(define-objc-class "NSTextStorage" ()
+  ()
+  (:documentation
+   "The fundamental storage mechanism of TextKit that contains the text managed by the system.
+see https://developer.apple.com/documentation/appkit/nstextstorage?language=objc"))
 
-(doc-objc-class "NSLayoutManager"       ; ns-layout-manager
-  "An object that coordinates the layout and display of text characters."
-  "see https://developer.apple.com/documentation/appkit/nslayoutmanager?language=objc")
+(define-objc-class "NSLayoutManager" ()
+  ()
+  (:documentation
+   "An object that coordinates the layout and display of text characters.
+see https://developer.apple.com/documentation/appkit/nslayoutmanager?language=objc"))
 
-(doc-objc-class "NSATSTypesetter"       ; ns-ats-typesetter
-  "A concrete typesetter object that places glyphs during the text layout process."
-  "see https://developer.apple.com/documentation/appkit/nsatstypesetter?language=objc")
+(define-objc-class "NSATSTypesetter" ()
+  ()
+  (:documentation
+   "A concrete typesetter object that places glyphs during the text layout process.
+see https://developer.apple.com/documentation/appkit/nsatstypesetter?language=objc"))
 
-(doc-objc-class "NSTypesetter"          ; ns-typesetter
-  "An abstract class that performs various type layout tasks."
-  "see https://developer.apple.com/documentation/appkit/nstypesetter?language=objc")
+(define-objc-class "NSTypesetter" ()
+  ()
+  (:documentation
+   "An abstract class that performs various type layout tasks.
+see https://developer.apple.com/documentation/appkit/nstypesetter?language=objc"))
 
 ;;; Text
 
@@ -2217,27 +2624,37 @@ without the overhead of a full `ns-view' subclass."
 
 ;;; Font Data
 
-(doc-objc-class "NSFont"                ; ns-font
-  "The representation of a font in an app."
-  "see https://developer.apple.com/documentation/appkit/nsfont?language=objc")
+(define-objc-class "NSFont" ()
+  ()
+  (:documentation
+   "The representation of a font in an app.
+see https://developer.apple.com/documentation/appkit/nsfont?language=objc"))
 
-(doc-objc-class "NSFontDescriptor"      ; ns-font-descriptor
-  "A dictionary of attributes that describe a font."
-  "see https://developer.apple.com/documentation/appkit/nsfontdescriptor?language=objc")
+(define-objc-class "NSFontDescriptor" ()
+  ()
+  (:documentation
+   "A dictionary of attributes that describe a font.
+see https://developer.apple.com/documentation/appkit/nsfontdescriptor?language=objc"))
 
 ;;; Management
 
-(doc-objc-class "NSFontManager"         ; ns-font-manager
-  "The center of activity for the font-conversion system."
-  "see https://developer.apple.com/documentation/appkit/nsfontmanager?language=objc")
+(define-objc-class "NSFontManager" ()
+  ()
+  (:documentation
+   "The center of activity for the font-conversion system.
+see https://developer.apple.com/documentation/appkit/nsfontmanager?language=objc"))
 
-(doc-objc-class "NSFontCollection"      ; ns-font-collection
-  "A font collection, which is a group of font descriptors taken together as a single object."
-  "see https://developer.apple.com/documentation/appkit/nsfontcollection?language=objc")
+(define-objc-class "NSFontCollection" ()
+  ()
+  (:documentation
+   "A font collection, which is a group of font descriptors taken together as a single object.
+see https://developer.apple.com/documentation/appkit/nsfontcollection?language=objc"))
 
-(doc-objc-class "NSMutableFontCollection" ; ns-mutable-font-collection
-  "A mutable collection of font descriptors taken together as a single object."
-  "see https://developer.apple.com/documentation/appkit/nsmutablefontcollection?language=objc")
+(define-objc-class "NSMutableFontCollection" ()
+  ()
+  (:documentation
+   "A mutable collection of font descriptors taken together as a single object.
+see https://developer.apple.com/documentation/appkit/nsmutablefontcollection?language=objc"))
 
 
 ;;;; Writing Tools
@@ -2248,23 +2665,31 @@ without the overhead of a full `ns-view' subclass."
 
 ;;; Writing Tools for custom views
 
-(doc-objc-class "NSWritingToolsCoordinator" ; ns-writing-tools-coordinator
-  "An object that manages interactions between Writing Tools and your custom text view."
-  "see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator?language=objc")
+(define-objc-class "NSWritingToolsCoordinator" ()
+  ()
+  (:documentation
+   "An object that manages interactions between Writing Tools and your custom text view.
+see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator?language=objc"))
 
-(doc-objc-class "NSWritingToolsCoordinatorContext" ; ns-writing-tools-coordinator-context
-  "A data object that you use to share your custom view’s text with Writing Tools."
-  "see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator/context?language=objc")
+(define-objc-class "NSWritingToolsCoordinatorContext" ()
+  ()
+  (:documentation
+   "A data object that you use to share your custom view’s text with Writing Tools.
+see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator/context?language=objc"))
 
-(doc-objc-class "NSWritingToolsCoordinatorAnimationParameters" ; ns-writing-tools-coordinator-animation-parameters
-  "An object you use to configure additional tasks or animations to run alongside the Writing Tools animations."
-  "see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator/animationparameters?language=objc")
+(define-objc-class "NSWritingToolsCoordinatorAnimationParameters" ()
+  ()
+  (:documentation
+   "An object you use to configure additional tasks or animations to run alongside the Writing Tools animations.
+see https://developer.apple.com/documentation/appkit/nswritingtoolscoordinator/animationparameters?language=objc"))
 
 ;;; Text previews
 
-(doc-objc-class "NSTextPreview"         ; ns-text-preview
-  "A snapshot of the text in your view, which the system uses to create user-visible effects."
-  "see https://developer.apple.com/documentation/appkit/nstextpreview?language=objc")
+(define-objc-class "NSTextPreview" ()
+  ()
+  (:documentation
+   "A snapshot of the text in your view, which the system uses to create user-visible effects.
+see https://developer.apple.com/documentation/appkit/nstextpreview?language=objc"))
 
 ;;; Toolbar configuration
 
@@ -2275,21 +2700,25 @@ without the overhead of a full `ns-view' subclass."
 
 ;;; Life Cycle
 
-(doc-objc-class "NSApplication"         ; ns-application
+(define-objc-class "NSApplication" ()
   (("currentEvent"
     :reader current-event
-    :documentation "The last event object that the app retrieved from the event queue.
+    :documentation
+    "The last event object that the app retrieved from the event queue.
 See https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
    ("running"
     :reader running-p
-    :documentation "Test if the main event loop is running.
+    :documentation
+    "Test if the main event loop is running.
 See https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
    ("active"
     :reader activep
-    :documentation "Test if this is the active app.
+    :documentation
+    "Test if this is the active app.
 See https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc"))
-  "An object that manages an app’s main event loop and resources used by all of that app's objects."
-  "Every app uses a single instance of `ns-application' to control the main
+  (:documentation
+   "An object that manages an app’s main event loop and resources used by all of that app's objects.
+Every app uses a single instance of `ns-application' to control the main
 event loop, keep track of the app's windows and menus, distribute
 events to the appropriate objects (that’s, itself or one of its windows),
 set up autorelease pools, and receive notification of app-level events.
@@ -2317,8 +2746,8 @@ server. The `ns-application' object maintains a list of all the
 `ns-view' objects.
 
 Dev Note:
-Use `ns-app' to retrive the global variable `coca.appkit::*ns-app*'."
-  "The shared `ns-application' object performs the important task of
+Use `ns-app' to retrive the global variable `coca.appkit::*ns-app*'.
+The shared `ns-application' object performs the important task of
 receiving events from the window server and distributing them to the
 proper `ns-responder' objects. `ns-app' translates an event into an
 `ns-event' object, then forwards the event object to the affected
@@ -2354,8 +2783,8 @@ this lack of access usually isn’t a problem. However, if you do need
 to use Cocoa classes within the main() function itself
 (other than to load nib files or to instantiate `ns-application'),
 you should create an @autorelease block to contain the code using
-the classes."
-  "The delegate and notifications
+the classes.
+The delegate and notifications
 =====================================
 You can assign a delegate to your `ns-application' object. The delegate
 responds to certain messages on behalf of the object. Some of these
@@ -2380,12 +2809,12 @@ methods applicationWillFinishLaunching: and
 applicationDidFinishLaunching:. If the delegate wants to be informed
 of both events, it implements both methods. If it needs to know only
 when the app is finished launching, it implements only
-applicationDidFinishLaunching:."
-  "System services
+applicationDidFinishLaunching:.
+System services
 ======================
 `ns-application' interacts with the system services architecture to
-provide services to your app through the Services menu."
-  "Subclassing notes
+provide services to your app through the Services menu.
+Subclassing notes
 ======================
 You rarely should find a real need to create a custom `ns-application'
 subclass. Unlike some object-oriented libraries, Cocoa doesn’t require
@@ -2444,8 +2873,8 @@ design goals. In general, a better design than subclassing
 NSApplication is to put the code that expresses your app’s special
 behavior into one or more custom objects called controllers. Methods
 defined in your controllers can be invoked from a small dispatcher
-object without being closely tied to the global app object."
-  "see https://developer.apple.com/documentation/appkit/nsapplication?language=objc")
+object without being closely tied to the global app object.
+see https://developer.apple.com/documentation/appkit/nsapplication?language=objc"))
 
 ;; Getting the shared app object
 
@@ -2596,63 +3025,82 @@ further dispatching."
 
 ;; Displaying high dynamic resolution (HDR) content
 
-(doc-objc-class "NSRunningApplication"  ; ns-running-application
-  "An object that can manipulate and provide information for a single instance of an app."
-  "see https://developer.apple.com/documentation/appkit/nsrunningapplication?language=objc")
+(define-objc-class "NSRunningApplication" ()
+  ()
+  (:documentation
+   "An object that can manipulate and provide information for a single instance of an app.
+see https://developer.apple.com/documentation/appkit/nsrunningapplication?language=objc"))
 
 ;;; Environment
 
-(doc-objc-class "NSWorkspace"           ; ns-workspace
-  "A workspace that can launch other apps and perform a variety of file-handling services."
-  "There is one shared NSWorkspace object per app.
+(define-objc-class "NSWorkspace" ()
+  ()
+  (:documentation
+   "A workspace that can launch other apps and perform a variety of file-handling services.
+There is one shared NSWorkspace object per app.
 You use the class method sharedWorkspace to access it.
 For example, the following statement uses an `ns-workspace' object to request that
 a file be opened in the TextEdit app:
 
-    (invoke (invoke \"NSWorkspace\" \"sharedWorkspace\") \"openFile:withApplication:\" file application)
+    (invoke (invoke \"NSWorkspace\" \"sharedWorkspace\")
+            \"openFile:withApplication:\"
+            file
+            application)
 
 You can use the workspace object to:
 + Open, manipulate, and get information about files and devices.
 + Track changes to the file system, devices, and the user database.
 + Get and set Finder information for files.
-+ Launch apps."
-  "see https://developer.apple.com/documentation/appkit/nsworkspace?language=objc")
++ Launch apps.
+see https://developer.apple.com/documentation/appkit/nsworkspace?language=objc"))
 
-(doc-objc-class "NSWorkspaceOpenConfiguration" ; ns-workspace-open-configuration
-  "The configuration options for opening URLs or launching apps. "
-  "Create an `ns-workspace-open-configuration' object before launching an app
+(define-objc-class "NSWorkspaceOpenConfiguration" ()
+  ()
+  (:documentation
+   "The configuration options for opening URLs or launching apps.
+Create an `ns-workspace-open-configuration' object before launching an app
 or opening a URL using the shared `ns-workspace' object.
 Use the properties of this object to customize the behavior of the launched app
 or the handling of the URLs.
 
-For example, you might tell the app to hide itself immediately after launch."
-  "see https://developer.apple.com/documentation/appkit/nsworkspace/openconfiguration?language=objc")
+For example, you might tell the app to hide itself immediately after launch.
+see https://developer.apple.com/documentation/appkit/nsworkspace/openconfiguration?language=objc"))
 
 ;;; Handoff
 
-(doc-objc-class "NSUserActivity"        ; ns-user-activity
-  "A representation of the state of your app at a moment in time."
-  "see https://developer.apple.com/documentation/Foundation/NSUserActivity?language=objc")
+(define-objc-class "NSUserActivity" ()
+  ()
+  (:documentation
+   "A representation of the state of your app at a moment in time.
+see https://developer.apple.com/documentation/Foundation/NSUserActivity?language=objc"))
 
 ;;; App Services
 
-(doc-objc-class "NSSharingService"      ; ns-sharing-service
-  "An object that facilitates the sharing of content with social media services, or with apps like Mail or Safari."
-  "see https://developer.apple.com/documentation/appkit/nssharingservice?language=objc")
+(define-objc-class "NSSharingService" ()
+  ()
+  (:documentation
+   "An object that facilitates the sharing of content with social media services, or with apps like Mail or Safari.
+see https://developer.apple.com/documentation/appkit/nssharingservice?language=objc"))
 
-(doc-objc-class "NSToolbarItem"         ; ns-toolbar-item
-  "A single item that appears in a window’s toolbar."
-  "see https://developer.apple.com/documentation/appkit/nstoolbaritem?language=objc")
+(define-objc-class "NSToolbarItem" ()
+  ()
+  (:documentation
+   "A single item that appears in a window’s toolbar.
+see https://developer.apple.com/documentation/appkit/nstoolbaritem?language=objc"))
 
-(doc-objc-class "NSSharingServicePickerToolbarItem" ; ns-sharing-service-picker-toolbar-item
-  "A toolbar item that displays the macOS share sheet."
-  "see https://developer.apple.com/documentation/appkit/nssharingservicepickertoolbaritem?language=objc")
+(define-objc-class "NSSharingServicePickerToolbarItem" ()
+  ()
+  (:documentation
+   "A toolbar item that displays the macOS share sheet.
+see https://developer.apple.com/documentation/appkit/nssharingservicepickertoolbaritem?language=objc"))
 
 ;;; App Help
 
-(doc-objc-class "NSHelpManager"         ; ns-help-manager
-  "An object for displaying online help for an app."
-  "see https://developer.apple.com/documentation/appkit/nshelpmanager?language=objc")
+(define-objc-class "NSHelpManager" ()
+  ()
+  (:documentation
+   "An object for displaying online help for an app.
+see https://developer.apple.com/documentation/appkit/nshelpmanager?language=objc"))
 
 ;;; Errors
 

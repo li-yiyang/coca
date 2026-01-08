@@ -440,26 +440,34 @@ see https://developer.apple.com/documentation/foundation/valuetransformer?langua
 
 ;;; Invocations
 
-(doc-objc-class "NSInvocation"          ; ns-invocation
-  "An Objective-C message rendered as an object."
-  "see https://developer.apple.com/documentation/foundation/nsinvocation?language=objc")
+(define-objc-class "NSInvocation" ()
+  ()
+  (:documentation
+   "An Objective-C message rendered as an object.
+see https://developer.apple.com/documentation/foundation/nsinvocation?language=objc"))
 
-(doc-objc-class "NSMethodSignature"     ; ns-method-signature
-  "A record of the type information for the return value and parameters of a method."
-  "see https://developer.apple.com/documentation/foundation/nsmethodsignature?language=objc")
+(define-objc-class "NSMethodSignature" ()
+  ()
+  (:documentation
+   "A record of the type information for the return value and parameters of a method.
+see https://developer.apple.com/documentation/foundation/nsmethodsignature?language=objc"))
 
 ;;; Remote Objects
 
-(doc-objc-class "NSProxy"               ; ns-proxy
-  "An abstract superclass defining an API for objects that act as stand-ins for
-other objects or for objects that don’t exist yet."
-  "see https://developer.apple.com/documentation/foundation/nsproxy?language=objc")
+(define-objc-class "NSProxy" ()
+  ()
+  (:documentation
+   "An abstract superclass defining an API for objects that act as stand-ins for
+other objects or for objects that don’t exist yet.
+see https://developer.apple.com/documentation/foundation/nsproxy?language=objc"))
 
 ;;; Memory Management
 
-(doc-objc-class "NSAutoreleasePool"     ; ns-autorelease-pool
-  "An object that supports Cocoa’s reference-counted memory management system."
-  "An autorelease pool stores objects that are sent a release message when
+(define-objc-class "NSAutoreleasePool" ()
+  ()
+  (:documentation
+   "An object that supports Cocoa’s reference-counted memory management system.
+An autorelease pool stores objects that are sent a release message when
 the pool itself is drained.
 
 Important:
@@ -520,8 +528,8 @@ they get added to the top of the stack. When pools are deallocated,
 they are removed from the stack. Autoreleased objects are placed into
 the top autorelease pool for the current thread. When a thread
 terminates, it automatically drains all of the autorelease pools
-associated with itself.  "
-  "Threads
+associated with itself.
+Threads
 =================
 If you are making Cocoa calls outside of the Application Kit’s main
 thread—for example if you create a Foundation-only application or if
@@ -542,8 +550,8 @@ enters multithreading mode only after detaching its first NSThread
 object. To use Cocoa on secondary POSIX threads, your application must
 first detach at least one NSThread object, which can immediately
 exit. You can test whether Cocoa is in multithreading mode with the
-NSThread class method isMultiThreaded."
-  "Garbage Collection
+NSThread class method isMultiThreaded.
+Garbage Collection
 ====================
 In a garbage-collected environment, there is no need for autorelease
 pools. You may, however, write a framework that is designed to work in
@@ -554,8 +562,8 @@ sending a drain message to a pool triggers garbage collection if
 necessary; release, however, is a no-op. In a reference-counted
 environment, drain has the same effect as release. Typically,
 therefore, you should use drain instead of release.
-"
-  "see https://developer.apple.com/documentation/foundation/nsautoreleasepool?language=objc")
+
+see https://developer.apple.com/documentation/foundation/nsautoreleasepool?language=objc"))
 
 (defun release (object)
   "Decrements the OBJECT reference count.
@@ -688,48 +696,66 @@ See also `with-autorelease-pool'. "
 ;;   ;;; ...
 ;;   )
 
-(doc-objc-class "NSDecimalNumber"       ; ns-decimal-number
-  "An object for representing and performing arithmetic on base-10 numbers."
-  "see https://developer.apple.com/documentation/foundation/nsdecimalnumber?language=objc")
+(define-objc-class "NSDecimalNumber" ()
+  ()
+  (:documentation
+   "An object for representing and performing arithmetic on base-10 numbers.
+see https://developer.apple.com/documentation/foundation/nsdecimalnumber?language=objc"))
 
-(doc-objc-class "NSNumber"              ; ns-number
-  "An object wrapper for primitive scalar numeric values."
-  "see https://developer.apple.com/documentation/foundation/nsnumber?language=objc")
+(define-objc-class "NSNumber" ()
+  ()
+  (:documentation
+   "An object wrapper for primitive scalar numeric values.
+see https://developer.apple.com/documentation/foundation/nsnumber?language=objc"))
 
-(doc-objc-class "NSNumberFormatter"     ; ns-number-formatter
-  "A formatter that converts between numeric values and their textual representations."
-  "see https://developer.apple.com/documentation/foundation/numberformatter?language=objc")
+(define-objc-class "NSNumberFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between numeric values and their textual representations.
+see https://developer.apple.com/documentation/foundation/numberformatter?language=objc"))
 
 ;;; Binary Data
 
-(doc-objc-class "NSData"                ; ns-data
-  "A static byte buffer in memory."
-  "see https://developer.apple.com/documentation/foundation/nsdata?language=objc")
+(define-objc-class "NSData" ()
+  ()
+  (:documentation
+   "A static byte buffer in memory.
+see https://developer.apple.com/documentation/foundation/nsdata?language=objc"))
 
-(doc-objc-class "NSMutableData"         ; ns-mutable-data
-  "An object representing a dynamic byte buffer in memory."
-  "see https://developer.apple.com/documentation/foundation/nsmutabledata?language=objc")
+(define-objc-class "NSMutableData" ()
+  ()
+  (:documentation
+   "An object representing a dynamic byte buffer in memory.
+see https://developer.apple.com/documentation/foundation/nsmutabledata?language=objc"))
 
 ;;; URLs
 
-(doc-objc-class "NSURL"                 ; ns-url
-  "An object that represents the location of a resource, such as an item on a
-remote server or the path to a local file."
-  "see https://developer.apple.com/documentation/foundation/nsurl?language=objc")
+(define-objc-class "NSURL" ()
+  ()
+  (:documentation
+   "An object that represents the location of a resource, such as an item on a
+remote server or the path to a local file.
+see https://developer.apple.com/documentation/foundation/nsurl?language=objc"))
 
-(doc-objc-class "NSURLComponents"       ; ns-url-components
-  "An object that parses URLs into and constructs URLs from their constituent parts."
-  "see https://developer.apple.com/documentation/foundation/nsurlcomponents?language=objc")
+(define-objc-class "NSURLComponents" ()
+  ()
+  (:documentation
+   "An object that parses URLs into and constructs URLs from their constituent parts.
+see https://developer.apple.com/documentation/foundation/nsurlcomponents?language=objc"))
 
-(doc-objc-class "NSURLQueryItem"        ; ns-url-query-item
-  "An object representing a single name/value pair for an item in the query portion of a URL."
-  "see https://developer.apple.com/documentation/foundation/nsurlqueryitem?language=objc")
+(define-objc-class "NSURLQueryItem" ()
+  ()
+  (:documentation
+   "An object representing a single name/value pair for an item in the query portion of a URL.
+see https://developer.apple.com/documentation/foundation/nsurlqueryitem?language=objc"))
 
 ;;; Unique Identifiers
 
-(doc-objc-class "NSUUID"                ; ns-uuid
-  "A universally unique value that can be used to identify types, interfaces, and other items."
-  "UUIDs (Universally Unique Identifiers), also known as GUIDs
+(define-objc-class "NSUUID" ()
+  ()
+  (:documentation
+   "A universally unique value that can be used to identify types, interfaces, and other items.
+UUIDs (Universally Unique Identifiers), also known as GUIDs
 (Globally Unique Identifiers) or IIDs (Interface Identifiers), are
 128-bit values. UUIDs created by NSUUID conform to RFC 4122 version
 4 and are created with random bytes.
@@ -748,8 +774,8 @@ CFUUIDRef. Use UUID strings to convert between CFUUIDRef and NSUUID,
 if needed. Two NSUUID objects are not guaranteed to be comparable by
 pointer value (as CFUUIDRef is); use isEqual: to compare two NSUUID
 instances.
-"
-  "see https://developer.apple.com/documentation/foundation/nsuuid?language=objc")
+
+see https://developer.apple.com/documentation/foundation/nsuuid?language=objc"))
 
 ;;; Geometry
 
@@ -772,9 +798,11 @@ instances.
   (lo :unsigned-int))
 
 
-(doc-objc-class "NSAffineTransform"     ; ns-affine-transform
-  "A graphics coordinate transformation."
-  "see https://developer.apple.com/documentation/foundation/nsaffinetransform?language=objc")
+(define-objc-class "NSAffineTransform" ()
+  ()
+  (:documentation
+   "A graphics coordinate transformation.
+see https://developer.apple.com/documentation/foundation/nsaffinetransform?language=objc"))
 
 ;;; Ranges
 
@@ -786,15 +814,19 @@ instances.
 ;;;; Strings and Text
 ;; see https://developer.apple.com/documentation/foundation/strings-and-text?language=objc
 
-(doc-objc-class "NSString"              ; ns-string
-  "A static, plain-text Unicode string object."
-  "Use `ns-string-to-string' and `string-to-ns-string' to convert between
-lisp string and `ns-string' objects. "
-  "See: https://developer.apple.com/documentation/foundation/nsstring?language=objc")
+(define-objc-class "NSString" ()
+  ()
+  (:documentation
+   "A static, plain-text Unicode string object.
+Use `ns-string-to-string' and `string-to-ns-string' to convert between
+lisp string and `ns-string' objects.
+See: https://developer.apple.com/documentation/foundation/nsstring?language=objc"))
 
-(doc-objc-class "NSMutableString"       ; ns-mutable-string
-  "A dynamic plain-text Unicode string object."
-  "See: https://developer.apple.com/documentation/foundation/nsmutablestring?language=objc")
+(define-objc-class "NSMutableString" ()
+  ()
+  (:documentation
+   "A dynamic plain-text Unicode string object.
+See: https://developer.apple.com/documentation/foundation/nsmutablestring?language=objc"))
 
 (defun string-to-ns-string (string)
   "Converts a Lisp string to an Objective-C NSString.
@@ -834,94 +866,132 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 
 ;;; Basic Collections
 
-(doc-objc-class "NSArray"               ; ns-array
-  "A static ordered collection of objects."
-  "see https://developer.apple.com/documentation/foundation/nsarray?language=objc")
+(define-objc-class "NSArray" ()
+  ()
+  (:documentation
+   "A static ordered collection of objects.
+see https://developer.apple.com/documentation/foundation/nsarray?language=objc"))
 
-(doc-objc-class "NSMutableArray"        ; ns-mutable-array
-  "A dynamic ordered collection of objects."
-  "see https://developer.apple.com/documentation/foundation/nsmutablearray?language=objc")
+(define-objc-class "NSMutableArray" ()
+  ()
+  (:documentation
+   "A dynamic ordered collection of objects.
+see https://developer.apple.com/documentation/foundation/nsmutablearray?language=objc"))
 
-(doc-objc-class "NSDictionary"          ; ns-dictionary
-  "A static collection of objects associated with unique keys."
-  "see https://developer.apple.com/documentation/foundation/nsdictionary?language=objc")
+(define-objc-class "NSDictionary" ()
+  ()
+  (:documentation
+   "A static collection of objects associated with unique keys.
+see https://developer.apple.com/documentation/foundation/nsdictionary?language=objc"))
 
-(doc-objc-class "NSMutableDictionary"   ; ns-mutable-dictionary
-  "A dynamic collection of objects associated with unique keys."
-  "see https://developer.apple.com/documentation/foundation/nsmutabledictionary?language=objc")
+(define-objc-class "NSMutableDictionary" ()
+  ()
+  (:documentation
+   "A dynamic collection of objects associated with unique keys.
+see https://developer.apple.com/documentation/foundation/nsmutabledictionary?language=objc"))
 
-(doc-objc-class "NSSet"                 ; ns-set
-  "A static, unordered collection of unique objects."
-  "see https://developer.apple.com/documentation/foundation/nsset?language=objc")
+(define-objc-class "NSSet" ()
+  ()
+  (:documentation
+   "A static, unordered collection of unique objects.
+see https://developer.apple.com/documentation/foundation/nsset?language=objc"))
 
-(doc-objc-class "NSMutableSet"          ; ns-mutable-set
-  "A dynamic unordered collection of unique objects."
-  "see https://developer.apple.com/documentation/foundation/nsmutableset?language=objc")
+(define-objc-class "NSMutableSet" ()
+  ()
+  (:documentation
+   "A dynamic unordered collection of unique objects.
+see https://developer.apple.com/documentation/foundation/nsmutableset?language=objc"))
 
 ;;; Indexes
 
-(doc-objc-class "NSIndexPath"           ; ns-index-path
-  "A list of indexes that together represent the path to a specific location in a tree of nested arrays."
-  "see https://developer.apple.com/documentation/foundation/nsindexpath?language=objc")
+(define-objc-class "NSIndexPath" ()
+  ()
+  (:documentation
+   "A list of indexes that together represent the path to a specific location in a tree of nested arrays.
+see https://developer.apple.com/documentation/foundation/nsindexpath?language=objc"))
 
-(doc-objc-class "NSIndexSet"            ; ns-index-set
-  "An immutable collection of unique integer values that represent indexes in another collection."
-  "see https://developer.apple.com/documentation/foundation/nsindexset?language=objc")
+(define-objc-class "NSIndexSet" ()
+  ()
+  (:documentation
+   "An immutable collection of unique integer values that represent indexes in another collection.
+see https://developer.apple.com/documentation/foundation/nsindexset?language=objc"))
 
-(doc-objc-class "NSMutableIndexSet"     ; ns-mutable-index-set
-  "A mutable collection of unique integer values that represent indexes in another collection."
-  "see https://developer.apple.com/documentation/foundation/nsmutableindexset?language=objc")
+(define-objc-class "NSMutableIndexSet" ()
+  ()
+  (:documentation
+   "A mutable collection of unique integer values that represent indexes in another collection.
+see https://developer.apple.com/documentation/foundation/nsmutableindexset?language=objc"))
 
 ;;; Specialized Sets
 
-(doc-objc-class "NSCountedSet"          ; ns-counted-set
-  "A mutable, unordered collection of distinct objects that may appear more than once in the collection."
-  "see https://developer.apple.com/documentation/foundation/nscountedset?language=objc")
+(define-objc-class "NSCountedSet" ()
+  ()
+  (:documentation
+   "A mutable, unordered collection of distinct objects that may appear more than once in the collection.
+see https://developer.apple.com/documentation/foundation/nscountedset?language=objc"))
 
-(doc-objc-class "NSOrderedSet"          ; ns-ordered-set
-  "A static, ordered collection of unique objects."
-  "see https://developer.apple.com/documentation/foundation/nsorderedset?language=objc")
+(define-objc-class "NSOrderedSet" ()
+  ()
+  (:documentation
+   "A static, ordered collection of unique objects.
+see https://developer.apple.com/documentation/foundation/nsorderedset?language=objc"))
 
-(doc-objc-class "NSMutableOrderedSet"   ; ns-mutable-ordered-set
-  "A dynamic, ordered collection of unique objects."
-  "see https://developer.apple.com/documentation/foundation/nsmutableorderedset?language=objc")
+(define-objc-class "NSMutableOrderedSet" ()
+  ()
+  (:documentation
+   "A dynamic, ordered collection of unique objects.
+see https://developer.apple.com/documentation/foundation/nsmutableorderedset?language=objc"))
 
 ;;; Purgeable Collections
 
-(doc-objc-class "NSCache"               ; ns-cache
-  "A mutable collection you use to temporarily store transient key-value pairs
-that are subject to eviction when resources are low."
-  "see https://developer.apple.com/documentation/foundation/nscache?language=objc")
+(define-objc-class "NSCache" ()
+  ()
+  (:documentation
+   "A mutable collection you use to temporarily store transient key-value pairs
+that are subject to eviction when resources are low.
+see https://developer.apple.com/documentation/foundation/nscache?language=objc"))
 
-(doc-objc-class "NSPurgeableData"       ; ns-purgeable-data
-  "A mutable data object containing bytes that can be discarded when they’re no longer needed."
-  "see https://developer.apple.com/documentation/foundation/nspurgeabledata?language=objc")
+(define-objc-class "NSPurgeableData" ()
+  ()
+  (:documentation
+   "A mutable data object containing bytes that can be discarded when they’re no longer needed.
+see https://developer.apple.com/documentation/foundation/nspurgeabledata?language=objc"))
 
 ;;; Pointer Collections
 
-(doc-objc-class "NSPointerArray"        ; ns-pointer-array
-  "A collection similar to an array, but with a broader range of available memory semantics."
-  "see https://developer.apple.com/documentation/foundation/nspointerarray?language=objc")
+(define-objc-class "NSPointerArray" ()
+  ()
+  (:documentation
+   "A collection similar to an array, but with a broader range of available memory semantics.
+see https://developer.apple.com/documentation/foundation/nspointerarray?language=objc"))
 
-(doc-objc-class "NSMapTable"            ; ns-map-table
-  "A collection similar to a dictionary, but with a broader range of available memory semantics."
-  "see https://developer.apple.com/documentation/foundation/nsmaptable?language=objc")
+(define-objc-class "NSMapTable" ()
+  ()
+  (:documentation
+   "A collection similar to a dictionary, but with a broader range of available memory semantics.
+see https://developer.apple.com/documentation/foundation/nsmaptable?language=objc"))
 
-(doc-objc-class "NSHashTable"           ; ns-hash-table
-  "A collection similar to a set, but with broader range of available memory semantics."
-  "see https://developer.apple.com/documentation/foundation/nshashtable?language=objc")
+(define-objc-class "NSHashTable" ()
+  ()
+  (:documentation
+   "A collection similar to a set, but with broader range of available memory semantics.
+see https://developer.apple.com/documentation/foundation/nshashtable?language=objc"))
 
 ;;; Iteration
 
-(doc-objc-class "NSEnumerator"          ; ns-enumerator
-  "An abstract class whose subclasses enumerate collections of objects, such as arrays and dictionaries."
-  "see https://developer.apple.com/documentation/foundation/nsenumerator?language=objc")
+(define-objc-class "NSEnumerator" ()
+  ()
+  (:documentation
+   "An abstract class whose subclasses enumerate collections of objects, such as arrays and dictionaries.
+see https://developer.apple.com/documentation/foundation/nsenumerator?language=objc"))
 
 ;;; Special Semantic Values
 
-(doc-objc-class "NSNull"                ; ns-null
-  "A singleton object used to represent null values in collection objects that don’t allow nil values."
-  "see https://developer.apple.com/documentation/foundation/nsnull?language=objc")
+(define-objc-class "NSNull" ()
+  ()
+  (:documentation
+   "A singleton object used to represent null values in collection objects that don’t allow nil values.
+see https://developer.apple.com/documentation/foundation/nsnull?language=objc"))
 
 ;; (define-objc-const +ns-not-found+
 ;;     ("NSNotFound" :long coca.objc::foundation)
@@ -937,15 +1007,17 @@ that are subject to eviction when resources are low."
 
 ;;; Date Representations
 
-(doc-objc-class "NSDate"                ; ns-date
-  "A representation of a specific point in time, independent of any calendar or time zone."
-  "To Create `ns-date'
+(define-objc-class "NSDate" ()
+  ()
+  (:documentation
+   "A representation of a specific point in time, independent of any calendar or time zone.
+To Create `ns-date'
 ==========================
 + `ns-time-interval'
 + `ns-date-since'
 + `ns-date-distant-past'
-+ `ns-date-distant-future'"
-  "see https://developer.apple.com/documentation/foundation/nsdate?language=objc")
++ `ns-date-distant-future'
+see https://developer.apple.com/documentation/foundation/nsdate?language=objc"))
 
 ;; Creating Date
 
@@ -1018,50 +1090,68 @@ see https://developer.apple.com/documentation/foundation/nsdate/distantfuture?la
 
 ;;; Calendrical Calculations
 
-(doc-objc-class "NSDateComponents"      ; ns-date-components
-  "An object that specifies a date or time in terms of units
-(such as year, month, day, hour, and minute) to be evaluated in a calendar system and time zone."
-  "see https://developer.apple.com/documentation/foundation/nsdatecomponents?language=objc")
+(define-objc-class "NSDateComponents" ()
+  ()
+  (:documentation
+   "An object that specifies a date or time in terms of units
+(such as year, month, day, hour, and minute) to be evaluated in a calendar system and time zone.
+see https://developer.apple.com/documentation/foundation/nsdatecomponents?language=objc"))
 
-(doc-objc-class "NSCalendar"            ; ns-calendar
-  "A definition of the relationships between calendar units and absolute points in time,
-providing features for calculation and comparison of dates."
-  "see https://developer.apple.com/documentation/foundation/nscalendar?language=objc")
+(define-objc-class "NSCalendar" ()
+  ()
+  (:documentation
+   "A definition of the relationships between calendar units and absolute points in time,
+providing features for calculation and comparison of dates.
+see https://developer.apple.com/documentation/foundation/nscalendar?language=objc"))
 
-(doc-objc-class "NSTimeZone"            ; ns-time-zone
-  "Information about standard time conventions associated with a specific geopolitical region."
-  "see https://developer.apple.com/documentation/foundation/nstimezone?language=objc")
+(define-objc-class "NSTimeZone" ()
+  ()
+  (:documentation
+   "Information about standard time conventions associated with a specific geopolitical region.
+see https://developer.apple.com/documentation/foundation/nstimezone?language=objc"))
 
 ;;; Date Formatting
 
-(doc-objc-class "NSDateFormatter"       ; ns-date-formatter
-  "A formatter that converts between dates and their textual representations."
-  "see https://developer.apple.com/documentation/foundation/dateformatter?language=objc")
+(define-objc-class "NSDateFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between dates and their textual representations.
+see https://developer.apple.com/documentation/foundation/dateformatter?language=objc"))
 
-(doc-objc-class "NSDateComponentsFormatter" ; ns-date-components-formatter
-  "A formatter that creates string representations of quantities of time."
-  "see https://developer.apple.com/documentation/foundation/datecomponentsformatter?language=objc")
+(define-objc-class "NSDateComponentsFormatter" ()
+  ()
+  (:documentation
+   "A formatter that creates string representations of quantities of time.
+see https://developer.apple.com/documentation/foundation/datecomponentsformatter?language=objc"))
 
-(doc-objc-class "NSDateIntervalFormatter" ; ns-date-interval-formatter
-  "A formatter that creates string representations of time intervals."
-  "see https://developer.apple.com/documentation/foundation/dateintervalformatter?language=objc")
+(define-objc-class "NSDateIntervalFormatter" ()
+  ()
+  (:documentation
+   "A formatter that creates string representations of time intervals.
+see https://developer.apple.com/documentation/foundation/dateintervalformatter?language=objc"))
 
-(doc-objc-class "NSISO8601DateFormatter" ; ns-iso8601-date-formatter
-  "A formatter that converts between dates and their ISO 8601 string representations."
-  "see https://developer.apple.com/documentation/foundation/iso8601dateformatter?language=objc")
+(define-objc-class "NSISO8601DateFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between dates and their ISO 8601 string representations.
+see https://developer.apple.com/documentation/foundation/iso8601dateformatter?language=objc"))
 
 ;;; Internationalization
 
-(doc-objc-class "NSLocale"              ; ns-locale
-  "Information about linguistic, cultural, and technological conventions for use in
-formatting data for presentation."
-  "see https://developer.apple.com/documentation/foundation/nslocale?language=objc")
+(define-objc-class "NSLocale" ()
+  ()
+  (:documentation
+   "Information about linguistic, cultural, and technological conventions for use in
+formatting data for presentation.
+see https://developer.apple.com/documentation/foundation/nslocale?language=objc"))
 
 ;;; Deprecated
 
-(doc-objc-class "NSCalendarDate"        ; ns-calendar-date
-  "A specialized date object with embedded calendar information."
-  "see https://developer.apple.com/documentation/foundation/nscalendardate?language=objc")
+(define-objc-class "NSCalendarDate" ()
+  ()
+  (:documentation
+   "A specialized date object with embedded calendar information.
+see https://developer.apple.com/documentation/foundation/nscalendardate?language=objc"))
 
 ;;; Fundamentals
 
@@ -1073,133 +1163,187 @@ formatting data for presentation."
 
 ;;; Essentials
 
-(doc-objc-class "NSMeasurement"         ; ns-measurement
-  "A numeric quantity labeled with a unit of measure, with support for unit conversion
-and unit-aware calculations."
-  "see https://developer.apple.com/documentation/foundation/nsmeasurement?language=objc")
+(define-objc-class "NSMeasurement" ()
+  ()
+  (:documentation
+   "A numeric quantity labeled with a unit of measure, with support for unit conversion
+and unit-aware calculations.
+see https://developer.apple.com/documentation/foundation/nsmeasurement?language=objc"))
 
-(doc-objc-class "NSUnit"                ; ns-unit
-  "An abstract class representing a unit of measure."
-  "see https://developer.apple.com/documentation/foundation/unit?language=objc")
+(define-objc-class "NSUnit" ()
+  ()
+  (:documentation
+   "An abstract class representing a unit of measure.
+see https://developer.apple.com/documentation/foundation/unit?language=objc"))
 
-(doc-objc-class "NSDimension"           ; ns-dimension
-  "An abstract class representing a dimensional unit of measure."
-  "see https://developer.apple.com/documentation/foundation/dimension?language=objc")
+(define-objc-class "NSDimension" ()
+  ()
+  (:documentation
+   "An abstract class representing a dimensional unit of measure.
+see https://developer.apple.com/documentation/foundation/dimension?language=objc"))
 
 ;;; Conversion
 
-(doc-objc-class "NSUnitConverter"       ; ns-unit-converter
-  "An abstract class that provides a description of how to convert a unit to and from
-the base unit of its dimension."
-  "see https://developer.apple.com/documentation/foundation/unitconverter?language=objc")
+(define-objc-class "NSUnitConverter" ()
+  ()
+  (:documentation
+   "An abstract class that provides a description of how to convert a unit to and from
+the base unit of its dimension.
+see https://developer.apple.com/documentation/foundation/unitconverter?language=objc"))
 
-(doc-objc-class "NSUnitConverterLinear" ; ns-unit-converter-linear
-  "A description of how to convert between units using a linear equation."
-  "see https://developer.apple.com/documentation/foundation/unitconverterlinear?language=objc")
+(define-objc-class "NSUnitConverterLinear" ()
+  ()
+  (:documentation
+   "A description of how to convert between units using a linear equation.
+see https://developer.apple.com/documentation/foundation/unitconverterlinear?language=objc"))
 
 ;;; Physical Dimension
 
-(doc-objc-class "NSUnitArea"            ; ns-unit-area
-  "A unit of measure for area."
-  "see https://developer.apple.com/documentation/foundation/unitarea?language=objc")
+(define-objc-class "NSUnitArea" ()
+  ()
+  (:documentation
+   "A unit of measure for area.
+see https://developer.apple.com/documentation/foundation/unitarea?language=objc"))
 
-(doc-objc-class "NSUnitLength"          ; ns-unit-length
-  "A unit of measure for length."
-  "see https://developer.apple.com/documentation/foundation/unitlength?language=objc")
+(define-objc-class "NSUnitLength" ()
+  ()
+  (:documentation
+   "A unit of measure for length.
+see https://developer.apple.com/documentation/foundation/unitlength?language=objc"))
 
-(doc-objc-class "NSUnitVolume"          ; ns-unit-volume
-  "A unit of measure for volume."
-  "see https://developer.apple.com/documentation/foundation/unitvolume?language=objc")
+(define-objc-class "NSUnitVolume" ()
+  ()
+  (:documentation
+   "A unit of measure for volume.
+see https://developer.apple.com/documentation/foundation/unitvolume?language=objc"))
 
-(doc-objc-class "NSUnitAngle"           ; ns-unit-angle
-  "A unit of measure for planar angle and rotation."
-  "see https://developer.apple.com/documentation/foundation/unitangle?language=objc")
+(define-objc-class "NSUnitAngle" ()
+  ()
+  (:documentation
+   "A unit of measure for planar angle and rotation.
+see https://developer.apple.com/documentation/foundation/unitangle?language=objc"))
 
 ;;; Mass, Weight, and Force
 
-(doc-objc-class "NSUnitMass"            ; ns-unit-mass
-  "A unit of measure for mass."
-  "see https://developer.apple.com/documentation/foundation/unitmass?language=objc")
+(define-objc-class "NSUnitMass" ()
+  ()
+  (:documentation
+   "A unit of measure for mass.
+see https://developer.apple.com/documentation/foundation/unitmass?language=objc"))
 
-(doc-objc-class "NSUnitPressure"        ; ns-unit-pressure
-  "A unit of measure for pressure."
-  "see https://developer.apple.com/documentation/foundation/unitpressure?language=objc")
+(define-objc-class "NSUnitPressure" ()
+  ()
+  (:documentation
+   "A unit of measure for pressure.
+see https://developer.apple.com/documentation/foundation/unitpressure?language=objc"))
 
 ;;; Time and Motion
 
-(doc-objc-class "NSUnitAcceleration"    ; ns-unit-acceleration
-  "A unit of measure for acceleration."
-  "see https://developer.apple.com/documentation/foundation/unitacceleration?language=objc")
+(define-objc-class "NSUnitAcceleration" ()
+  ()
+  (:documentation
+   "A unit of measure for acceleration.
+see https://developer.apple.com/documentation/foundation/unitacceleration?language=objc"))
 
-(doc-objc-class "NSUnitDuration"        ; ns-unit-duration
-  "A unit of measure for a duration of time."
-  "see https://developer.apple.com/documentation/foundation/unitduration?language=objc")
+(define-objc-class "NSUnitDuration" ()
+  ()
+  (:documentation
+   "A unit of measure for a duration of time.
+see https://developer.apple.com/documentation/foundation/unitduration?language=objc"))
 
-(doc-objc-class "NSUnitFrequency"       ; ns-unit-frequency
-  "A unit of measure for frequency."
-  "see https://developer.apple.com/documentation/foundation/unitfrequency?language=objc")
+(define-objc-class "NSUnitFrequency" ()
+  ()
+  (:documentation
+   "A unit of measure for frequency.
+see https://developer.apple.com/documentation/foundation/unitfrequency?language=objc"))
 
-(doc-objc-class "NSUnitSpeed"           ; ns-unit-speed
-  "A unit of measure for speed."
-  "see https://developer.apple.com/documentation/foundation/unitspeed?language=objc")
+(define-objc-class "NSUnitSpeed" ()
+  ()
+  (:documentation
+   "A unit of measure for speed.
+see https://developer.apple.com/documentation/foundation/unitspeed?language=objc"))
 
 ;;; Energy, Heat, and Light
 
-(doc-objc-class "NSUnitEnergy"          ; ns-unit-energy
-  "A unit of measure for energy."
-  "see https://developer.apple.com/documentation/foundation/unitenergy?language=objc")
+(define-objc-class "NSUnitEnergy" ()
+  ()
+  (:documentation
+   "A unit of measure for energy.
+see https://developer.apple.com/documentation/foundation/unitenergy?language=objc"))
 
-(doc-objc-class "NSUnitPower"           ; ns-unit-power
-  "A unit of measure for power."
-  "see https://developer.apple.com/documentation/foundation/unitpower?language=objc")
+(define-objc-class "NSUnitPower" ()
+  ()
+  (:documentation
+   "A unit of measure for power.
+see https://developer.apple.com/documentation/foundation/unitpower?language=objc"))
 
-(doc-objc-class "NSUnitTemperature"     ; ns-unit-temperature
-  "A unit of measure for temperature."
-  "see https://developer.apple.com/documentation/foundation/unittemperature?language=objc")
+(define-objc-class "NSUnitTemperature" ()
+  ()
+  (:documentation
+   "A unit of measure for temperature.
+see https://developer.apple.com/documentation/foundation/unittemperature?language=objc"))
 
-(doc-objc-class "NSUnitIlluminance"     ; ns-unit-illuminance
-  "A unit of measure for illuminance."
-  "see https://developer.apple.com/documentation/foundation/unitilluminance?language=objc")
+(define-objc-class "NSUnitIlluminance" ()
+  ()
+  (:documentation
+   "A unit of measure for illuminance.
+see https://developer.apple.com/documentation/foundation/unitilluminance?language=objc"))
 
 ;;; Electricity
 
-(doc-objc-class "NSUnitElectricCharge"  ; ns-unit-electric-charge
-  "A unit of measure for electric charge."
-  "see https://developer.apple.com/documentation/foundation/unitelectriccharge?language=objc")
+(define-objc-class "NSUnitElectricCharge" ()
+  ()
+  (:documentation
+   "A unit of measure for electric charge.
+see https://developer.apple.com/documentation/foundation/unitelectriccharge?language=objc"))
 
-(doc-objc-class "NSUnitElectricCurrent" ; ns-unit-electric-current
-  "A unit of measure for electric current."
-  "see https://developer.apple.com/documentation/foundation/unitelectriccurrent?language=objc")
+(define-objc-class "NSUnitElectricCurrent" ()
+  ()
+  (:documentation
+   "A unit of measure for electric current.
+see https://developer.apple.com/documentation/foundation/unitelectriccurrent?language=objc"))
 
-(doc-objc-class "NSUnitElectricPotentialDifference" ; ns-unit-electric-potential-difference
-  "A unit of measure for electric potential difference."
-  "see https://developer.apple.com/documentation/foundation/unitelectricpotentialdifference?language=objc")
+(define-objc-class "NSUnitElectricPotentialDifference" ()
+  ()
+  (:documentation
+   "A unit of measure for electric potential difference.
+see https://developer.apple.com/documentation/foundation/unitelectricpotentialdifference?language=objc"))
 
-(doc-objc-class "NSUnitElectricResistance" ; ns-unit-electric-resistance
-  "A unit of measure for electric resistance."
-  "see https://developer.apple.com/documentation/foundation/unitelectricresistance?language=objc")
+(define-objc-class "NSUnitElectricResistance" ()
+  ()
+  (:documentation
+   "A unit of measure for electric resistance.
+see https://developer.apple.com/documentation/foundation/unitelectricresistance?language=objc"))
 
 ;;; Concentration and Dispersion
 
-(doc-objc-class "NSUnitConcentrationMass" ; ns-unit-concentration-mass
-  "A unit of measure for concentration of mass."
-  "see https://developer.apple.com/documentation/foundation/unitconcentrationmass?language=objc")
+(define-objc-class "NSUnitConcentrationMass" ()
+  ()
+  (:documentation
+   "A unit of measure for concentration of mass.
+see https://developer.apple.com/documentation/foundation/unitconcentrationmass?language=objc"))
 
-(doc-objc-class "NSUnitDispersion"      ; ns-unit-dispersion
-  "A unit of measure for specific quantities of dispersion."
-  "see https://developer.apple.com/documentation/foundation/unitdispersion?language=objc")
+(define-objc-class "NSUnitDispersion" ()
+  ()
+  (:documentation
+   "A unit of measure for specific quantities of dispersion.
+see https://developer.apple.com/documentation/foundation/unitdispersion?language=objc"))
 
 ;;; Fuel Efficiency
 
-(doc-objc-class "NSUnitFuelEfficiency"  ; ns-unit-fuel-efficiency
-  "A unit of measure for fuel efficiency."
-  "see https://developer.apple.com/documentation/foundation/unitfuelefficiency?language=objc")
+(define-objc-class "NSUnitFuelEfficiency" ()
+  ()
+  (:documentation
+   "A unit of measure for fuel efficiency.
+see https://developer.apple.com/documentation/foundation/unitfuelefficiency?language=objc"))
 
 ;;; Data Storage
 
-(doc-objc-class "NSUnitInformationStorage" ; ns-unit-information-storage
-  "A unit of measure for quantities of information."
-  "see https://developer.apple.com/documentation/foundation/unitinformationstorage?language=objc")
+(define-objc-class "NSUnitInformationStorage" ()
+  ()
+  (:documentation
+   "A unit of measure for quantities of information.
+see https://developer.apple.com/documentation/foundation/unitinformationstorage?language=objc"))
 
 
 ;;;; Data Formatting
@@ -1208,103 +1352,143 @@ the base unit of its dimension."
 
 ;;; Numbers and currency
 
-(doc-objc-class "NSNumberFormatter"     ; ns-number-formatter
-  "A formatter that converts between numeric values and their textual representations."
-  "see https://developer.apple.com/documentation/foundation/numberformatter?language=objc")
+(define-objc-class "NSNumberFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between numeric values and their textual representations.
+see https://developer.apple.com/documentation/foundation/numberformatter?language=objc"))
 
 ;;; Names
 
-(doc-objc-class "NSPersonNameComponents" ; ns-person-name-components
-  "An object that manages the separate parts of a person’s name to allow locale-aware formatting."
-  "see https://developer.apple.com/documentation/foundation/nspersonnamecomponents?language=objc")
+(define-objc-class "NSPersonNameComponents" ()
+  ()
+  (:documentation
+   "An object that manages the separate parts of a person’s name to allow locale-aware formatting.
+see https://developer.apple.com/documentation/foundation/nspersonnamecomponents?language=objc"))
 
 ;;; Dates and times
 
-(doc-objc-class "NSDateFormatter"       ; ns-date-formatter
-  "A formatter that converts between dates and their textual representations."
-  "see https://developer.apple.com/documentation/foundation/dateformatter?language=objc")
+(define-objc-class "NSDateFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between dates and their textual representations.
+see https://developer.apple.com/documentation/foundation/dateformatter?language=objc"))
 
-(doc-objc-class "NSDateComponentsFormatter" ; ns-date-components-formatter
-  "A formatter that creates string representations of quantities of time."
-  "see https://developer.apple.com/documentation/foundation/datecomponentsformatter?language=objc")
+(define-objc-class "NSDateComponentsFormatter" ()
+  ()
+  (:documentation
+   "A formatter that creates string representations of quantities of time.
+see https://developer.apple.com/documentation/foundation/datecomponentsformatter?language=objc"))
 
-(doc-objc-class "NSRelativeDateTimeFormatter" ; ns-relative-date-time-formatter
-  "A formatter that creates locale-aware string representations of a relative date or time."
-  "see https://developer.apple.com/documentation/foundation/relativedatetimeformatter?language=objc")
+(define-objc-class "NSRelativeDateTimeFormatter" ()
+  ()
+  (:documentation
+   "A formatter that creates locale-aware string representations of a relative date or time.
+see https://developer.apple.com/documentation/foundation/relativedatetimeformatter?language=objc"))
 
-(doc-objc-class "NSDateIntervalFormatter" ; ns-date-interval-formatter
-  "A formatter that creates string representations of time intervals."
-  "see https://developer.apple.com/documentation/foundation/dateintervalformatter?language=objc")
+(define-objc-class "NSDateIntervalFormatter" ()
+  ()
+  (:documentation
+   "A formatter that creates string representations of time intervals.
+see https://developer.apple.com/documentation/foundation/dateintervalformatter?language=objc"))
 
-(doc-objc-class "NSISO8601DateFormatter" ; ns-iso8601-date-formatter
-  "A formatter that converts between dates and their ISO 8601 string representations."
-  "see https://developer.apple.com/documentation/foundation/iso8601dateformatter?language=objc")
+(define-objc-class "NSISO8601DateFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts between dates and their ISO 8601 string representations.
+see https://developer.apple.com/documentation/foundation/iso8601dateformatter?language=objc"))
 
 ;;; Data sizes
 
-(doc-objc-class "NSByteCountFormatter"  ; ns-byte-count-formatter
-  "A formatter that converts a byte count value into a localized description that is formatted with the appropriate byte modifier (KB, MB, GB and so on)."
-  "see https://developer.apple.com/documentation/foundation/bytecountformatter?language=objc")
+(define-objc-class "NSByteCountFormatter" ()
+  ()
+  (:documentation
+   "A formatter that converts a byte count value into a localized description that is formatted with the appropriate byte modifier (KB, MB, GB and so on).
+see https://developer.apple.com/documentation/foundation/bytecountformatter?language=objc"))
 
 ;;; Measurements
 
-(doc-objc-class "NSMeasurementFormatter" ; ns-measurement-formatter
-  "A formatter that provides localized representations of units and measurements."
-  "see https://developer.apple.com/documentation/foundation/measurementformatter?language=objc")
+(define-objc-class "NSMeasurementFormatter" ()
+  ()
+  (:documentation
+   "A formatter that provides localized representations of units and measurements.
+see https://developer.apple.com/documentation/foundation/measurementformatter?language=objc"))
 
 ;;; Lists
 
-(doc-objc-class "NSListFormatter"       ; ns-list-formatter
-  "An object that provides locale-correct formatting of a list of items using the appropriate separator and conjunction."
-  "see https://developer.apple.com/documentation/foundation/listformatter?language=objc")
+(define-objc-class "NSListFormatter" ()
+  ()
+  (:documentation
+   "An object that provides locale-correct formatting of a list of items using the appropriate separator and conjunction.
+see https://developer.apple.com/documentation/foundation/listformatter?language=objc"))
 
 ;;; Internationalization
 
-(doc-objc-class "NSLocale"              ; ns-locale
-  "Information about linguistic, cultural, and technological conventions for use in formatting data for presentation."
-  "see https://developer.apple.com/documentation/foundation/nslocale?language=objc")
+(define-objc-class "NSLocale" ()
+  ()
+  (:documentation
+   "Information about linguistic, cultural, and technological conventions for use in formatting data for presentation.
+see https://developer.apple.com/documentation/foundation/nslocale?language=objc"))
 
 ;;; Custom formatters
 
-(doc-objc-class "NSFormatter"           ; ns-formatter
-  "An abstract class that declares an interface for objects that create, interpret, and validate the textual representation of values."
-  "see https://developer.apple.com/documentation/foundation/formatter?language=objc")
+(define-objc-class "NSFormatter" ()
+  ()
+  (:documentation
+   "An abstract class that declares an interface for objects that create, interpret, and validate the textual representation of values.
+see https://developer.apple.com/documentation/foundation/formatter?language=objc"))
 
 ;;; Automatic grammar agreement
 
-(doc-objc-class "NSInflectionRule"      ; ns-inflection-rule
-  "A rule that affects how an attributed string performs automatic grammatical agreement."
-  "see https://developer.apple.com/documentation/foundation/nsinflectionrule?language=objc")
+(define-objc-class "NSInflectionRule" ()
+  ()
+  (:documentation
+   "A rule that affects how an attributed string performs automatic grammatical agreement.
+see https://developer.apple.com/documentation/foundation/nsinflectionrule?language=objc"))
 
-(doc-objc-class "NSInflectionRuleExplicit" ; ns-inflection-rule-explicit
-  "An inflection rule that uses a morphology instance to determine how to inflect attribued strings."
-  "see https://developer.apple.com/documentation/foundation/nsinflectionruleexplicit?language=objc")
+(define-objc-class "NSInflectionRuleExplicit" ()
+  ()
+  (:documentation
+   "An inflection rule that uses a morphology instance to determine how to inflect attribued strings.
+see https://developer.apple.com/documentation/foundation/nsinflectionruleexplicit?language=objc"))
 
-(doc-objc-class "NSMorphology"          ; ns-morphology
-  "A description of the grammatical properties of a string."
-  "see https://developer.apple.com/documentation/foundation/nsmorphology?language=objc")
+(define-objc-class "NSMorphology" ()
+  ()
+  (:documentation
+   "A description of the grammatical properties of a string.
+see https://developer.apple.com/documentation/foundation/nsmorphology?language=objc"))
 
-(doc-objc-class "NSTermOfAddress"       ; ns-term-of-address
-  "The type for representing grammatical gender in localized text."
-  "see https://developer.apple.com/documentation/foundation/nstermofaddress?language=objc")
+(define-objc-class "NSTermOfAddress" ()
+  ()
+  (:documentation
+   "The type for representing grammatical gender in localized text.
+see https://developer.apple.com/documentation/foundation/nstermofaddress?language=objc"))
 
-(doc-objc-class "NSMorphologyPronoun"   ; ns-morphology-pronoun
-  "A custom pronoun for referring to a third person."
-  "see https://developer.apple.com/documentation/foundation/nsmorphologypronoun?language=objc")
+(define-objc-class "NSMorphologyPronoun" ()
+  ()
+  (:documentation
+   "A custom pronoun for referring to a third person.
+see https://developer.apple.com/documentation/foundation/nsmorphologypronoun?language=objc"))
 
 ;;; Deprecated
 
-(doc-objc-class "NSLengthFormatter"     ; ns-length-formatter
-  "A formatter that provides localized descriptions of linear distances, such as length and height measurements."
-  "see https://developer.apple.com/documentation/foundation/lengthformatter?language=objc")
+(define-objc-class "NSLengthFormatter" ()
+  ()
+  (:documentation
+   "A formatter that provides localized descriptions of linear distances, such as length and height measurements.
+see https://developer.apple.com/documentation/foundation/lengthformatter?language=objc"))
 
-(doc-objc-class "NSMassFormatter"       ; ns-mass-formatter
-  "A formatter that provides localized descriptions of mass and weight values."
-  "see https://developer.apple.com/documentation/foundation/massformatter?language=objc")
+(define-objc-class "NSMassFormatter" ()
+  ()
+  (:documentation
+   "A formatter that provides localized descriptions of mass and weight values.
+see https://developer.apple.com/documentation/foundation/massformatter?language=objc"))
 
-(doc-objc-class "NSEnergyFormatter"     ; ns-energy-formatter
-  "A formatter that provides localized descriptions of energy values."
-  "see https://developer.apple.com/documentation/foundation/energyformatter?language=objc")
+(define-objc-class "NSEnergyFormatter" ()
+  ()
+  (:documentation
+   "A formatter that provides localized descriptions of energy values.
+see https://developer.apple.com/documentation/foundation/energyformatter?language=objc"))
 
 
 ;;;; Filters and Sorting
@@ -1313,27 +1497,37 @@ the base unit of its dimension."
 
 ;;; Filltering
 
-(doc-objc-class "NSPredicate"           ; ns-predicate
-  "A definition of logical conditions for constraining a search for a fetch or for in-memory filtering."
-  "see https://developer.apple.com/documentation/foundation/nspredicate?language=objc")
+(define-objc-class "NSPredicate" ()
+  ()
+  (:documentation
+   "A definition of logical conditions for constraining a search for a fetch or for in-memory filtering.
+see https://developer.apple.com/documentation/foundation/nspredicate?language=objc"))
 
-(doc-objc-class "NSExpression"          ; ns-expression
-  "An expression for use in a comparison predicate."
-  "see https://developer.apple.com/documentation/foundation/nsexpression?language=objc")
+(define-objc-class "NSExpression" ()
+  ()
+  (:documentation
+   "An expression for use in a comparison predicate.
+see https://developer.apple.com/documentation/foundation/nsexpression?language=objc"))
 
-(doc-objc-class "NSComparisonPredicate" ; ns-comparison-predicate
-  "A specialized predicate for comparing expressions."
-  "see https://developer.apple.com/documentation/foundation/nscomparisonpredicate?language=objc")
+(define-objc-class "NSComparisonPredicate" ()
+  ()
+  (:documentation
+   "A specialized predicate for comparing expressions.
+see https://developer.apple.com/documentation/foundation/nscomparisonpredicate?language=objc"))
 
-(doc-objc-class "NSCompoundPredicate"   ; ns-compound-predicate
-  "A specialized predicate that evaluates logical combinations of other predicates."
-  "see https://developer.apple.com/documentation/foundation/nscompoundpredicate?language=objc")
+(define-objc-class "NSCompoundPredicate" ()
+  ()
+  (:documentation
+   "A specialized predicate that evaluates logical combinations of other predicates.
+see https://developer.apple.com/documentation/foundation/nscompoundpredicate?language=objc"))
 
 ;;; Sorting
 
-(doc-objc-class "NSSortDescriptor"      ; ns-sort-descriptor
-  "An immutable description of how to order a collection of objects according to a property common to all the objects."
-  "see https://developer.apple.com/documentation/foundation/nssortdescriptor?language=objc")
+(define-objc-class "NSSortDescriptor" ()
+  ()
+  (:documentation
+   "An immutable description of how to order a collection of objects according to a property common to all the objects.
+see https://developer.apple.com/documentation/foundation/nssortdescriptor?language=objc"))
 
 (define-objc-enum ns-ordered
   "Constants that indicate sort order.
@@ -1352,70 +1546,96 @@ call to the last (that is, left to right in code). "
 
 ;;; Undo
 
-(doc-objc-class "NSUndoManager"         ; ns-undo-manager
-  "A general-purpose recorder of operations that enables undo and redo."
-  "see https://developer.apple.com/documentation/foundation/undomanager?language=objc")
+(define-objc-class "NSUndoManager" ()
+  ()
+  (:documentation
+   "A general-purpose recorder of operations that enables undo and redo.
+see https://developer.apple.com/documentation/foundation/undomanager?language=objc"))
 
 ;;; Progress
 
-(doc-objc-class "NSProgress"            ; ns-progress
-  "An object that conveys ongoing progress to the user for a specified task."
-  "see https://developer.apple.com/documentation/foundation/progress?language=objc")
+(define-objc-class "NSProgress" ()
+  ()
+  (:documentation
+   "An object that conveys ongoing progress to the user for a specified task.
+see https://developer.apple.com/documentation/foundation/progress?language=objc"))
 
 ;;; Operations
 
-(doc-objc-class "NSOperation"           ; ns-operation
-  "An abstract class that represents the code and data associated with a single task."
-  "see https://developer.apple.com/documentation/foundation/operation?language=objc")
+(define-objc-class "NSOperation" ()
+  ()
+  (:documentation
+   "An abstract class that represents the code and data associated with a single task.
+see https://developer.apple.com/documentation/foundation/operation?language=objc"))
 
-(doc-objc-class "NSOperationQueue"      ; ns-operation-queue
-  "A queue that regulates the execution of operations."
-  "see https://developer.apple.com/documentation/foundation/operationqueue?language=objc")
+(define-objc-class "NSOperationQueue" ()
+  ()
+  (:documentation
+   "A queue that regulates the execution of operations.
+see https://developer.apple.com/documentation/foundation/operationqueue?language=objc"))
 
-(doc-objc-class "NSBlockOperation"      ; ns-block-operation
-  "An operation that manages the concurrent execution of one or more blocks."
-  "see https://developer.apple.com/documentation/foundation/blockoperation?language=objc")
+(define-objc-class "NSBlockOperation" ()
+  ()
+  (:documentation
+   "An operation that manages the concurrent execution of one or more blocks.
+see https://developer.apple.com/documentation/foundation/blockoperation?language=objc"))
 
-(doc-objc-class "NSInvocationOperation" ; ns-invocation-operation
-  "An operation that manages the execution of a single encapsulated task specified as an invocation."
-  "see https://developer.apple.com/documentation/foundation/nsinvocationoperation?language=objc")
+(define-objc-class "NSInvocationOperation" ()
+  ()
+  (:documentation
+   "An operation that manages the execution of a single encapsulated task specified as an invocation.
+see https://developer.apple.com/documentation/foundation/nsinvocationoperation?language=objc"))
 
 ;;; Scheduling
 
-(doc-objc-class "NSTimer"               ; ns-timer
-  "A timer that fires after a certain time interval has elapsed,
-sending a specified message to a target object."
-  "see https://developer.apple.com/documentation/foundation/timer?language=objc")
+(define-objc-class "NSTimer" ()
+  ()
+  (:documentation
+   "A timer that fires after a certain time interval has elapsed,
+sending a specified message to a target object.
+see https://developer.apple.com/documentation/foundation/timer?language=objc"))
 
 ;;; Activity Sharing
 
-(doc-objc-class "NSUserActivity"        ; coca.appkit:ns-user-activity
-  "A representation of the state of your app at a moment in time."
-  "see https://developer.apple.com/documentation/foundation/nsuseractivity?language=objc")
+(define-objc-class "NSUserActivity" ()
+  ()
+  (:documentation
+   "A representation of the state of your app at a moment in time.
+see https://developer.apple.com/documentation/foundation/nsuseractivity?language=objc"))
 
 ;;; System Interaction
 
-(doc-objc-class "NSProcessInfo"         ; ns-process-info
-  "A collection of information about the current process."
-  "see https://developer.apple.com/documentation/foundation/processinfo?language=objc")
+(define-objc-class "NSProcessInfo" ()
+  ()
+  (:documentation
+   "A collection of information about the current process.
+see https://developer.apple.com/documentation/foundation/processinfo?language=objc"))
 
-(doc-objc-class "NSBackgroundActivityScheduler" ; ns-background-activity-scheduler
-  "A task scheduler suitable for low priority operations that can run in the background."
-  "see https://developer.apple.com/documentation/foundation/nsbackgroundactivityscheduler?language=objc")
+(define-objc-class "NSBackgroundActivityScheduler" ()
+  ()
+  (:documentation
+   "A task scheduler suitable for low priority operations that can run in the background.
+see https://developer.apple.com/documentation/foundation/nsbackgroundactivityscheduler?language=objc"))
 
 ;;; User Notifications
 
-(doc-objc-class "NSUserNotification"    ; ns-user-notification
-  "A notification that can be scheduled for display in the notification center."
-  "see https://developer.apple.com/documentation/foundation/nsusernotification?language=objc")
+(define-objc-class "NSUserNotification" ()
+  ()
+  (:documentation
+   "A notification that can be scheduled for display in the notification center.
+see https://developer.apple.com/documentation/foundation/nsusernotification?language=objc"))
 
-(doc-objc-class "NSUserNotificationAction" ; ns-user-notification-action
-  "An action that the user can take in response to receiving a notification."
-  "see https://developer.apple.com/documentation/foundation/nsusernotificationaction?language=objc")
+(define-objc-class "NSUserNotificationAction" ()
+  ()
+  (:documentation
+   "An action that the user can take in response to receiving a notification.
+see https://developer.apple.com/documentation/foundation/nsusernotificationaction?language=objc"))
 
-(doc-objc-class "NSUserNotificationCenter" ; ns-user-notification-center
-  "An object that delivers notifications from apps to the user."
-  "see https://developer.apple.com/documentation/foundation/nsusernotificationcenter?language=objc")
+(define-objc-class "NSUserNotificationCenter" ()
+  ()
+  (:documentation
+   "An object that delivers notifications from apps to the user.
+see https://developer.apple.com/documentation/foundation/nsusernotificationcenter?language=objc"))
 
 
 ;;;; Resources
@@ -1424,15 +1644,19 @@ sending a specified message to a target object."
 
 ;;; Bundle Resources
 
-(doc-objc-class "NSBundle"              ; ns-bundle
-  "A representation of the code and resources stored in a bundle directory on disk."
-  "see https://developer.apple.com/documentation/foundation/bundle?language=objc")
+(define-objc-class "NSBundle" ()
+  ()
+  (:documentation
+   "A representation of the code and resources stored in a bundle directory on disk.
+see https://developer.apple.com/documentation/foundation/bundle?language=objc"))
 
 ;;; On-Demand Resources
 
-(doc-objc-class "NSBundleResourceRequest" ; ns-bundle-resource-request
-  "A resource manager you use to download content hosted on the App Store at the time your app needs it."
-  "see https://developer.apple.com/documentation/foundation/nsbundleresourcerequest?language=objc")
+(define-objc-class "NSBundleResourceRequest" ()
+  ()
+  (:documentation
+   "A resource manager you use to download content hosted on the App Store at the time your app needs it.
+see https://developer.apple.com/documentation/foundation/nsbundleresourcerequest?language=objc"))
 
 
 ;;;; Notifications
@@ -1443,23 +1667,31 @@ sending a specified message to a target object."
 
 ;;; Notifications
 
-(doc-objc-class "NSNotification"        ; ns-notification
-  "A container for information broadcast through a notification center to all registered observers."
-  "see https://developer.apple.com/documentation/foundation/nsnotification?language=objc")
+(define-objc-class "NSNotification" ()
+  ()
+  (:documentation
+   "A container for information broadcast through a notification center to all registered observers.
+see https://developer.apple.com/documentation/foundation/nsnotification?language=objc"))
 
-(doc-objc-class "NSNotificationCenter"  ; ns-notification-center
-  "A notification dispatch mechanism that enables the broadcast of information to registered observers."
-  "see https://developer.apple.com/documentation/foundation/notificationcenter?language=objc")
+(define-objc-class "NSNotificationCenter" ()
+  ()
+  (:documentation
+   "A notification dispatch mechanism that enables the broadcast of information to registered observers.
+see https://developer.apple.com/documentation/foundation/notificationcenter?language=objc"))
 
-(doc-objc-class "NSNotificationQueue"   ; ns-notification-queue
-  "A notification center buffer."
-  "see https://developer.apple.com/documentation/foundation/notificationqueue?language=objc")
+(define-objc-class "NSNotificationQueue" ()
+  ()
+  (:documentation
+   "A notification center buffer.
+see https://developer.apple.com/documentation/foundation/notificationqueue?language=objc"))
 
 ;;; Cross-Process Notifications
 
-(doc-objc-class "NSDistributedNotificationCenter" ; ns-distributed-notification-center
-  "A notification dispatch mechanism that enables the broadcast of notifications across task boundaries."
-  "see https://developer.apple.com/documentation/foundation/distributednotificationcenter?language=objc")
+(define-objc-class "NSDistributedNotificationCenter" ()
+  ()
+  (:documentation
+   "A notification dispatch mechanism that enables the broadcast of notifications across task boundaries.
+see https://developer.apple.com/documentation/foundation/distributednotificationcenter?language=objc"))
 
 
 ;;;; App Extension Support
@@ -1468,29 +1700,37 @@ sending a specified message to a target object."
 
 ;;; Extension Support
 
-(doc-objc-class "NSExtensionContext"    ; ns-extension-context
-  "The host app context from which an app extension is invoked."
-  "see https://developer.apple.com/documentation/foundation/nsextensioncontext?language=objc")
+(define-objc-class "NSExtensionContext" ()
+  ()
+  (:documentation
+   "The host app context from which an app extension is invoked.
+see https://developer.apple.com/documentation/foundation/nsextensioncontext?language=objc"))
 
 ;;; Share Extensions
 
 ;;; Attachments
 
-(doc-objc-class "NSItemProvider"        ; ns-item-provider
-  "An item provider for conveying data or a file between processes during
-drag-and-drop or copy-and-paste activities, or from a host app to an app extension."
-  "see https://developer.apple.com/documentation/foundation/nsitemprovider?language=objc")
+(define-objc-class "NSItemProvider" ()
+  ()
+  (:documentation
+   "An item provider for conveying data or a file between processes during
+drag-and-drop or copy-and-paste activities, or from a host app to an app extension.
+see https://developer.apple.com/documentation/foundation/nsitemprovider?language=objc"))
 
-(doc-objc-class "NSExtensionItem"       ; ns-extension-item
-  "An immutable collection of values representing different aspects of an item
-for an extension to act upon."
-  "see https://developer.apple.com/documentation/foundation/nsextensionitem?language=objc")
+(define-objc-class "NSExtensionItem" ()
+  ()
+  (:documentation
+   "An immutable collection of values representing different aspects of an item
+for an extension to act upon.
+see https://developer.apple.com/documentation/foundation/nsextensionitem?language=objc"))
 
 ;;; Host App Interaction
 
-(doc-objc-class "NSUserActivity"        ; coca.appkit:ns-user-activity
-  "A representation of the state of your app at a moment in time."
-  "see https://developer.apple.com/documentation/foundation/nsuseractivity?language=objc")
+(define-objc-class "NSUserActivity" ()
+  ()
+  (:documentation
+   "A representation of the state of your app at a moment in time.
+see https://developer.apple.com/documentation/foundation/nsuseractivity?language=objc"))
 
 
 ;;;; Errors and Exceptions
@@ -1499,23 +1739,29 @@ for an extension to act upon."
 
 ;;; User-Relevant Errors
 
-(doc-objc-class "NSError"               ; ns-error
-  "Information about an error condition including a domain, a domain-specific error code,
-and application-specific information."
-  "see https://developer.apple.com/documentation/foundation/errors-and-exceptions?language=objc")
+(define-objc-class "NSError" ()
+  ()
+  (:documentation
+   "Information about an error condition including a domain, a domain-specific error code,
+and application-specific information.
+see https://developer.apple.com/documentation/foundation/errors-and-exceptions?language=objc"))
 
 ;;; Assertions
 
-(doc-objc-class "NSAssertionHandler"    ; ns-assertion-handler
-  "An object that logs an assertion to the console. "
-  "see https://developer.apple.com/documentation/foundation/nsassertionhandler?language=objc")
+(define-objc-class "NSAssertionHandler" ()
+  ()
+  (:documentation
+   "An object that logs an assertion to the console.
+see https://developer.apple.com/documentation/foundation/nsassertionhandler?language=objc"))
 
 ;;; Exceptions
 
-(doc-objc-class "NSException"           ; ns-exception
-  "An object that represents a special condition that interrupts the
-normal flow of program execution."
-  "see https://developer.apple.com/documentation/foundation/nsexception?language=objc")
+(define-objc-class "NSException" ()
+  ()
+  (:documentation
+   "An object that represents a special condition that interrupts the
+normal flow of program execution.
+see https://developer.apple.com/documentation/foundation/nsexception?language=objc"))
 
 ;;; Diagonstics and Debugging
 
@@ -1550,156 +1796,224 @@ string, it would be escaped as `%%'. "
 
 ;;; Script Execution
 
-(doc-objc-class "NSAppleScript"         ; ns-apple-script
-  "An object that provides the ability to load, compile, and execute scripts."
-  "see https://developer.apple.com/documentation/foundation/nsapplescript?language=objc")
+(define-objc-class "NSAppleScript" ()
+  ()
+  (:documentation
+   "An object that provides the ability to load, compile, and execute scripts.
+see https://developer.apple.com/documentation/foundation/nsapplescript?language=objc"))
 
 ;;; Apple Event Handling
 
-(doc-objc-class "NSAppleEventDescriptor" ; ns-apple-event-descriptor
-  "A wrapper for the Apple event descriptor data type."
-  "see https://developer.apple.com/documentation/foundation/nsappleeventdescriptor?language=objc")
+(define-objc-class "NSAppleEventDescriptor" ()
+  ()
+  (:documentation
+   "A wrapper for the Apple event descriptor data type.
+see https://developer.apple.com/documentation/foundation/nsappleeventdescriptor?language=objc"))
 
-(doc-objc-class "NSAppleEventManager"   ; ns-apple-event-manager
-  "A mechanism for registering handler routines for specific types of Apple events
-and dispatching events to those handlers."
-  "see https://developer.apple.com/documentation/foundation/nsappleeventmanager?language=objc")
+(define-objc-class "NSAppleEventManager" ()
+  ()
+  (:documentation
+   "A mechanism for registering handler routines for specific types of Apple events
+and dispatching events to those handlers.
+see https://developer.apple.com/documentation/foundation/nsappleeventmanager?language=objc"))
 
 ;;; Script Commands
 
-(doc-objc-class "NSScriptCommand"       ; ns-script-command
-  "A self-contained scripting statement."
-  "see https://developer.apple.com/documentation/foundation/nsscriptcommand?language=objc")
+(define-objc-class "NSScriptCommand" ()
+  ()
+  (:documentation
+   "A self-contained scripting statement.
+see https://developer.apple.com/documentation/foundation/nsscriptcommand?language=objc"))
 
-(doc-objc-class "NSQuitCommand"         ; ns-quit-command
-  "A command that quits the specified app."
-  "see https://developer.apple.com/documentation/foundation/nsquitcommand?language=objc")
+(define-objc-class "NSQuitCommand" ()
+  ()
+  (:documentation
+   "A command that quits the specified app.
+see https://developer.apple.com/documentation/foundation/nsquitcommand?language=objc"))
 
-(doc-objc-class "NSSetCommand"          ; ns-set-command
-  "A command that sets one or more attributes or relationships to one or more values."
-  "see https://developer.apple.com/documentation/foundation/nssetcommand?language=objc")
+(define-objc-class "NSSetCommand" ()
+  ()
+  (:documentation
+   "A command that sets one or more attributes or relationships to one or more values.
+see https://developer.apple.com/documentation/foundation/nssetcommand?language=objc"))
 
-(doc-objc-class "NSMoveCommand"         ; ns-move-command
-  "A command that moves one or more scriptable objects."
-  "see https://developer.apple.com/documentation/foundation/nsmovecommand?language=objc")
+(define-objc-class "NSMoveCommand" ()
+  ()
+  (:documentation
+   "A command that moves one or more scriptable objects.
+see https://developer.apple.com/documentation/foundation/nsmovecommand?language=objc"))
 
-(doc-objc-class "NSCreateCommand"       ; ns-create-command
-  "A command that creates a scriptable object."
-  "see https://developer.apple.com/documentation/foundation/nscreatecommand?language=objc")
+(define-objc-class "NSCreateCommand" ()
+  ()
+  (:documentation
+   "A command that creates a scriptable object.
+see https://developer.apple.com/documentation/foundation/nscreatecommand?language=objc"))
 
-(doc-objc-class "NSDeleteCommand"       ; ns-delete-command
-  "A command that deletes a scriptable object."
-  "see https://developer.apple.com/documentation/foundation/nsdeletecommand?language=objc")
+(define-objc-class "NSDeleteCommand" ()
+  ()
+  (:documentation
+   "A command that deletes a scriptable object.
+see https://developer.apple.com/documentation/foundation/nsdeletecommand?language=objc"))
 
-(doc-objc-class "NSExistsCommand"       ; ns-exists-command
-  "A command that determines whether a scriptable object exists."
-  "see https://developer.apple.com/documentation/foundation/nsexistscommand?language=objc")
+(define-objc-class "NSExistsCommand" ()
+  ()
+  (:documentation
+   "A command that determines whether a scriptable object exists.
+see https://developer.apple.com/documentation/foundation/nsexistscommand?language=objc"))
 
-(doc-objc-class "NSGetCommand"          ; ns-get-command
-  "A command that retrieves a value or object from a scriptable object."
-  "see https://developer.apple.com/documentation/foundation/nsgetcommand?language=objc")
+(define-objc-class "NSGetCommand" ()
+  ()
+  (:documentation
+   "A command that retrieves a value or object from a scriptable object.
+see https://developer.apple.com/documentation/foundation/nsgetcommand?language=objc"))
 
-(doc-objc-class "NSCloneCommand"        ; ns-clone-command
-  "A command that clones one or more scriptable objects."
-  "see https://developer.apple.com/documentation/foundation/nsclonecommand?language=objc")
+(define-objc-class "NSCloneCommand" ()
+  ()
+  (:documentation
+   "A command that clones one or more scriptable objects.
+see https://developer.apple.com/documentation/foundation/nsclonecommand?language=objc"))
 
-(doc-objc-class "NSCountCommand"        ; ns-count-command
-  "A command that counts the number of objects of a specified class in the specified object container."
-  "see https://developer.apple.com/documentation/foundation/nscountcommand?language=objc")
+(define-objc-class "NSCountCommand" ()
+  ()
+  (:documentation
+   "A command that counts the number of objects of a specified class in the specified object container.
+see https://developer.apple.com/documentation/foundation/nscountcommand?language=objc"))
 
-(doc-objc-class "NSCloseCommand"        ; ns-close-command
-  "A command that closes one or more scriptable objects."
-  "see https://developer.apple.com/documentation/foundation/nsclosecommand?language=objc")
+(define-objc-class "NSCloseCommand" ()
+  ()
+  (:documentation
+   "A command that closes one or more scriptable objects.
+see https://developer.apple.com/documentation/foundation/nsclosecommand?language=objc"))
 
 ;;; Object Specifiers
 
-(doc-objc-class "NSScriptObjectSpecifier" ; ns-script-object-specifier
-  "An abstract class used to represent natural language expressions."
-  "see https://developer.apple.com/documentation/foundation/nsscriptobjectspecifier?language=objc")
+(define-objc-class "NSScriptObjectSpecifier" ()
+  ()
+  (:documentation
+   "An abstract class used to represent natural language expressions.
+see https://developer.apple.com/documentation/foundation/nsscriptobjectspecifier?language=objc"))
 
-(doc-objc-class "NSPropertySpecifier"   ; ns-property-specifier
-  "A specifier for a simple attribute value, a one-to-one relationship, or all elements of a to-many relationship."
-  "see https://developer.apple.com/documentation/foundation/nspropertyspecifier?language=objc")
+(define-objc-class "NSPropertySpecifier" ()
+  ()
+  (:documentation
+   "A specifier for a simple attribute value, a one-to-one relationship, or all elements of a to-many relationship.
+see https://developer.apple.com/documentation/foundation/nspropertyspecifier?language=objc"))
 
-(doc-objc-class "NSPositionalSpecifier" ; ns-positional-specifier
-  "A specifier for an insertion point in a container relative to another object in the container."
-  "see https://developer.apple.com/documentation/foundation/nspositionalspecifier?language=objc")
+(define-objc-class "NSPositionalSpecifier" ()
+  ()
+  (:documentation
+   "A specifier for an insertion point in a container relative to another object in the container.
+see https://developer.apple.com/documentation/foundation/nspositionalspecifier?language=objc"))
 
-(doc-objc-class "NSRandomSpecifier"     ; ns-random-specifier
-  "A specifier for an arbitrary object in a collection or,
-if not a one-to-many relationship, the sole object."
-  "see https://developer.apple.com/documentation/foundation/nsrandomspecifier?language=objc")
+(define-objc-class "NSRandomSpecifier" ()
+  ()
+  (:documentation
+   "A specifier for an arbitrary object in a collection or,
+if not a one-to-many relationship, the sole object.
+see https://developer.apple.com/documentation/foundation/nsrandomspecifier?language=objc"))
 
-(doc-objc-class "NSRangeSpecifier"      ; ns-range-specifier
-  "A specifier for a range of objects in a container."
-  "see https://developer.apple.com/documentation/foundation/nsrangespecifier?language=objc")
+(define-objc-class "NSRangeSpecifier" ()
+  ()
+  (:documentation
+   "A specifier for a range of objects in a container.
+see https://developer.apple.com/documentation/foundation/nsrangespecifier?language=objc"))
 
-(doc-objc-class "NSUniqueIDSpecifier"   ; ns-unique-id-specifier
-  "A specifier for an object in a collection (or container) by unique ID."
-  "see https://developer.apple.com/documentation/foundation/nsuniqueidspecifier?language=objc")
+(define-objc-class "NSUniqueIDSpecifier" ()
+  ()
+  (:documentation
+   "A specifier for an object in a collection (or container) by unique ID.
+see https://developer.apple.com/documentation/foundation/nsuniqueidspecifier?language=objc"))
 
-(doc-objc-class "NSWhoseSpecifier"      ; ns-whose-specifier
-  "A specifier that indicates every object in a collection matching a condition."
-  "see https://developer.apple.com/documentation/foundation/nswhosespecifier?language=objc")
+(define-objc-class "NSWhoseSpecifier" ()
+  ()
+  (:documentation
+   "A specifier that indicates every object in a collection matching a condition.
+see https://developer.apple.com/documentation/foundation/nswhosespecifier?language=objc"))
 
-(doc-objc-class "NSNameSpecifier"       ; ns-name-specifier
-  "A specifier for an object in a collection (or container) by name."
-  "see https://developer.apple.com/documentation/foundation/nsnamespecifier?language=objc")
+(define-objc-class "NSNameSpecifier" ()
+  ()
+  (:documentation
+   "A specifier for an object in a collection (or container) by name.
+see https://developer.apple.com/documentation/foundation/nsnamespecifier?language=objc"))
 
-(doc-objc-class "NSMiddleSpecifier"     ; ns-middle-specifier
-  "A specifier indicating the middle object in a collection or,
-if not a one-to-many relationship, the sole object."
-  "see https://developer.apple.com/documentation/foundation/nsmiddlespecifier?language=objc")
+(define-objc-class "NSMiddleSpecifier" ()
+  ()
+  (:documentation
+   "A specifier indicating the middle object in a collection or,
+if not a one-to-many relationship, the sole object.
+see https://developer.apple.com/documentation/foundation/nsmiddlespecifier?language=objc"))
 
-(doc-objc-class "NSIndexSpecifier"      ; ns-index-specifier
-  "A specifier representing an object in a collection (or container) with an index number."
-  "see https://developer.apple.com/documentation/foundation/nsindexspecifier?language=objc")
+(define-objc-class "NSIndexSpecifier" ()
+  ()
+  (:documentation
+   "A specifier representing an object in a collection (or container) with an index number.
+see https://developer.apple.com/documentation/foundation/nsindexspecifier?language=objc"))
 
-(doc-objc-class "NSRelativeSpecifier"   ; ns-relative-specifier
-  "A specifier that indicates an object in a collection by its position relative to another object."
-  "see https://developer.apple.com/documentation/foundation/nsrelativespecifier?language=objc")
+(define-objc-class "NSRelativeSpecifier" ()
+  ()
+  (:documentation
+   "A specifier that indicates an object in a collection by its position relative to another object.
+see https://developer.apple.com/documentation/foundation/nsrelativespecifier?language=objc"))
 
 ;;; Script Dictionary Description
 
-(doc-objc-class "NSScriptSuiteRegistry" ; ns-script-suite-registry
-  "The top-level repository of scriptability information for an app at runtime."
-  "see https://developer.apple.com/documentation/foundation/nsscriptsuiteregistry?language=objc")
+(define-objc-class "NSScriptSuiteRegistry" ()
+  ()
+  (:documentation
+   "The top-level repository of scriptability information for an app at runtime.
+see https://developer.apple.com/documentation/foundation/nsscriptsuiteregistry?language=objc"))
 
-(doc-objc-class "NSScriptClassDescription" ; ns-script-class-description
-  "A scriptable class that a macOS app supports."
-  "see https://developer.apple.com/documentation/foundation/nsscriptclassdescription?language=objc")
+(define-objc-class "NSScriptClassDescription" ()
+  ()
+  (:documentation
+   "A scriptable class that a macOS app supports.
+see https://developer.apple.com/documentation/foundation/nsscriptclassdescription?language=objc"))
 
-(doc-objc-class "NSClassDescription"    ; ns-class-description
-  "An abstract class that provides the interface for querying the relationships and properties of a class."
-  "see https://developer.apple.com/documentation/foundation/nsclassdescription?language=objc")
+(define-objc-class "NSClassDescription" ()
+  ()
+  (:documentation
+   "An abstract class that provides the interface for querying the relationships and properties of a class.
+see https://developer.apple.com/documentation/foundation/nsclassdescription?language=objc"))
 
-(doc-objc-class "NSScriptCommandDescription" ; ns-script-command-description
-  "A script command that a macOS app supports."
-  "see https://developer.apple.com/documentation/foundation/nsscriptcommanddescription?language=objc")
+(define-objc-class "NSScriptCommandDescription" ()
+  ()
+  (:documentation
+   "A script command that a macOS app supports.
+see https://developer.apple.com/documentation/foundation/nsscriptcommanddescription?language=objc"))
 
 ;;; Object Matching Tests
 
-(doc-objc-class "NSScriptWhoseTest"     ; ns-script-whose-test
-  "An abstract class that provides the basis for testing specifiers one at a time or in groups."
-  "see https://developer.apple.com/documentation/foundation/nsscriptwhosetest?language=objc")
+(define-objc-class "NSScriptWhoseTest" ()
+  ()
+  (:documentation
+   "An abstract class that provides the basis for testing specifiers one at a time or in groups.
+see https://developer.apple.com/documentation/foundation/nsscriptwhosetest?language=objc"))
 
-(doc-objc-class "NSSpecifierTest"       ; ns-specifier-test
-  "A comparison between an object specifier and a test object."
-  "see https://developer.apple.com/documentation/foundation/nsspecifiertest?language=objc")
+(define-objc-class "NSSpecifierTest" ()
+  ()
+  (:documentation
+   "A comparison between an object specifier and a test object.
+see https://developer.apple.com/documentation/foundation/nsspecifiertest?language=objc"))
 
-(doc-objc-class "NSLogicalTest"         ; ns-logical-test
-  "The logical combination of one or more specifier tests."
-  "see https://developer.apple.com/documentation/foundation/nslogicaltest?language=objc")
+(define-objc-class "NSLogicalTest" ()
+  ()
+  (:documentation
+   "The logical combination of one or more specifier tests.
+see https://developer.apple.com/documentation/foundation/nslogicaltest?language=objc"))
 
 ;;; NSObject Script Support
 
-(doc-objc-class "NSScriptCoercionHandler" ; ns-script-coercion-handler
-  "A mechanism for converting one kind of scripting data to another."
-  "see https://developer.apple.com/documentation/foundation/nsscriptcoercionhandler?language=objc")
+(define-objc-class "NSScriptCoercionHandler" ()
+  ()
+  (:documentation
+   "A mechanism for converting one kind of scripting data to another.
+see https://developer.apple.com/documentation/foundation/nsscriptcoercionhandler?language=objc"))
 
-(doc-objc-class "NSScriptExecutionContext" ; ns-script-execution-context
-  "The context in which the current script command is executed."
-  "see https://developer.apple.com/documentation/foundation/nsscriptexecutioncontext?language=objc")
+(define-objc-class "NSScriptExecutionContext" ()
+  ()
+  (:documentation
+   "The context in which the current script command is executed.
+see https://developer.apple.com/documentation/foundation/nsscriptexecutioncontext?language=objc"))
 
 
 ;;;; File System
@@ -1708,37 +2022,51 @@ if not a one-to-many relationship, the sole object."
 
 ;;; File system operations
 
-(doc-objc-class "NSFileManager"         ; ns-file-manager
-  "A convenient interface to the contents of the file system, and the primary means of interacting with it."
-  "see https://developer.apple.com/documentation/foundation/filemanager?language=objc")
+(define-objc-class "NSFileManager" ()
+  ()
+  (:documentation
+   "A convenient interface to the contents of the file system, and the primary means of interacting with it.
+see https://developer.apple.com/documentation/foundation/filemanager?language=objc"))
 
 ;;; Coordinated file access
 
-(doc-objc-class "NSFileAccessIntent"    ; ns-file-access-intent
-  "The details of a coordinated-read or coordinated-write operation."
-  "see https://developer.apple.com/documentation/foundation/nsfileaccessintent?language=objc")
+(define-objc-class "NSFileAccessIntent" ()
+  ()
+  (:documentation
+   "The details of a coordinated-read or coordinated-write operation.
+see https://developer.apple.com/documentation/foundation/nsfileaccessintent?language=objc"))
 
-(doc-objc-class "NSFileCoordinator"     ; ns-file-coordinator
-  "An object that coordinates the reading and writing of files and directories among file presenters."
-  "see https://developer.apple.com/documentation/foundation/nsfilecoordinator?language=objc")
+(define-objc-class "NSFileCoordinator" ()
+  ()
+  (:documentation
+   "An object that coordinates the reading and writing of files and directories among file presenters.
+see https://developer.apple.com/documentation/foundation/nsfilecoordinator?language=objc"))
 
 ;;; Managed file access
 
-(doc-objc-class "NSFileHandle"          ; ns-file-handle
-  "An object-oriented wrapper for a file descriptor."
-  "see https://developer.apple.com/documentation/foundation/filehandle?language=objc")
+(define-objc-class "NSFileHandle" ()
+  ()
+  (:documentation
+   "An object-oriented wrapper for a file descriptor.
+see https://developer.apple.com/documentation/foundation/filehandle?language=objc"))
 
-(doc-objc-class "NSFileSecurity"        ; ns-file-security
-  "A stub class that encapsulates security information about a file."
-  "see https://developer.apple.com/documentation/foundation/nsfilesecurity?language=objc")
+(define-objc-class "NSFileSecurity" ()
+  ()
+  (:documentation
+   "A stub class that encapsulates security information about a file.
+see https://developer.apple.com/documentation/foundation/nsfilesecurity?language=objc"))
 
-(doc-objc-class "NSFileVersion"         ; ns-file-version
-  "A snapshot of a file at a specific point in time."
-  "see https://developer.apple.com/documentation/foundation/nsfileversion?language=objc")
+(define-objc-class "NSFileVersion" ()
+  ()
+  (:documentation
+   "A snapshot of a file at a specific point in time.
+see https://developer.apple.com/documentation/foundation/nsfileversion?language=objc"))
 
-(doc-objc-class "NSFileWrapper"         ; ns-file-wrapper
-  "A representation of a node (a file, directory, or symbolic link) in the file system."
-  "see https://developer.apple.com/documentation/foundation/filewrapper?language=objc")
+(define-objc-class "NSFileWrapper" ()
+  ()
+  (:documentation
+   "A representation of a node (a file, directory, or symbolic link) in the file system.
+see https://developer.apple.com/documentation/foundation/filewrapper?language=objc"))
 
 ;;; Errors
 
@@ -1752,46 +2080,62 @@ if not a one-to-many relationship, the sole object."
 
 ;;; JSON
 
-(doc-objc-class "NSJSONSerialization"   ; ns-json-serialization
-  "An object that converts between JSON and the equivalent Foundation objects."
-  "see https://developer.apple.com/documentation/foundation/jsonserialization?language=objc")
+(define-objc-class "NSJSONSerialization" ()
+  ()
+  (:documentation
+   "An object that converts between JSON and the equivalent Foundation objects.
+see https://developer.apple.com/documentation/foundation/jsonserialization?language=objc"))
 
 ;;; Property Lists
 
-(doc-objc-class "NSPropertyListSerialization" ; ns-property-list-serialization
-  "An object that converts between a property list and one of several serialized representations."
-  "see https://developer.apple.com/documentation/foundation/propertylistserialization?language=objc")
+(define-objc-class "NSPropertyListSerialization" ()
+  ()
+  (:documentation
+   "An object that converts between a property list and one of several serialized representations.
+see https://developer.apple.com/documentation/foundation/propertylistserialization?language=objc"))
 
 ;;; XML
 ;; https://developer.apple.com/documentation/foundation/xml-processing-and-modeling?language=objc
 
 ;;; Keyed Archivers
 
-(doc-objc-class "NSKeyedArchiver"       ; ns-keyed-archiver
-  "An encoder that stores an object’s data to an archive referenced by keys."
-  "see https://developer.apple.com/documentation/foundation/nskeyedarchiver?language=objc")
+(define-objc-class "NSKeyedArchiver" ()
+  ()
+  (:documentation
+   "An encoder that stores an object’s data to an archive referenced by keys.
+see https://developer.apple.com/documentation/foundation/nskeyedarchiver?language=objc"))
 
-(doc-objc-class "NSKeyedUnarchiver"     ; ns-keyed-unarchiver
-  "A decoder that restores data from an archive referenced by keys."
-  "see https://developer.apple.com/documentation/foundation/nskeyedunarchiver?language=objc")
+(define-objc-class "NSKeyedUnarchiver" ()
+  ()
+  (:documentation
+   "A decoder that restores data from an archive referenced by keys.
+see https://developer.apple.com/documentation/foundation/nskeyedunarchiver?language=objc"))
 
-(doc-objc-class "NSCoder"               ; ns-coder
-  "An abstract class that serves as the basis for objects that enable archiving and distribution of other objects."
-  "see https://developer.apple.com/documentation/foundation/nscoder?language=objc")
+(define-objc-class "NSCoder" ()
+  ()
+  (:documentation
+   "An abstract class that serves as the basis for objects that enable archiving and distribution of other objects.
+see https://developer.apple.com/documentation/foundation/nscoder?language=objc"))
 
-(doc-objc-class "NSSecureUnarchiveFromDataTransformer" ; ns-secure-unarchive-from-data-transformer
-  "A value transformer that converts data to and from classes that support secure coding."
-  "see https://developer.apple.com/documentation/foundation/nssecureunarchivefromdatatransformer?language=objc")
+(define-objc-class "NSSecureUnarchiveFromDataTransformer" ()
+  ()
+  (:documentation
+   "A value transformer that converts data to and from classes that support secure coding.
+see https://developer.apple.com/documentation/foundation/nssecureunarchivefromdatatransformer?language=objc"))
 
 ;;; Deprecated
 
-(doc-objc-class "NSArchiver"            ; ns-archiver
-  "A coder that stores an object’s data to an archive."
-  "see https://developer.apple.com/documentation/foundation/nsarchiver?language=objc")
+(define-objc-class "NSArchiver" ()
+  ()
+  (:documentation
+   "A coder that stores an object’s data to an archive.
+see https://developer.apple.com/documentation/foundation/nsarchiver?language=objc"))
 
-(doc-objc-class "NSUnarchiver"          ; ns-unarchiver
-  "A decoder that restores data from an archive."
-  "see https://developer.apple.com/documentation/foundation/nsunarchiver?language=objc")
+(define-objc-class "NSUnarchiver" ()
+  ()
+  (:documentation
+   "A decoder that restores data from an archive.
+see https://developer.apple.com/documentation/foundation/nsunarchiver?language=objc"))
 
 ;; (defcfun ... "NXReadNSObjectFromCoder"
 ;;   "Returns the next object from the coder."
@@ -1807,17 +2151,21 @@ if not a one-to-many relationship, the sole object."
 
 ;;; App-specific settings
 
-(doc-objc-class "NSUserDefaults"        ; ns-user-defaults
-  "An interface to the user’s defaults database, which stores system-wide and app-specific settings."
-  "see https://developer.apple.com/documentation/foundation/userdefaults?language=objc")
+(define-objc-class "NSUserDefaults" ()
+  ()
+  (:documentation
+   "An interface to the user’s defaults database, which stores system-wide and app-specific settings.
+see https://developer.apple.com/documentation/foundation/userdefaults?language=objc"))
 
 ;;; Settings interfaces
 
 ;;; iCloud key and value storage
 
-(doc-objc-class "NSUbiquitousKeyValueStore" ; ns-ubiquitous-key-value-store
-  "An iCloud-based container of key-value pairs you share among instances of your app running on a person’s devices."
-  "see https://developer.apple.com/documentation/foundation/nsubiquitouskeyvaluestore?language=objc")
+(define-objc-class "NSUbiquitousKeyValueStore" ()
+  ()
+  (:documentation
+   "An iCloud-based container of key-value pairs you share among instances of your app running on a person’s devices.
+see https://developer.apple.com/documentation/foundation/nsubiquitouskeyvaluestore?language=objc"))
 
 
 ;;;; Spotlight
@@ -1826,15 +2174,19 @@ if not a one-to-many relationship, the sole object."
 
 ;;; Queries
 
-(doc-objc-class "NSMetadataQuery"       ; ns-metadata-query
-  "A query that you perform against Spotlight metadata."
-  "see https://developer.apple.com/documentation/foundation/nsmetadataquery?language=objc")
+(define-objc-class "NSMetadataQuery" ()
+  ()
+  (:documentation
+   "A query that you perform against Spotlight metadata.
+see https://developer.apple.com/documentation/foundation/nsmetadataquery?language=objc"))
 
 ;;; Items
 
-(doc-objc-class "NSMetadataItem"        ; ns-metadata-item
-  "The metadata associated with a file."
-  "see https://developer.apple.com/documentation/foundation/nsmetadataitem?language=objc")
+(define-objc-class "NSMetadataItem" ()
+  ()
+  (:documentation
+   "The metadata associated with a file.
+see https://developer.apple.com/documentation/foundation/nsmetadataitem?language=objc"))
 
 
 ;;;; iCloud
@@ -1844,27 +2196,35 @@ if not a one-to-many relationship, the sole object."
 
 ;;; iCloud Storage
 
-(doc-objc-class "NSFileManager"         ; ns-file-manager
-  "A convenient interface to the contents of the file system,
-and the primary means of interacting with it."
-  "see https://developer.apple.com/documentation/foundation/filemanager?language=objc")
+(define-objc-class "NSFileManager" ()
+  ()
+  (:documentation
+   "A convenient interface to the contents of the file system,
+and the primary means of interacting with it.
+see https://developer.apple.com/documentation/foundation/filemanager?language=objc"))
 
 ;;; App Preferences
 
-(doc-objc-class "NSUbiquitousKeyValueStore" ; ns-ubiquitous-key-value-store
-  "An iCloud-based container of key-value pairs you share among instances
-of your app running on a person’s devices."
-  "see https://developer.apple.com/documentation/foundation/nsubiquitouskeyvaluestore?language=objc")
+(define-objc-class "NSUbiquitousKeyValueStore" ()
+  ()
+  (:documentation
+   "An iCloud-based container of key-value pairs you share among instances
+of your app running on a person’s devices.
+see https://developer.apple.com/documentation/foundation/nsubiquitouskeyvaluestore?language=objc"))
 
 ;;; File Search
 
-(doc-objc-class "NSMetadataQuery"       ; ns-metadata-query
-  "A query that you perform against Spotlight metadata."
-  "see https://developer.apple.com/documentation/foundation/nsmetadataquery?language=objc")
+(define-objc-class "NSMetadataQuery" ()
+  ()
+  (:documentation
+   "A query that you perform against Spotlight metadata.
+see https://developer.apple.com/documentation/foundation/nsmetadataquery?language=objc"))
 
-(doc-objc-class "NSMetadataItem"        ; ns-metadata-item
-  "The metadata associated with a file."
-  "see https://developer.apple.com/documentation/foundation/nsmetadataitem?language=objc")
+(define-objc-class "NSMetadataItem" ()
+  ()
+  (:documentation
+   "The metadata associated with a file.
+see https://developer.apple.com/documentation/foundation/nsmetadataitem?language=objc"))
 
 ;;; Entitlements
 
@@ -1882,31 +2242,43 @@ of your app running on a person’s devices."
 
 ;;; Essentials
 
-(doc-objc-class "NSURLSession"          ; ns-url-session
-  "An object that coordinates a group of related, network data transfer tasks."
-  "see https://developer.apple.com/documentation/foundation/urlsession?language=objc")
+(define-objc-class "NSURLSession" ()
+  ()
+  (:documentation
+   "An object that coordinates a group of related, network data transfer tasks.
+see https://developer.apple.com/documentation/foundation/urlsession?language=objc"))
 
-(doc-objc-class "NSURLSessionTask"      ; ns-url-session-task
-  "A task, like downloading a specific resource, performed in a URL session."
-  "see https://developer.apple.com/documentation/foundation/urlsessiontask?language=objc")
+(define-objc-class "NSURLSessionTask" ()
+  ()
+  (:documentation
+   "A task, like downloading a specific resource, performed in a URL session.
+see https://developer.apple.com/documentation/foundation/urlsessiontask?language=objc"))
 
 ;;; Requests and responses
 
-(doc-objc-class "NSURLRequest"          ; ns-url-request
-  "A URL load request that is independent of protocol or URL scheme."
-  "see https://developer.apple.com/documentation/foundation/nsurlrequest?language=objc")
+(define-objc-class "NSURLRequest" ()
+  ()
+  (:documentation
+   "A URL load request that is independent of protocol or URL scheme.
+see https://developer.apple.com/documentation/foundation/nsurlrequest?language=objc"))
 
-(doc-objc-class "NSMutableURLRequest"   ; ns-mutable-url-request
-  "A mutable URL load request that is independent of protocol or URL scheme."
-  "see https://developer.apple.com/documentation/foundation/nsmutableurlrequest?language=objc")
+(define-objc-class "NSMutableURLRequest" ()
+  ()
+  (:documentation
+   "A mutable URL load request that is independent of protocol or URL scheme.
+see https://developer.apple.com/documentation/foundation/nsmutableurlrequest?language=objc"))
 
-(doc-objc-class "NSURLResponse"         ; ns-url-response
-  "The metadata associated with the response to a URL load request, independent of protocol and URL scheme."
-  "see https://developer.apple.com/documentation/foundation/urlresponse?language=objc")
+(define-objc-class "NSURLResponse" ()
+  ()
+  (:documentation
+   "The metadata associated with the response to a URL load request, independent of protocol and URL scheme.
+see https://developer.apple.com/documentation/foundation/urlresponse?language=objc"))
 
-(doc-objc-class "NSHTTPURLResponse"     ; ns-httpurl-response
-  "The metadata associated with the response to an HTTP protocol URL load request."
-  "see https://developer.apple.com/documentation/foundation/httpurlresponse?language=objc")
+(define-objc-class "NSHTTPURLResponse" ()
+  ()
+  (:documentation
+   "The metadata associated with the response to an HTTP protocol URL load request.
+see https://developer.apple.com/documentation/foundation/httpurlresponse?language=objc"))
 
 ;;; Uploading
 
@@ -1914,43 +2286,59 @@ of your app running on a person’s devices."
 
 ;;; Cache behavior
 
-(doc-objc-class "NSCachedURLResponse"   ; ns-cached-url-response
-  "A cached response to a URL request."
-  "see https://developer.apple.com/documentation/foundation/cachedurlresponse?language=objc")
+(define-objc-class "NSCachedURLResponse" ()
+  ()
+  (:documentation
+   "A cached response to a URL request.
+see https://developer.apple.com/documentation/foundation/cachedurlresponse?language=objc"))
 
-(doc-objc-class "NSURLCache"            ; ns-url-cache
-  "An object that maps URL requests to cached response objects."
-  "see https://developer.apple.com/documentation/foundation/urlcache?language=objc")
+(define-objc-class "NSURLCache" ()
+  ()
+  (:documentation
+   "An object that maps URL requests to cached response objects.
+see https://developer.apple.com/documentation/foundation/urlcache?language=objc"))
 
 ;;; Authentication and credentials
 
-(doc-objc-class "NSURLAuthenticationChallenge" ; ns-url-authentication-challenge
-  "A challenge from a server requiring authentication from the client."
-  "see https://developer.apple.com/documentation/foundation/urlauthenticationchallenge?language=objc")
+(define-objc-class "NSURLAuthenticationChallenge" ()
+  ()
+  (:documentation
+   "A challenge from a server requiring authentication from the client.
+see https://developer.apple.com/documentation/foundation/urlauthenticationchallenge?language=objc"))
 
-(doc-objc-class "NSURLCredential"       ; ns-url-credential
-  "An authentication credential consisting of information specific to the type of credential and the type of persistent storage to use, if any."
-  "see https://developer.apple.com/documentation/foundation/urlcredential?language=objc")
+(define-objc-class "NSURLCredential" ()
+  ()
+  (:documentation
+   "An authentication credential consisting of information specific to the type of credential and the type of persistent storage to use, if any.
+see https://developer.apple.com/documentation/foundation/urlcredential?language=objc"))
 
-(doc-objc-class "NSURLCredentialStorage" ; ns-url-credential-storage
-  "The manager of a shared credentials cache."
-  "see https://developer.apple.com/documentation/foundation/urlcredentialstorage?language=objc")
+(define-objc-class "NSURLCredentialStorage" ()
+  ()
+  (:documentation
+   "The manager of a shared credentials cache.
+see https://developer.apple.com/documentation/foundation/urlcredentialstorage?language=objc"))
 
-(doc-objc-class "NSURLProtectionSpace"  ; ns-url-protection-space
-  "A server or an area on a server, commonly referred to as a realm, that requires authentication."
-  "see https://developer.apple.com/documentation/foundation/urlprotectionspace?language=objc")
+(define-objc-class "NSURLProtectionSpace" ()
+  ()
+  (:documentation
+   "A server or an area on a server, commonly referred to as a realm, that requires authentication.
+see https://developer.apple.com/documentation/foundation/urlprotectionspace?language=objc"))
 
 ;;; Network activity attribution
 
 ;;; Cookies
 
-(doc-objc-class "NSHTTPCookie"          ; ns-http-cookie
-  "A representation of an HTTP cookie."
-  "see https://developer.apple.com/documentation/foundation/httpcookie?language=objc")
+(define-objc-class "NSHTTPCookie" ()
+  ()
+  (:documentation
+   "A representation of an HTTP cookie.
+see https://developer.apple.com/documentation/foundation/httpcookie?language=objc"))
 
-(doc-objc-class "NSHTTPCookieStorage"   ; ns-http-cookie-storage
-  "A container that manages the storage of cookies."
-  "see https://developer.apple.com/documentation/foundation/httpcookiestorage?language=objc")
+(define-objc-class "NSHTTPCookieStorage" ()
+  ()
+  (:documentation
+   "A container that manages the storage of cookies.
+see https://developer.apple.com/documentation/foundation/httpcookiestorage?language=objc"))
 
 ;;; Errors
 
@@ -1965,15 +2353,19 @@ of your app running on a person’s devices."
 
 ;;; Local Network Services
 
-(doc-objc-class "NSNetService"          ; ns-net-service
-  "A network service that broadcasts its availability using multicast DNS."
-  "see https://developer.apple.com/documentation/foundation/netservice?language=objc")
+(define-objc-class "NSNetService" ()
+  ()
+  (:documentation
+   "A network service that broadcasts its availability using multicast DNS.
+see https://developer.apple.com/documentation/foundation/netservice?language=objc"))
 
 ;;; Service Discovery
 
-(doc-objc-class "NSNetServiceBrowser"   ; ns-net-service-browser
-  "A network service browser that finds published services on a network using multicast DNS."
-  "see https://developer.apple.com/documentation/foundation/netservicebrowser?language=objc")
+(define-objc-class "NSNetServiceBrowser" ()
+  ()
+  (:documentation
+   "A network service browser that finds published services on a network using multicast DNS.
+see https://developer.apple.com/documentation/foundation/netservicebrowser?language=objc"))
 
 ;;; Networking
 
@@ -1984,27 +2376,37 @@ of your app running on a person’s devices."
 
 ;;; XPC Client
 
-(doc-objc-class "NSXPCConnection"       ; ns-xpc-connection
-  "A bidirectional communication channel between two processes."
-  "see https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc")
+(define-objc-class "NSXPCConnection" ()
+  ()
+  (:documentation
+   "A bidirectional communication channel between two processes.
+see https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc"))
 
-(doc-objc-class "NSXPCInterface"        ; ns-xpc-interface
-  "An interface that may be sent to an exported object or remote object proxy."
-  "see https://developer.apple.com/documentation/foundation/nsxpcinterface?language=objc")
+(define-objc-class "NSXPCInterface" ()
+  ()
+  (:documentation
+   "An interface that may be sent to an exported object or remote object proxy.
+see https://developer.apple.com/documentation/foundation/nsxpcinterface?language=objc"))
 
-(doc-objc-class "NSXPCCoder"            ; ns-xpc-coder
-  "A coder that encodes and decodes objects that your app sends over an XPC connection."
-  "see https://developer.apple.com/documentation/foundation/nsxpccoder?language=objc")
+(define-objc-class "NSXPCCoder" ()
+  ()
+  (:documentation
+   "A coder that encodes and decodes objects that your app sends over an XPC connection.
+see https://developer.apple.com/documentation/foundation/nsxpccoder?language=objc"))
 
 ;;; XPC Services
 
-(doc-objc-class "NSXPCListener"         ; ns-xpc-listener
-  "A listener that waits for new incoming connections, configures them, and accepts or rejects them."
-  "see https://developer.apple.com/documentation/foundation/nsxpclistener?language=objc")
+(define-objc-class "NSXPCListener" ()
+  ()
+  (:documentation
+   "A listener that waits for new incoming connections, configures them, and accepts or rejects them.
+see https://developer.apple.com/documentation/foundation/nsxpclistener?language=objc"))
 
-(doc-objc-class "NSXPCListenerEndpoint" ; ns-xpc-listener-endpoint
-  "An object that names a specific XPC listener."
-  "see https://developer.apple.com/documentation/foundation/nsxpclistenerendpoint?language=objc")
+(define-objc-class "NSXPCListenerEndpoint" ()
+  ()
+  (:documentation
+   "An object that names a specific XPC listener.
+see https://developer.apple.com/documentation/foundation/nsxpclistenerendpoint?language=objc"))
 
 ;;; Low-Level Utilities
 
@@ -2015,9 +2417,11 @@ of your app running on a person’s devices."
 
 ;;; Run Loop Scheduling
 
-(doc-objc-class "NSRunLoop"             ; ns-run-loop
-  "The programmatic interface to objects that manage input sources."
-  "see https://developer.apple.com/documentation/foundation/runloop?language=objc")
+(define-objc-class "NSRunLoop" ()
+  ()
+  (:documentation
+   "The programmatic interface to objects that manage input sources.
+see https://developer.apple.com/documentation/foundation/runloop?language=objc"))
 
 (deftype ns-run-loop-mode ()
   "Modes that a run loop operates in.
@@ -2044,83 +2448,117 @@ see https://developer.apple.com/documentation/foundation/runloop/mode/common?lan
   "The mode set to handle input sources other than connection objects.
 see https://developer.apple.com/documentation/foundation/runloop/mode/default?language=objc")
 
-(doc-objc-class "NSTimer"               ; ns-timer
-  "A timer that fires after a certain time interval has elapsed,
-sending a specified message to a target object."
-  "see https://developer.apple.com/documentation/foundation/timer?language=objc")
+(define-objc-class "NSTimer" ()
+  ()
+  (:documentation
+   "A timer that fires after a certain time interval has elapsed,
+sending a specified message to a target object.
+see https://developer.apple.com/documentation/foundation/timer?language=objc"))
 
 ;;; Process Info
 
-(doc-objc-class "NSProcessInfo"         ; ns-process-info
-  "A collection of information about the current process."
-  "see https://developer.apple.com/documentation/foundation/processinfo?language=objc")
+(define-objc-class "NSProcessInfo" ()
+  ()
+  (:documentation
+   "A collection of information about the current process.
+see https://developer.apple.com/documentation/foundation/processinfo?language=objc"))
 
 ;;; Threads and Locking
 
-(doc-objc-class "NSThread"              ; ns-thread
-  "A thread of execution."
-  "see https://developer.apple.com/documentation/foundation/thread?language=objc")
+(define-objc-class "NSThread" ()
+  ()
+  (:documentation
+   "A thread of execution.
+see https://developer.apple.com/documentation/foundation/thread?language=objc"))
 
-(doc-objc-class "NSLock"                ; ns-lock
-  "An object that coordinates the operation of multiple threads of execution within the same application."
-  "see https://developer.apple.com/documentation/foundation/nslock?language=objc")
+(define-objc-class "NSLock" ()
+  ()
+  (:documentation
+   "An object that coordinates the operation of multiple threads of execution within the same application.
+see https://developer.apple.com/documentation/foundation/nslock?language=objc"))
 
-(doc-objc-class "NSRecursiveLock"       ; ns-recursive-lock
-  "A lock that may be acquired multiple times by the same thread without causing a deadlock."
-  "see https://developer.apple.com/documentation/foundation/nsrecursivelock?language=objc")
+(define-objc-class "NSRecursiveLock" ()
+  ()
+  (:documentation
+   "A lock that may be acquired multiple times by the same thread without causing a deadlock.
+see https://developer.apple.com/documentation/foundation/nsrecursivelock?language=objc"))
 
-(doc-objc-class "NSDistributedLock"     ; ns-distributed-lock
-  "A lock that multiple applications on multiple hosts can use to restrict
-access to some shared resource, such as a file."
-  "see https://developer.apple.com/documentation/foundation/nsdistributedlock?language=objc")
+(define-objc-class "NSDistributedLock" ()
+  ()
+  (:documentation
+   "A lock that multiple applications on multiple hosts can use to restrict
+access to some shared resource, such as a file.
+see https://developer.apple.com/documentation/foundation/nsdistributedlock?language=objc"))
 
-(doc-objc-class "NSConditionLock"       ; ns-condition-lock
-  "A lock that can be associated with specific, user-defined conditions."
-  "see https://developer.apple.com/documentation/foundation/nsconditionlock?language=objc")
+(define-objc-class "NSConditionLock" ()
+  ()
+  (:documentation
+   "A lock that can be associated with specific, user-defined conditions.
+see https://developer.apple.com/documentation/foundation/nsconditionlock?language=objc"))
 
-(doc-objc-class "NSCondition"           ; ns-condition
-  "A condition variable whose semantics follow those used for POSIX-style conditions."
-  "see https://developer.apple.com/documentation/foundation/nscondition?language=objc")
+(define-objc-class "NSCondition" ()
+  ()
+  (:documentation
+   "A condition variable whose semantics follow those used for POSIX-style conditions.
+see https://developer.apple.com/documentation/foundation/nscondition?language=objc"))
 
 ;;; Operations
 
-(doc-objc-class "NSOperationQueue"      ; ns-operation-queue
-  "A queue that regulates the execution of operations."
-  "see https://developer.apple.com/documentation/foundation/operationqueue?language=objc")
+(define-objc-class "NSOperationQueue" ()
+  ()
+  (:documentation
+   "A queue that regulates the execution of operations.
+see https://developer.apple.com/documentation/foundation/operationqueue?language=objc"))
 
-(doc-objc-class "NSOperation"           ; ns-operation
-  "An abstract class that represents the code and data associated with a single task."
-  "see https://developer.apple.com/documentation/foundation/operation?language=objc")
+(define-objc-class "NSOperation" ()
+  ()
+  (:documentation
+   "An abstract class that represents the code and data associated with a single task.
+see https://developer.apple.com/documentation/foundation/operation?language=objc"))
 
-(doc-objc-class "NSBlockOperation"      ; ns-block-operation
-  "An operation that manages the concurrent execution of one or more blocks."
-  "see https://developer.apple.com/documentation/foundation/blockoperation?language=objc")
+(define-objc-class "NSBlockOperation" ()
+  ()
+  (:documentation
+   "An operation that manages the concurrent execution of one or more blocks.
+see https://developer.apple.com/documentation/foundation/blockoperation?language=objc"))
 
-(doc-objc-class "NSInvocationOperation" ; ns-invocation-operation
-  "An operation that manages the execution of a single encapsulated task specified as an invocation."
-  "see https://developer.apple.com/documentation/foundation/nsinvocationoperation?language=objc")
+(define-objc-class "NSInvocationOperation" ()
+  ()
+  (:documentation
+   "An operation that manages the execution of a single encapsulated task specified as an invocation.
+see https://developer.apple.com/documentation/foundation/nsinvocationoperation?language=objc"))
 
 ;;; Scripts and External Tasks
 
-(doc-objc-class "NSTask"                ; ns-task
-  "An object that represents a subprocess of the current process."
-  "see https://developer.apple.com/documentation/foundation/process?language=objc")
+(define-objc-class "NSTask" ()
+  ()
+  (:documentation
+   "An object that represents a subprocess of the current process.
+see https://developer.apple.com/documentation/foundation/process?language=objc"))
 
-(doc-objc-class "NSUserScriptTask"      ; ns-user-script-task
-  "An object that executes scripts."
-  "see https://developer.apple.com/documentation/foundation/nsuserscripttask?language=objc")
+(define-objc-class "NSUserScriptTask" ()
+  ()
+  (:documentation
+   "An object that executes scripts.
+see https://developer.apple.com/documentation/foundation/nsuserscripttask?language=objc"))
 
-(doc-objc-class "NSUserAppleScriptTask" ; ns-user-apple-script-task
-  "An object that executes AppleScript scripts."
-  "see https://developer.apple.com/documentation/foundation/nsuserapplescripttask?language=objc")
+(define-objc-class "NSUserAppleScriptTask" ()
+  ()
+  (:documentation
+   "An object that executes AppleScript scripts.
+see https://developer.apple.com/documentation/foundation/nsuserapplescripttask?language=objc"))
 
-(doc-objc-class "NSUserAutomatorTask"   ; ns-user-automator-task
-  "An object that executes Automator workflows."
-  "see https://developer.apple.com/documentation/foundation/nsuserautomatortask?language=objc")
+(define-objc-class "NSUserAutomatorTask" ()
+  ()
+  (:documentation
+   "An object that executes Automator workflows.
+see https://developer.apple.com/documentation/foundation/nsuserautomatortask?language=objc"))
 
-(doc-objc-class "NSUserUnixTask"        ; ns-user-unix-task
-  "An object that executes unix applications."
-  "see https://developer.apple.com/documentation/foundation/nsuserunixtask?language=objc")
+(define-objc-class "NSUserUnixTask" ()
+  ()
+  (:documentation
+   "An object that executes unix applications.
+see https://developer.apple.com/documentation/foundation/nsuserunixtask?language=objc"))
 
 
 ;;;; Streams, Sockets, and Ports
@@ -2129,41 +2567,57 @@ access to some shared resource, such as a file."
 
 ;;; Streams
 
-(doc-objc-class "NSStream"              ; ns-stream
-  "An abstract class representing a stream."
-  "see https://developer.apple.com/documentation/foundation/stream?language=objc")
+(define-objc-class "NSStream" ()
+  ()
+  (:documentation
+   "An abstract class representing a stream.
+see https://developer.apple.com/documentation/foundation/stream?language=objc"))
 
-(doc-objc-class "NSInputStream"         ; ns-input-stream
-  "A stream that provides read-only stream functionality."
-  "see https://developer.apple.com/documentation/foundation/inputstream?language=objc")
+(define-objc-class "NSInputStream" ()
+  ()
+  (:documentation
+   "A stream that provides read-only stream functionality.
+see https://developer.apple.com/documentation/foundation/inputstream?language=objc"))
 
-(doc-objc-class "NSOutputStream"        ; ns-output-stream
-  "A stream that provides write-only stream functionality."
-  "see https://developer.apple.com/documentation/foundation/outputstream?language=objc")
+(define-objc-class "NSOutputStream" ()
+  ()
+  (:documentation
+   "A stream that provides write-only stream functionality.
+see https://developer.apple.com/documentation/foundation/outputstream?language=objc"))
 
 ;;; Tasks and Pipes
 
-(doc-objc-class "NSTask"                ; ns-task
-  "An object that represents a subprocess of the current process."
-  "see https://developer.apple.com/documentation/foundation/process?language=objc")
+(define-objc-class "NSTask" ()
+  ()
+  (:documentation
+   "An object that represents a subprocess of the current process.
+see https://developer.apple.com/documentation/foundation/process?language=objc"))
 
-(doc-objc-class "NSPipe"                ; ns-pipe
-  "A one-way communications channel between related processes."
-  "see https://developer.apple.com/documentation/foundation/pipe?language=objc")
+(define-objc-class "NSPipe" ()
+  ()
+  (:documentation
+   "A one-way communications channel between related processes.
+see https://developer.apple.com/documentation/foundation/pipe?language=objc"))
 
 ;;; Sockets
 
-(doc-objc-class "NSHost"                ; ns-host
-  "A representation of an individual host on the network."
-  "see https://developer.apple.com/documentation/foundation/host?language=objc")
+(define-objc-class "NSHost" ()
+  ()
+  (:documentation
+   "A representation of an individual host on the network.
+see https://developer.apple.com/documentation/foundation/host?language=objc"))
 
-(doc-objc-class "NSPort"                ; ns-port
-  "An abstract class that represents a communication channel."
-  "see https://developer.apple.com/documentation/foundation/port?language=objc")
+(define-objc-class "NSPort" ()
+  ()
+  (:documentation
+   "An abstract class that represents a communication channel.
+see https://developer.apple.com/documentation/foundation/port?language=objc"))
 
-(doc-objc-class "NSSocketPort"          ; ns-socket-port
-  "A port that represents a BSD socket."
-  "see https://developer.apple.com/documentation/foundation/socketport?language=objc")
+(define-objc-class "NSSocketPort" ()
+  ()
+  (:documentation
+   "A port that represents a BSD socket.
+see https://developer.apple.com/documentation/foundation/socketport?language=objc"))
 
 ;;; Byte Ordering
 

@@ -593,14 +593,25 @@ Example:
 
 Syntax:
 
-    (define-objc-class { \"OBJC-NAME\" | (\"OBJC-NAME\" &optional LISP-NAME) }
+    (define-objc-class
+        { \"OBJC-NAME\" | (\"OBJC-NAME\" &optional LISP-NAME) }
+        DIRECT-SUPERCLASS
         ({ (OBJC-PROPERTY &key before after reader accessor documentation) }*)
       CLASS-OPTIONS)
 
++ OBJC-NAME: string of ObjC class name
++ LISP-NAME: lisp name of ObjC class (optional)
++ DIRECT-SUPERCLASS:
+  if not empty, will be used to declare new ObjC class
+  if the ObjC class is not defined before;
+  if empty, it's equal to modify the class infomations
++ CLASS-OPTIONS:
+  + :documentation: set the documentation of the class
 "
   (destructuring-bind (objc-name &optional (lisp-name (objc-intern objc-name)))
       (listfy name)
-    (if (null-pointer-p (objc_getClass objc-name))
+    (if (not (or (endp direct-superclass)
+                 (not (null-pointer-p (objc_getClass objc-name)))))
         `(defclass ,lisp-name ,direct-superclass
            ,(loop :for (name . options) :in direct-ivars
                   :collect (destructuring-bind (&key
