@@ -299,6 +299,52 @@ LispWorks' API.
       (see above as string CLASS input)
   #+end_example
 
++ =define-objc-class=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-class) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC Class of NAME.
+
+  Example:
+
+      ;; for existing ObjC class,
+      ;; `define-objc-class' acts like declaration
+      ;; it's direct super class could be ignored
+      (define-objc-class "NSWindow" ()
+        (("objcProperty" :getter "getObjCProperty"
+                           :setter "setObjCProperty:"
+                           :before string-to-ns-string))
+        (:documentation "Foo... "))
+
+      ;; for non-existing ObjC class,
+      ;; `define-objc-class' defines a new ObjC class
+      (define-objc-class "MyWindow" (ns-window) ())
+
+  Syntax:
+
+      (define-objc-class
+          { "OBJC-NAME" | ("OBJC-NAME" &optional LISP-NAME) }
+          DIRECT-SUPERCLASS
+          ({
+               (OBJC-PROPERTY &key before after reader accessor documentation)
+             | (LISP-SLOT &key LISP-SLOT-DEFINITIONS...)
+           }*)
+        CLASS-OPTIONS)
+
+  + OBJC-NAME: string of ObjC class name
+  + LISP-NAME: lisp name of ObjC class (optional)
+  + DIRECT-SUPERCLASS:
+    if not empty, will be used to declare new ObjC class
+    if the ObjC class is not defined before;
+    if empty, it's equal to modify the class infomations
+  + CLASS-OPTIONS:
+    + :documentation: set the documentation of the class
+  #+end_example
+
 + =coerce-to-selector=
 
   #+begin_src lisp :exports results
@@ -398,12 +444,15 @@ LispWorks' API.
   + LAMBDA-LIST:
     VAR: symbol of argument
     OBJC-ENCODING: ObjC type encoding for argument
-  + BODY: method body
+  + BODY: method body,
+    use `self' when referring current ObjC object
+    use `super' when referring current ObjC object super class
 
   Example:
 
       (define-objc-method (ns-window "foo") :void ()
-        (foo))
+        (invoke (super) balabala)
+        (foo self))
   #+end_example
 + =define-coca-init=
 

@@ -23,10 +23,11 @@ under =coca= package.
 (tmt:with-body-in-main-thread (:blocking t)
   (sb-int:set-floating-point-modes :traps nil)
   (let ((app (ns-app))
-        (win (ns-window (make-ns-rect :x 100 :y 100
-                                      :w 300 :h 300)
-                        :title   "A Very basic window"
-                        :visible t)))
+        (win (init (alloc 'ns-window)
+                   :frame   (make-ns-rect :x 100 :y 100
+                                          :w 300 :h 300)
+                   :title   "A Very basic window"
+                   :visiblep t)))
     (run app)))
 #+end_src
 
@@ -47,4 +48,3 @@ if you found your lisp also dies, it's normal.
 
 Reference:
 + [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Applications/Application/Application.m][Application.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
-

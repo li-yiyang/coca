@@ -18,6 +18,7 @@ https://developer.apple.com/documentation/foundation?language=objc")
    ;; Object Runtime
    #:ns-object
    #:copy
+   #:init
    #:description
    #:ns-uinteger
    #:ns-integer
@@ -380,6 +381,25 @@ see https://developer.apple.com/documentation/objectivec/nsobject-swift.class/co
   "When printing `ns-object', print `description' of OBJ. "
   (write-string (description obj) stream))
 
+(defmethod initialize-instance :after ((object ns-object) &key)
+  "Allocate OBJECT pointer if OBJC-OBJECT-POINTER is unbound. "
+  (unless (slot-boundp object 'objc-object-pointer)
+    (let* ((tmp (invoke (class-of object) "alloc"))
+           (ptr (objc-object-pointer tmp)))
+      (setf (slot-value object 'objc-object-pointer)                       ptr
+            (gethash (cffi:pointer-address ptr) coca.objc::*objc-objects*) object))))
+
+(defgeneric init (object &key &allow-other-keys)
+  (:documentation
+   "Initialize OBJECT in ObjC environment.
+Return OBJECT itself. ")
+  (:method :around ((object ns-object) &key)
+    (call-next-method)
+    object)
+  (:method ((object ns-object) &key)
+    "By default, initialize ObjC by invoke ObjC method init. "
+    (invoke object "init")))
+
 ;;; Copying
 
 ;;; Value Wrappers and Transformations
@@ -645,16 +665,16 @@ see https://developer.apple.com/documentation/objectivec/nsobject-swift.class/al
   (declare (type (or symbol string objc-class) class))
   (the ns-object (invoke class "alloc")))
 
-(defun alloc-init (class)
+(defun alloc-init (class &rest keys &key &allow-other-keys)
   "Invoke [[CLASS alloc] init];
 
 This is equal to calling:
 
-    (invoke (invoke CLASS \"alloc\") \"init\")
+    (init (invoke CLASS \"alloc\") . KEYS)
 
 see also `alloc'. "
   (declare (type (or symbol string objc-class) class))
-  (the ns-object (invoke (invoke class "alloc") "init")))
+  (the ns-object (apply #'init (invoke class "alloc") keys)))
 
 (defun make-autorelease-pool ()
   "Makes an autorelease pool for the current thread.

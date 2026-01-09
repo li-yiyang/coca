@@ -155,13 +155,14 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:alpha-value
    #:background-color
    #:color-space
-   #:can-hide
+   #:can-hide-p
    #:on-active-space
    #:hides-on-deactivate
    #:collection-behavior
-   #:opaque
-   #:has-shadow
-   #:visible
+   #:opaquep
+   #:has-shadow-p
+   #:visiblep
+   #:title
    #:ns-backing-store-type
    #:*ns-window-style*
    #:*ns-backing-store*
@@ -1114,8 +1115,82 @@ See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.st
                               "that does not activate the owning app.")
   (:hud-window                (ash 1 13) "The window is a HUD panel. "))
 
+(define-objc-enum ns-window-collection-behavior
+  "Window collection behaviors related to Mission Control, Spaces, and
+Stage Manager.
+
+Collection behaviors are properties you set on windows to control
+their display characteristics in window management technologies. Use
+them to specify a preference on how windows behave in window
+management technologies like Mission Control, Spaces, and Stage
+Manager.
+
+To set a collection behavior on a window, assign one or more behavior
+options to the window’s `collection-behavior' property.
+
+Not all collection behaviors apply to all windowing management
+technologies, and some are mutually exclusive to their respective
+groups. For example, `:primary', `:auxiliary',
+and `:can-join-all-applications' only apply to full screen and
+Stage Manager. They’re also mutually exclusive. Specify at
+most one per window."
+  "Stage Manager and full screen"
+  (:primary                      65536
+                                 "The behavior marking this window as primary "
+                                 "for both Stage Manager and full screen.")
+  (:auxiliary                    131072
+                                 "The behavior marking this window as auxiliary"
+                                 "for both Stage Manager and full screen.")
+  (:can-join-all-applications    262144
+                                 "The behavior marking this window as one that "
+                                 "can join all apps for both Stage Manager and "
+                                 "full screen.")
+  "Spaces"
+  (:default                      0
+                                 "The window appears in only one space at a time.")
+  (:can-join-all-spaces          1
+                                 "The window can appear in all spaces.")
+  (:move-to-active-space         2
+                                 "When the window becomes active, move it to the "
+                                 "active space instead of switching spaces.")
+  "Mission Control"
+  (:stationary                   16
+                                 "Mission Control doesn’t affect the window, so it"
+                                 "stays visible and stationary, like the desktop "
+                                 "window.")
+  "Spaces and Mission Control"
+  (:managed                      4
+                                 "The window participates in Mission Control and "
+                                 "Spaces.")
+  (:transient                    8
+                                 "The window floats in Spaces and hides in "
+                                 "Mission Control.")
+  "Full screen"
+  (:full-screen-primary          128
+                                 "The window can enter full-screen mode.")
+  (:full-screen-auxiliary        256
+                                 "The window displays on the same space as the "
+                                 "full screen window.")
+  (:full-screen-none             512
+                                 "The window doesn’t support full-screen mode.")
+  (:full-screen-allows-tiling    2048
+                                 "The window can be a secondary full screen tile"
+                                 "even if it can’t be a full screen window itself.")
+  (:full-screen-disallows-tiling 4096
+                                 "The window doesn’t support being a full-screen "
+                                 "tile window, but may support being a full-screen"
+                                 "window.")
+  "Window cycling"
+  (:participates-in-cycle        32
+                                 "The window participates in the window cycle for "
+                                 "use with the Cycle Through Windows menu item.")
+  (:ignores-cycle                64
+                                 "The window isn’t part of the window cycle for "
+                                 "use with the Cycle Through Windows menu item."))
+
 (define-objc-class "NSWindow" ()
-  (("contentViewController"
+  (;; Configuring the Window's Content
+   ("contentViewController"
     :reader content-view-controller
     :documentation
     "Get the main content view controller for the window.
@@ -1159,6 +1234,7 @@ to release it as appropriate when adding it to another `ns-window' or
 `ns-view' object.
 
 see https://developer.apple.com/documentation/appkit/nswindow/contentview?language=objc")
+   ;; Configuring the Window's Appearance
    ("styleMask"
     :accessor style-mask
     :after decode-ns-window-style-mask
@@ -1196,7 +1272,7 @@ backing store, and is off-screen.
 
 see https://developer.apple.com/documentation/appkit/nswindow/colorspace?language=objc")
    ("canHide"
-    :accessor can-hide
+    :accessor can-hide-p
     :before   as-boolean
     :documentation
     "A Boolean value that indicates whether the window can hide
@@ -1209,7 +1285,7 @@ By default, the value of the property is `t'.
 
 see https://developer.apple.com/documentation/appkit/nswindow/canhide?language=objc")
    ("onActiveSpace"
-    :accessor on-active-space
+    :accessor on-active-space-p
     :before   as-boolean
     :documentation
     "Whether the window is on the currently active space.
@@ -1222,7 +1298,8 @@ window onscreen would cause it to be on the active space.
 
 see https://developer.apple.com/documentation/appkit/nswindow/isonactivespace?language=objc")
    ("hidesOnDeactivate"
-    :reader hides-on-deactivate
+    :reader hides-on-deactivate-p
+    :before as-boolean
     :documentation
     "Whether the window is removed from the screen
 when its application becomes inactive.
@@ -1235,6 +1312,7 @@ for NSPanel is true.
 see https://developer.apple.com/documentation/appkit/nswindow/hidesondeactivate?language=objc")
    ("collectionBehavior"
     :accessor collection-behavior
+    :before   decode-ns-window-collection-behavior
     :documentation
     "A value that identifies the window’s behavior in window collections.
 
@@ -1242,19 +1320,27 @@ The possible values for this property are listed in `ns-window-collection-behavi
 
 see https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.property?language=objc")
    ("opaque"
-    :accessor opaque
+    :accessor opaquep
     :before   as-boolean
     :documentation
     "Whether the window is opaque.
 see https://developer.apple.com/documentation/appkit/nswindow/isopaque?language=objc")
    ("hasShadow"
-    :accessor has-shadow
+    :accessor has-shadow-p
     :before   as-boolean
     :documentation
     "Whether the window has a shadow.
 see https://developer.apple.com/documentation/appkit/nswindow/hasshadow?language=objc")
+   ;; Accessing Window Information
+   ;; Getting Layout Information
+   ;; Managing Windows
+   ;; Managing Sheets
+   ;; Sizing Windows
+   ;; Sizing Content
+   ;; Managing Window Layers
+   ;; Managing Window Visibility and Occlusion State
    ("visible"
-    :accessor visible
+    :accessor visiblep
     :before   as-boolean
     :setter   "setIsVisible:"
     :documentation
@@ -1264,6 +1350,31 @@ Dev Note:
 Using (setf visible-p) would invoke setIsVisible: method.
 
 see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language=objc")
+   ;; Managing Window Frames in User Defaults
+   ;; Managing Key Status
+   ;; Managing Main Status
+   ;; Managing Toolbars
+   ;; Managing Attached Windows
+   ;; Managing Default Buttons
+   ;; Managing Field Editors
+   ;; Managing the Window Menu
+   ;; Managing Cursor Rectangles
+   ;; Managing Title Bars
+   ;; Managing Title Bar Accessories
+   ;; Managing Window Tabs
+   ;; Managing Tooltips
+   ;; Handling Events
+   ;; Managing Responders
+   ;; Managing the Key View Loop
+   ;; Managing Window Sharing
+   ;; Handling Window Restoration
+   ;; Drawing Windows
+   ;; Window Animation
+   ;; Updating Windows
+   ;; Dragging Items
+   ;; Accessing Edited Status
+   ;; Converting Coordinates
+   ;; Managing Titles
    ("title"
     :reader title
     :documentation
@@ -1274,7 +1385,22 @@ If the title has been set using setTitleWithRepresentedFilename:, this
 property contains the file’s path. Setting this property also sets the
 title of the window’s miniaturized window.
 
-see https://developer.apple.com/documentation/appkit/nswindow/title?language=objc"))
+see https://developer.apple.com/documentation/appkit/nswindow/title?language=objc")
+   ;; Accessing Screen Information
+   ;; Moving Windows
+   ;; Closing Windows
+   ;; Minimizing Windows
+   ;; Getting the Dock Tile
+   ;; Printing Windows
+   ;; Providing Services
+   ;; Triggering Constraint-Based Layout
+   ;; Debugging Constraint-Based Layout
+   ;; Constraint-Based Layouts
+   ;; Working with Window Depths
+   ;; Getting Information About Scripting Attributes
+   ;; Setting Scripting Attributes
+   ;; Handling Script Commands
+   )
   (:documentation
    "A window that an app displays on the screen.
 A single `ns-window' object corresponds to, at most, one on-screen window.
@@ -1330,23 +1456,22 @@ see https://developer.apple.com/documentation/appkit/nswindow/settitlewithrepres
           "setTitleWithRepresentedFilename:"
           (string-to-ns-string (uiop:native-namestring path))))
 
-(defun ns-window (ns-rect &key
-                            (style     *ns-window-style*)
-                            (backing   *ns-backing-store*)
-                            (defer      t)
-                            (class     'ns-window)
-                            (object     (alloc class))
-                            (visible    t)
-                            (has-shadow t)
-                            (opaque     nil)
-                            title
-                            screen
-                  &allow-other-keys)
+(defmethod init ((window ns-window)
+                 &key frame
+                   (style       *ns-window-style*)
+                   (backing     *ns-backing-store*)
+                   (defer        t)
+                   (visiblep     t)
+                   (has-shadow-p t)
+                   (opaquep      nil)
+                   title
+                   screen
+                 &allow-other-keys)
   "Initializes the window with the specified values.
 Return the initialized `ns-window'.
 
 Parameters:
-+ NS-RECT: `ns-rect'
++ FRAME: `ns-rect'
   Origin and size of the window’s content area in screen
   coordinates. Note that the window server limits window position
   coordinates to ±16,000 and sizes to 10,000.
@@ -1391,30 +1516,28 @@ this invokes
 
 see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:)?language=objc
 see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:screen:)?language=objc"
-  (declare (type ns-rect ns-rect)
+  (declare (type ns-rect frame)
            (type (satisfies ns-window-style-mask-p)  style)
            (type (satisfies ns-backing-store-type-p) backing)
            (type (or null ns-screen)                 screen))
-  (assert (subtypep class 'ns-window))
-  (let ((window (if screen
-                    (invoke object
-                            "initWithContentRect:styleMask:backing:defer:screen:"
-                            ns-rect
-                            (ns-window-style-mask style)
-                            (ns-backing-store-type backing)
-                            (as-boolean defer)
-                            screen)
-                    (invoke object
-                            "initWithContentRect:styleMask:backing:defer:"
-                            ns-rect
-                            (ns-window-style-mask style)
-                            (ns-backing-store-type backing)
-                            (as-boolean defer)))))
-    (setf (visible    window) visible
-          (has-shadow window) has-shadow
-          (opaque     window) opaque)
-    (when title (setf (title window) title))
-    window))
+  (if screen
+      (invoke window
+              "initWithContentRect:styleMask:backing:defer:screen:"
+              frame
+              (ns-window-style-mask  style)
+              (ns-backing-store-type backing)
+              (as-boolean defer)
+              screen)
+      (invoke window
+              "initWithContentRect:styleMask:backing:defer:"
+              frame
+              (ns-window-style-mask  style)
+              (ns-backing-store-type backing)
+              (as-boolean defer)))
+  (setf (visiblep     window) visiblep
+        (has-shadow-p window) has-shadow-p
+        (opaquep      window) opaquep)
+  (when title (setf (title window) title)))
 
 ;; Managing the Window's Behavior
 
@@ -1444,27 +1567,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Managing Main Status
 
-;; (defmethod main-window-p ((window ns-window))
-;;   "Test if WINDOW is application's main window.
-;; see https://developer.apple.com/documentation/appkit/nswindow/ismainwindow?language=objc"
-;;   (invoke window "mainWindow"))
-
-;; (defmethod can-become-main-window-p ((window ns-window))
-;;   "Test if WINDOW can become the application's main window.
-;; see https://developer.apple.com/documentation/appkit/nswindow/canbecomemain?language=objc"
-;;   (invoke window "canBecomeMainWindow"))
-
-;; (defmethod make-main-window ((window ns-window))
-;;   "Makes the window the main window.
-;; see https://developer.apple.com/documentation/appkit/nswindow/makemain()?language=objc"
-;;   (invoke window "makeMainWindow"))
-
 ;; Managing Toolbars
-
-;; (defmethod toolbar ((window ns-window))
-;;   "Get the WINDOW's toolbar
-;; see https://developer.apple.com/documentation/appkit/nswindow/toolbar?language=objc"
-;;   (invoke window "toolbar"))
 
 ;; Managing Attached Windows
 
