@@ -38,8 +38,10 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:+ns-event-tracking-run-loop-mode+
    #:+ns-modal-panel-run-loop-mode+
    #:next-event
-   #:run
    #:finish-launching
+   #:run
+   #:stop
+   #:terminate
    #:send-event
    #:ns-running-application
    #:ns-workspace
@@ -139,28 +141,30 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-animation
 
    ;; Windows, Panels, and Screens
-   #:ns-window
    #:ns-window-style-mask
    #:ns-window-style-mask-p
    #:decode-ns-window-style-mask
    #:ns-backing-store-type
    #:ns-backing-store-type-p
    #:decode-backing-store-type
-   #:ns-window-init
+   #:ns-window
    #:content-view-controller
    #:content-view
-   #:style
+   #:style-mask
+   #:alpha-value
    #:alpha-value
    #:background-color
    #:color-space
    #:can-hide
-   #:on-active-space
    #:on-active-space
    #:hides-on-deactivate
    #:collection-behavior
    #:opaque
    #:has-shadow
    #:visible
+   #:ns-backing-store-type
+   #:*ns-window-style*
+   #:*ns-backing-store*
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -292,7 +296,28 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-print-operation
 
    ;; Text Display
+   #:ns-line-break-strategy
+   #:decode-ns-line-break-strategy
+   #:ns-line-break-strategy-p
+   #:ns-text-field-bezel-style
+   #:decode-ns-text-field-bezel-style
+   #:ns-text-field-bezel-style-p
    #:ns-text-field
+   #:selectable
+   #:editable
+   #:allows-editing-text-attributes-p
+   #:imports-graphics-p
+   #:placeholder-string
+   #:placeholder-attributed-string
+   #:line-break-strategy
+   #:allows-default-tightening-for-truncation-p
+   #:maximum-number-of-lines
+   #:preferred-max-layout-width
+   #:text-color
+   #:background-color
+   #:draws-background-p
+   #:bezeledp
+   #:bezel-style
    #:ns-text-view
    #:ns-text
    #:ns-text-input-context
@@ -590,6 +615,95 @@ see https://developer.apple.com/documentation/appkit/nsniboutletconnector?langua
   ()
   (:documentation
    "The infrastructure for drawing, printing, and handling events in an app.
+
+You typically don’t use `ns-view' objects directly. Instead, you use
+objects that descend from NSView or you subclass NSView yourself and
+override its methods to implement the behavior you need. An instance
+of the NSView class (or one of its subclasses) is commonly known as a
+view object, or simply as a view.
+
+Views handle the presentation and interaction with your app’s visible
+content. You arrange one or more views inside an NSWindow object,
+which acts as a wrapper for your content. A view object defines a
+rectangular region for drawing and receiving mouse events. Views
+handle other chores as well, including the dragging of icons and
+working with the NSScrollView class to support efficient scrolling.
+
+AppKit handles most of your app’s `ns-view' management. Unless you’re
+implementing a concrete subclass of `ns-view' or working intimately with
+the content of the view hierarchy at runtime, you don’t need to know
+much about this class’s interface. For any view, there are many
+methods that you can use as-is. The following methods are commonly
+used.
+
++ `frame'  returns the location and size of the `ns-view' object.
++ `bounds' returns the internal origin and size of the `ns-view' object.
++ `needs-display-p' determines whether the NSView object needs to be
+  redrawn.
++ `window' returns the `ns-window' object that contains the `ns-view'
+  object.
++ `draw-rect' draws the `ns-view' object.
+  All subclasses must implement this method, but it’s rarely invoked
+  explicitly.
+  An alternative to drawing is to update the layer directly using the
+  updateLayer method.
+
+For more information on how `ns-view' instances handle event and action
+messages, see Cocoa Event Handling Guide. For more information on
+displaying tooltips and contextual menus, see Displaying Contextual
+Menus and Managing Tooltips.
+
+Subclassing notes
+`ns-view' is perhaps the most important class in AppKit when it comes to
+subclassing and inheritance. Most user-interface objects you see in a
+Cocoa application are objects that inherit from NSView. If you want to
+create an object that draws itself in a special way, or that responds
+to mouse clicks in a special way, you would create a custom subclass
+of `ns-view' (or of a class that inherits from NSView). Subclassing
+NSView is such a common and important procedure that several technical
+documents describe how to both draw in custom subclasses and respond
+to events in custom subclasses. See Cocoa Drawing Guide and Cocoa
+Event Handling Guide (especially “Handling Mouse Events” and “Mouse
+Events”).
+
+Handling events in your subclass
+If you subclass `ns-view' directly and handle specific types of events,
+don’t call super in the implementations of your event-related
+methods. Views inherit their event-handling capabilities from their
+`ns-responder' parent class. The default behavior for responders is to
+pass events up the responder chain, which isn’t the behavior you
+typically want for a custom view. Therefore, don’t call super if your
+view implements any of the following methods and handles the event:
+
++ `mouse-down'
++ `mouse-dragged'
++ `mouse-up'
++ `mouse-moved'
++ `mouse-entered'
++ `mouse-exited'
++ `right-mouse-dragged'
++ `right-mouse-up'
++ `other-mouse-down'
++ `other-mouse-dragged'
++ `other-mouse-up'
++ `scroll-wheel'
++ `key-down'
++ `key-up'
++ `flags-changed'
++ `tablet-point'
++ `tablet-proximity'
+
+Note
+`ns-view' changes the default behavior of `right-mouse-down' so that it
+calls `menu-for-event' and, if non nil, presents the contextual menu. In
+macOS 10.7 and later, if the event is not handled, `ns-view' passes the
+event up the responder chain. Because of these behaviorial changes,
+call super when implementing `right-mouse-down' in your custom NSView
+subclasses.
+
+If your view descends from a class other than `ns-view', call super to
+let the parent view handle any events that you don’t.
+
 see https://developer.apple.com/documentation/appkit/nsview?language=objc"))
 
 (define-objc-class "NSControl" ()
@@ -1083,6 +1197,7 @@ backing store, and is off-screen.
 see https://developer.apple.com/documentation/appkit/nswindow/colorspace?language=objc")
    ("canHide"
     :accessor can-hide
+    :before   as-boolean
     :documentation
     "A Boolean value that indicates whether the window can hide
 when its application becomes hidden.
@@ -1095,6 +1210,7 @@ By default, the value of the property is `t'.
 see https://developer.apple.com/documentation/appkit/nswindow/canhide?language=objc")
    ("onActiveSpace"
     :accessor on-active-space
+    :before   as-boolean
     :documentation
     "Whether the window is on the currently active space.
 
@@ -1127,24 +1243,38 @@ The possible values for this property are listed in `ns-window-collection-behavi
 see https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.property?language=objc")
    ("opaque"
     :accessor opaque
+    :before   as-boolean
     :documentation
     "Whether the window is opaque.
 see https://developer.apple.com/documentation/appkit/nswindow/isopaque?language=objc")
    ("hasShadow"
     :accessor has-shadow
+    :before   as-boolean
     :documentation
     "Whether the window has a shadow.
 see https://developer.apple.com/documentation/appkit/nswindow/hasshadow?language=objc")
    ("visible"
     :accessor visible
-    :setter "setIsVisible:"
+    :before   as-boolean
+    :setter   "setIsVisible:"
     :documentation
     "If window is visible on screen.
 
 Dev Note:
 Using (setf visible-p) would invoke setIsVisible: method.
 
-see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language=objc"))
+see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language=objc")
+   ("title"
+    :reader title
+    :documentation
+    "The string that appears in the title bar of the window or the
+path to the represented file.
+
+If the title has been set using setTitleWithRepresentedFilename:, this
+property contains the file’s path. Setting this property also sets the
+title of the window’s miniaturized window.
+
+see https://developer.apple.com/documentation/appkit/nswindow/title?language=objc"))
   (:documentation
    "A window that an app displays on the screen.
 A single `ns-window' object corresponds to, at most, one on-screen window.
@@ -1182,13 +1312,36 @@ see `ns-window-init'. ")
   "Default `ns-backing-store-type'.
 see `ns-window-init'. ")
 
-(defun ns-window-init (ns-rect &key
-                                 (style   *ns-window-style*)
-                                 (backing *ns-backing-store*)
-                                 (defer   t)
-                                 (class   'ns-window)
-                                 screen
-                       &allow-other-keys)
+(defmethod (setf title) ((title string) (window ns-window))
+  (invoke window "setTitle:" (string-to-ns-string title)))
+
+(defmethod (setf title) ((path pathname) (window ns-window))
+  "Sets a given path as the window’s title, formatting it as a
+file-system path, and records this path as the window’s associated
+file.
+
+Parameters:
++ PATH: The file path to set as the window’s title.
+
+The windows’ title bar displays the filename, not the file’s path.
+
+see https://developer.apple.com/documentation/appkit/nswindow/settitlewithrepresentedfilename(_:)?language=objc"
+  (invoke window
+          "setTitleWithRepresentedFilename:"
+          (string-to-ns-string (uiop:native-namestring path))))
+
+(defun ns-window (ns-rect &key
+                            (style     *ns-window-style*)
+                            (backing   *ns-backing-store*)
+                            (defer      t)
+                            (class     'ns-window)
+                            (object     (alloc class))
+                            (visible    t)
+                            (has-shadow t)
+                            (opaque     nil)
+                            title
+                            screen
+                  &allow-other-keys)
   "Initializes the window with the specified values.
 Return the initialized `ns-window'.
 
@@ -1221,6 +1374,16 @@ Parameters:
   screen. When nil, the content rectangle is positioned relative to
   (0, 0), which is the origin of the primary screen.
 
+Styls Modification:
++ VISIBLE:
+  if window is visible on screen (default `t')
++ HAS-SHADOW:
+  if window has shadow (default `t')
++ OPAQUE:
+  if window is opaque (default `nil')
++ TITLE:
+  the title of window (default not set)
+
 Dev Note:
 this invokes
 + initWithContentRect:styleMask:backing:defer:screen:
@@ -1233,20 +1396,25 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
            (type (satisfies ns-backing-store-type-p) backing)
            (type (or null ns-screen)                 screen))
   (assert (subtypep class 'ns-window))
-  (if screen
-      (invoke (alloc class)
-              "initWithContentRect:styleMask:backing:defer:screen:"
-              ns-rect
-              (ns-window-style-mask style)
-              (ns-backing-store-type backing)
-              (and defer t)
-              screen)
-      (invoke (alloc class)
-              "initWithContentRect:styleMask:backing:defer:"
-              ns-rect
-              (ns-window-style-mask style)
-              (ns-backing-store-type backing)
-              (and defer t))))
+  (let ((window (if screen
+                    (invoke object
+                            "initWithContentRect:styleMask:backing:defer:screen:"
+                            ns-rect
+                            (ns-window-style-mask style)
+                            (ns-backing-store-type backing)
+                            (and defer t)
+                            screen)
+                    (invoke object
+                            "initWithContentRect:styleMask:backing:defer:"
+                            ns-rect
+                            (ns-window-style-mask style)
+                            (ns-backing-store-type backing)
+                            (and defer t)))))
+    (setf (visible    window) visible
+          (has-shadow window) has-shadow
+          (opaque     window) opaque)
+    (when title (setf (title window) title))
+    window))
 
 ;; Managing the Window's Behavior
 
@@ -2350,11 +2518,212 @@ see https://developer.apple.com/documentation/appkit/nsprintoperation?language=o
 
 ;;; Text views
 
+(define-objc-enum ns-line-break-strategy
+  "Constants that specify how the text system breaks lines while laying out paragraphs.
+see https://developer.apple.com/documentation/appkit/nsparagraphstyle/linebreakstrategy-swift.struct?language=objc"
+  (:push-out              1
+                          "The text system pushes out individual lines to avoid an orphan"
+                          "word on the last line of the paragraph.")
+  (:hangul-word-priority  2
+                          "The text system prohibits breaking between Hangul characters.")
+  (:standard              65525
+                          "The text system uses the same configuration of line-break"
+                          "strategies that it uses for standard UI labels.")
+  (:none                  0
+                          "The text system doesn’t use any line-break strategies."))
+
+(define-objc-enum ns-text-field-bezel-style
+  "The style of bezel the text field displays.
+see https://developer.apple.com/documentation/appkit/nstextfield/bezelstyle-swift.enum?language=objc"
+  (:square  0 "A style that draws a bezel with square corners around a text field.")
+  (:rounded 1 "A style that draws a bezel with rounded corners around a single-line text field."))
+
 (define-objc-class "NSTextField" ()
-  ()
+  (;; Controlling Selection and Editing
+   ("selectable"
+    :accessor selectable
+    :documentation
+    "A Boolean value that determines whether the user can select the
+content of the text field.
+
+If `t', the text field becomes selectable but not editable.
+Use `editable' to make the text field selectable and editable.
+
+If `nil', the text is neither editable nor selectable.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/isselectable?language=objc")
+   ("editable"
+    :accessor editable
+    :before   as-boolean
+    :documentation
+    "A Boolean value that controls whether the user can edit the value
+in the text field.
+
+If `t', the user can select and edit text.
+
+If `nil', the user can’t edit text, and the ability to select the text
+field’s content is dependent on the value of selectable.
+
+For example, if an NSTextField object is selectable but uneditable,
+becomes editable for a time, and then becomes uneditable again, it
+remains selectable. To ensure that text is neither editable nor
+selectable, use `selectable' to disable text selection.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/iseditable?language=objc")
+   ;; Controlling Rich Text Behavior
+   ("allowsEditingTextAttributes"
+    :accessor allows-editing-text-attributes-p
+    :documentation
+    "A Boolean value that controls whether the user can change font
+attributes of the text field’s string.
+
+If `t' and the text value is an attributed string, the text field’s
+content displays using the attributed string’s visual settings. The
+user can modify the text field’s style attributes in the font panel.
+
+If `nil' and the text is an attributed string, the text field ignores
+style attributes, such as font and color. The text field’s content
+displays according to the text field’s settings. The text field
+ignores changes to the attributed string’s attributes when displaying
+the string and when the text field is in edit mode.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/allowseditingtextattributes?language=objc")
+   ("importsGraphics"
+    :accessor imports-graphics-p
+    :documentation
+    "A Boolean value that controls whether the user can drag image
+files into the text field.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/importsgraphics?language=objc")
+   ;; Setting Placeholder Text
+   ("placeholderString"
+    :accessor placeholder-string
+    :documentation
+    "The string the text field displays when empty to help the user
+understand the text field’s purpose.
+see https://developer.apple.com/documentation/appkit/nstextfield/placeholderstring?language=objc")
+   ("placeholderAttributedString"
+    :accessor placeholder-attributed-string
+    :documentation
+    "The attributed string the text field displays when empty to help
+the user understand the text field’s purpose.
+see https://developer.apple.com/documentation/appkit/nstextfield/placeholderattributedstring?language=objc")
+   ;; Configuring Line Wrapping
+   ("lineBreakStrategy"
+    :accessor line-break-strategy
+    :before   ns-line-break-strategy
+    :after    decode-ns-line-break-strategy
+    :documentation
+    "The strategy that the system uses to break lines when laying out
+multiple lines of text.
+
+The default value for editable text fields is `:none' to match the
+field editor’s behavior. The default value for selectable, uneditable
+text fields is `:standard'.
+
+Note
+When the text field has an attributed string value, the system ignores
+the `text-color', `font', `alignment', `line-break-mode', and
+`line-break-strategy' properties. Set the `foreground-color', `font',
+`alignment', `line-break-mode', and `line-break-strategy' properties
+in the attributed string instead.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/linebreakstrategy?language=objc")
+   ("allowsDefaultTighteningForTruncation"
+    :accessor allows-default-tightening-for-truncation-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that controls whether single-line text fields
+tighten intercharacter spacing before truncating the text.
+see https://developer.apple.com/documentation/appkit/nstextfield/allowsdefaulttighteningfortruncation?language=objc")
+   ("maximumNumberOfLines"
+    :accessor maximum-number-of-lines
+    :documentation
+    "The maximum number of lines a wrapping text field displays before
+clipping or truncating the text.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/maximumnumberoflines?language=objc")
+   ;; Sizing with Auto Layout
+   ("preferredMaxLayoutWidth"
+    :accessor preferred-max-layout-width
+    :documentation
+    "The maximum width of the text field’s intrinsic content size.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/preferredmaxlayoutwidth?language=objc")
+   ;; Setting the Text Color
+   ("textColor"
+    :accessor text-color
+    :documentation
+    "The color of the text field’s content.
+see https://developer.apple.com/documentation/appkit/nstextfield/textcolor?language=objc")
+   ;; Controlling the Background
+   ("backgroundColor"
+    :accessor background-color
+    :documentation
+    "The color of the background the text field’s cell draws behind the text.
+see https://developer.apple.com/documentation/appkit/nstextfield/backgroundcolor?language=objc")
+   ("drawsBackground"
+    :accessor draws-background-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that controls whether the text field’s cell draws
+a background color behind the text.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/drawsbackground?language=objc")
+   ("bezeled"
+    :accessor bezeledp
+    :before   as-boolean
+    :documentation
+    "A Boolean value that controls whether the text field draws a
+bezeled background around its contents.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/isbezeled?language=objc")
+   ("bezelStyle"
+    :accessor bezel-style
+    :before   ns-text-field-bezel-style
+    :after    decode-ns-text-field-bezel-style
+    :documentation
+    "The text field’s bezel style, `:square' or `:rounded'.
+
+To set the bezel style, you must have already set the the text field’s
+`bezeled' method with an argument of true. For a list of bezel styles,
+see `ns-text-field-bezel-style'.
+
+see https://developer.apple.com/documentation/appkit/nstextfieldcell/bezelstyle?language=objc")
+   ;; Setting a Border
+   ("bordered"
+    :accessor borderedp
+    :before   as-boolean
+    :documentation
+    "A Boolean value that controls whether the text field draws a
+solid black border around its contents.
+
+see https://developer.apple.com/documentation/appkit/nstextfield/isbordered?language=objc")
+   ;; Working with the Responder Chain
+   ;; Using Keyboard Interface Control
+   ;; Supporting Text Completion and Suggestions
+   )
   (:documentation
    "Text the user can select or edit to send an action message to a target
 when the user presses the Return key.
+
+The NSTextField class uses the NSTextFieldCell class to implement its
+user interface. Text fields display text either as a static label or
+as an editable input field. The content of a text field is either
+plain text or a rich-text attributed string. Text fields also support
+line wrapping to display multiline text, and a variety of truncation
+styles if the content doesn’t fit the available space.
+
+The parent class, NSControl, provides the methods for setting the
+values of the text field, such as stringValue and doubleValue. There
+are corresponding methods to retrieve values.
+
+In macOS 12 and later, if you explicitly call the layoutManager
+property on your text field, the framework will revert to a
+compatibility mode that uses NSLayoutManager. The text view also
+switches to this compatibility mode when it encounters text content
+that’s not yet supported.
+
 see https://developer.apple.com/documentation/appkit/nstextfield?language=objc"))
 
 (define-objc-class "NSTextView" ()
@@ -2784,6 +3153,7 @@ to use Cocoa classes within the main() function itself
 (other than to load nib files or to instantiate `ns-application'),
 you should create an @autorelease block to contain the code using
 the classes.
+
 The delegate and notifications
 =====================================
 You can assign a delegate to your `ns-application' object. The delegate
@@ -2810,10 +3180,12 @@ applicationDidFinishLaunching:. If the delegate wants to be informed
 of both events, it implements both methods. If it needs to know only
 when the app is finished launching, it implements only
 applicationDidFinishLaunching:.
+
 System services
 ======================
 `ns-application' interacts with the system services architecture to
 provide services to your app through the Services menu.
+
 Subclassing notes
 ======================
 You rarely should find a real need to create a custom `ns-application'
@@ -2890,6 +3262,9 @@ see https://developer.apple.com/documentation/appkit/nsapplication?language=objc
   "Returns the shared `ns-application'. "
   (or *ns-app* (invoke 'ns-application "sharedApplication")))
 
+(define-coca-init :pre
+  (setf *ns-app* nil))
+
 ;; Managing the event loop
 
 (define-objc-const +ns-event-tracking-run-loop-mode+
@@ -2938,10 +3313,6 @@ see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(mat
           mode
           (and deque t)))
 
-(defmethod run ((app ns-application))
-  "Starts the main event loop. "
-  (invoke app "run"))
-
 (defmethod finish-launching ((app ns-application))
   "Activates the app,
 opens any files specified by the `ns-open' user default,
@@ -2957,6 +3328,72 @@ notification center. If you override finishLaunching, the subclass
 method should invoke the superclass method.
 "
   (invoke app "finishLaunching"))
+
+(defmethod run ((app ns-application))
+  "Starts the main event loop. "
+  (invoke app "run"))
+
+(defmethod stop ((app ns-application) (sender standard-objc-object))
+  "Stops the main event loop.
+
+Parameters:
++ SENDER: the Object that sent this message
+
+This method notifies the app that you want to exit the current run
+loop as soon as it finishes processing the current NSEvent
+object. This method doesn’t forcibly exit the current run
+loop. Instead it sets a flag that the app checks only after it
+finishes dispatching an actual event object. For example, you could
+call this method from an action method responding to a button click or
+from one of the many methods defined by the NSResponder
+class. However, calling this method from a timer or run-loop observer
+routine wouldn’t stop the run loop because they don’t result in the
+posting of an NSEvent object.
+
+If you call this method from an event handler running in your main run
+loop, the app object exits out of the run method, thereby returning
+control to the main() function. If you call this method from within a
+modal event loop, it will exit the modal loop instead of the main
+event loop.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/stop(_:)?language=objc"
+  (invoke app "stop:" sender))
+
+(defmethod terminate ((app ns-application) (sender standard-objc-object))
+  "Terminates the receiver.
+
+Parameters:
++ NS-APP: NSApplication
++ SENDER:
+  Typically, this parameter contains the object that initiated the
+  termination request.
+
+This method is typically invoked when the user chooses Quit or Exit
+from the app’s menu.
+
+When invoked, this method performs several steps to process the
+termination request. First, it asks the app’s document controller (if
+one exists) to save any unsaved changes in its documents. During this
+process, the document controller can cancel termination in response to
+input from the user. If the document controller doesn’t cancel the
+operation, this method then calls the delegate’s
+applicationShouldTerminate: method. If applicationShouldTerminate:
+returns NSTerminateCancel, the termination process is aborted and
+control is handed back to the main event loop. If the method returns
+NSTerminateLater, the app runs its run loop in the
+NSModalPanelRunLoopMode mode until the
+replyToApplicationShouldTerminate: method is called with the value
+true or false. If the applicationShouldTerminate: method returns
+NSTerminateNow, this method posts a
+NSApplicationWillTerminateNotification notification to the default
+notification center.
+
+Don’t bother to put final cleanup code in your app’s main()
+function—it will never be executed. If cleanup is necessary, perform
+that cleanup in the delegate’s applicationWillTerminate: method.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/terminate(_:)?language=objc"
+  (invoke ns-app "terminate:" sender))
 
 (defmethod send-event ((app ns-application) (event ns-event))
   "Dispatches an event to other objects.
