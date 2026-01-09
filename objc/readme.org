@@ -240,6 +240,24 @@ LispWorks' API.
   #+end_example
 
 ** Methods
++ =coca-init=
+
+  #+begin_src lisp :exports results
+  (documentation #'coca-init t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Initialize Coca foreign pointers.
+
+  Dev Note:
+  if you save Coca as standalone executable file, you should call
+  this method before all the method calling of ObjC methods or objects.
+
+  Use `define-coca-init' to clean up and setup how to reload
+  ObjC environment.
+  #+end_example
+
 + =objc-object-pointer=
 
   #+begin_src lisp :exports results
@@ -386,4 +404,32 @@ LispWorks' API.
 
       (define-objc-method (ns-window "foo") :void ()
         (foo))
+  #+end_example
++ =define-coca-init=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-coca-init) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define HOOK to be triggered when init Coca.
+
+  Syntax:
+
+      (define-coca-init { :pre | :post } &body)
+
+  Dev Note:
+  + :pre will execute the BODY before `coca-init'
+    this is adviced to remove the interned ObjC object
+  + :post will execute the BODY after `coca-init'
+    this is adviced to rebind the ObjC object
+
+  For example, if you defines an ObjC object as global parameter:
+
+     (defparameter *foo* (get-objc-object-foo))
+     (define-coca-init :post (setf *foo* (get-objc-object-foo)))
+
+  This will ensure that the foreign ObjC pointer is correctly
+  reinitialized after you close the ObjC environment.
   #+end_example

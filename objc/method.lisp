@@ -331,6 +331,12 @@ This is equal to generating below C code:
 
 ;;; invoke
 
+;; self:  self
+;; class: super class of self
+(defstruct objc-super
+  (self  nil :type standard-objc-object)
+  (class nil :type objc-class))
+
 (defun can-invoke-p (object method)
   "Test if OBJECT can invoke METHOD or not.
 
@@ -361,7 +367,7 @@ Parameter:
 
 (defun invoke (object method &rest args)
   "Call METHOD on OBJECT by ARGS.
-Return value is warpped as lisp value.
+Return value is wrapped as lisp value.
 
 Parameters:
 + OBJECT: object, class to call
@@ -390,7 +396,7 @@ Example:
             \"initWithContentRect:styleMask:backing:defer:\"
             rect style backing defer)
 "
-  (declare (type (or symbol string objc-class foreign-pointer objc-pointer) object)
+  (declare (type (or symbol string objc-class foreign-pointer objc-pointer objc-super) object)
            (type (or string sel) method))
   (etypecase object
     (standard-objc-object
@@ -398,6 +404,11 @@ Example:
            (sel   (coerce-to-selector method)))
        (apply (the function (objc-class-instance-method class sel))
               (cons object (cons sel args)))))
+    (objc-super
+     (let ((class (objc-super-class object))
+           (sel   (coerce-to-selector method)))
+       (apply (the function (objc-class-instance-method class sel))
+              (cons (objc-super-self object) (cons sel args)))))
     ((or symbol string objc-class)
      (let ((class  (coerce-to-objc-class object))
            (sel    (coerce-to-selector   method)))
@@ -466,6 +477,16 @@ Parameters:
   (with-slots (objc-instance-methods) class
     (setf (gethash sel objc-instance-methods) nil)))
 
+(defun objc-super-class-of (object)
+  "Return ObjC super class of OBJECT. "
+  (declare (type standard-objc-object object))
+  (let ((class (class-of object)))
+    (find-if #'objc-class-p (c2mop:class-direct-superclasses class))))
+
+(defmacro super (&optional (self 'self))
+  "Return `coca.objc::objc-super' as wrapper of self. "
+  `(make-objc-super :self ,self :class (objc-super-class-of ,self)))
+
 (trivial-indent:define-indentation define-objc-method (4 4 &lambda &body))
 (defmacro define-objc-method ((class method &optional name) ret lambda-list &body body)
   "Define ObjC instance METHOD for CLASS.
@@ -483,12 +504,15 @@ Syntax:
 + LAMBDA-LIST:
   VAR: symbol of argument
   OBJC-ENCODING: ObjC type encoding for argument
-+ BODY: method body
++ BODY: method body,
+  use `self' when referring current ObjC object
+  use `super' when referring current ObjC object super class
 
 Example:
 
     (define-objc-method (ns-window \"foo\") :void ()
-      (foo))
+      (invoke (super) balabala)
+      (foo self))
 "
   (declare (type (or symbol string) class)
            (type string method)
@@ -497,26 +521,32 @@ Example:
   (let* ((class (coerce-to-objc-class class))
          (name  (or name (intern (format nil "%~A-~A"
                                          (objc-class-name class)
-                                         method)))))
+                                         method))))
+         (sel   (gensym "SEL")))
     (declare (type symbol name))
     `(progn
        (defcallback ,name ,(objc-encoding-cffi-type ret)
-           ,(loop :for (var enc) :in lambda-list
-                  :collect (list var (objc-encoding-cffi-type enc)))
-         (let ,(loop :for (var enc) :in lambda-list
-                     :for type := (atomize enc)
-                     :if (eql type :object)
-                       :collect `(,var (coerce-to-objc-object          ,var))
-                     :if (eql type :class)
-                       :collect `(,var (pointer-to-objc-class-nullable ,var))
-                     :if (eql type :sel)
-                       :collect `(,var (coerce-to-selector             ,var)))
+           ((self :pointer)
+            (,sel :pointer)
+            ,@(loop :for (var enc) :in lambda-list
+                    :collect (list var (objc-encoding-cffi-type enc))))
+         (declare (ignore ,sel))
+         (let ((self (coerce-to-objc-object self))
+               ,@(loop :for (var enc) :in lambda-list
+                       :for type := (atomize enc)
+                       :if (eql type :object)
+                         :collect `(,var (coerce-to-objc-object          ,var))
+                       :if (eql type :class)
+                         :collect `(,var (pointer-to-objc-class-nullable ,var))
+                       :if (eql type :sel)
+                         :collect `(,var (coerce-to-selector             ,var))))
+           (declare (ignorable self))
            ,@body))
        (%define-objc-method ,class
                             (coerce-to-selector ,method)
                             ',name
                             (encode-objc-type-encoding
-                             ',(cons ret (mapcar #'second lambda-list))))
+                             '(,ret :object :sel ,@(mapcar #'second lambda-list))))
        ',name)))
 
 ;;;; method.lisp ends here

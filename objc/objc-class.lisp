@@ -107,7 +107,7 @@ See `coca.objc::objc-property-direct-slot' and `coca.objc::objc-property-effecti
   (:documentation "Class of effective ObjC slots and methods to construct them when appropriate. "))
 
 (defun objc-property-slot-p (slot-definition)
-  (declare (type c2mop:slot-definition slot-definition))
+  "Test if SLOT-DEFINITION is `coca.objc::objc-property-slot'. "
   (typep slot-definition 'objc-property-slot))
 
 (defmethod c2mop:slot-definition-allocation ((slot objc-property-slot))
@@ -167,23 +167,31 @@ It should return the class of slot definition required. "
 
 ;; For `objc-property-slot':
 ;; reading slot is invoke on `objc-property-reader'
-(defmethod c2mop:slot-value-using-class ((class objc-class) object (slot objc-property-slot))
+(defmethod c2mop:slot-value-using-class
+    ((class objc-class) object (slot objc-property-slot))
   (funcall (objc-property-after-read slot) (invoke object (objc-property-reader slot))))
 
 ;; For `objc-property-slot':
 ;; writing slot is invoke on `objc-property-writer'
 ;; if `objc-property-writer' is `nil', it's a read-only slot
-(defmethod (setf c2mop:slot-value-using-class) (value (class objc-class) object (slot objc-property-slot))
+(defmethod (setf c2mop:slot-value-using-class)
+    (value (class objc-class) object (slot objc-property-slot))
   (let ((writer (objc-property-writer slot)))
     (if writer
         (invoke object writer (funcall (objc-property-before-write slot) value))
         (error "ObjC property ~S is read only. " (c2mop:slot-definition-name slot)))))
 
-(defmethod c2mop:slot-boundp-using-class ((class objc-class) object (slot objc-property-slot))
+(defmethod c2mop:slot-boundp-using-class
+    ((class objc-class) object (slot objc-property-slot))
+  "If cannot invoke `coco.objc::objc-property-reader', the slot is unbound.
+
+Dev Note: why would this happen? "
   (declare (ignore class))
   (can-invoke-p object (objc-property-reader slot)))
 
-(defmethod c2mop:slot-makunbound-using-class ((class objc-class) object (slot objc-property-slot))
+(defmethod c2mop:slot-makunbound-using-class
+    ((class objc-class) object (slot objc-property-slot))
+  "ObjC property slot could not be unbound. "
   (declare (ignore class object slot))
   (error "Cannot unbound ObjC property ~S. " (c2mop:slot-definition-name slot)))
 
@@ -194,8 +202,12 @@ It should return the class of slot definition required. "
 ;; Use `property_getName' would get the name of property -> `objc-intern'
 ;; Use `property_getAttributes' would get the attribute string -> `decode-objc-property-attributes'
 
-(defun gen-objc-property-set (name)
-  "Given NAME like isRunning and return setIsRunning:. "
+(defun objc-property-default-setter (name)
+  "Given NAME like isRunning and return setIsRunning:.
+
+Parameter:
++ NAME: string of ObjC property name
+"
   (declare (type string name))
   (concatenate 'string "set" (the string (str:pascal-case name)) ":"))
 
@@ -251,13 +263,16 @@ Return values are LISP-NAME, OBJC-NAME, OBJC-ENCODING, READER, WRITER.
 see https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html#//apple_ref/doc/uid/TP40008048-CH101"
   (loop :with read-only := nil
         :with reader    := name
-        :with writer    := (gen-objc-property-set name)
+        :with writer    := (objc-property-default-setter name)
         :with encoding  := :unknown
         :for attribute :in (str:split-omit-nulls "," attributes)
         :do (case (aref attribute 0)
               (#\R (setf writer nil))
               (#\G (setf reader (subseq attribute 1)))
               (#\S (setf writer (subseq attribute 1)))
+              ;; Dev Note:
+              ;; the attribute type for object will be like:
+              ;; @"ObjCName" -> should be replaced by @
               (#\T (multiple-value-bind (ignore enc)
                        (decode-objc-type-encoding
                         (str:replace-all "@\".*\"" "@" (subseq attribute 1) :regex t))
@@ -276,42 +291,83 @@ Return a list of `objc-clas-property'. "
   (when (typep objc-class 'objc-class)
     (remove-if-not #'objc-property-slot-p (c2mop:class-slots objc-class))))
 
-(defun objc-class-additional-direct-slots (pointer super-slots)
-  "Return a list of decoded property infomation for OBJC-CLASS.
+(defun compute-objc-class-direct-slots (objc-class)
+  "Compute direct slots for OBJC-CLASS.
+Return a list of normalized direct-slot-definition plist.
 
-The additional property should not exists in SUPER-SLOTS.
-Return form should be able to use as :direct-slots. "
-  (declare (type foreign-pointer pointer))
-  (let ((super-slots (loop :with hash := (make-hash-table :test 'equal)
-                           :for slotd :in super-slots
-                           :do (setf (gethash (objc-property-name slotd) hash) t)
-                           :finally (return hash))))
+Parameter:
++ OBJC-CLASS: `objc-class'
+
+Dev Note:
+"
+  (declare (type objc-class objc-class))
+  (let ((dslots ())
+        (super-objc-slots (make-hash-table :test 'equal)))
+    ;; `super-objc-slots' is used as differ cache
+    (loop :for super :in (c2mop:class-direct-superclasses objc-class) :do
+      (loop :for slotd :in (objc-class-property-slots super)
+            :if (objc-property-slot-p slotd)
+              :do (setf (gethash (objc-property-name slotd) super-objc-slots) t)))
+    ;; compute additional ObjC property slots
     (with-foreign-pointer (out-count (foreign-type-size :unsigned-int))
-      (let ((properties (class_copyPropertyList pointer out-count)))
+      (let ((properties (class_copyPropertyList
+                         (objc-object-pointer objc-class)
+                         out-count)))
         (unwind-protect
-             (loop
-               :with def := ()
-               :for i :below (mem-ref out-count :unsigned-int)
-               :for property   := (mem-aref properties :pointer i)
-               :for name       := (property_getName       property)
-               :for attributes := (property_getAttributes property)
-               :if (and
-                    (not (gethash name super-slots))
-                    (not (gethash name *objc-property-blacklist*))
-                    ;; if failed to parse encoding, ignore them...
-                    (ignore-errors
-                     (multiple-value-bind
-                           (lisp-name objc-name encoding reader writer)
-                         (decode-objc-property-attributes name attributes)
-                       (setf def
-                             `(:name                   ,lisp-name
-                               :objc-property          ,objc-name
-                               :objc-property-encoding ,encoding
-                               :objc-property-reader   ,(coerce-to-selector reader)
-                               :objc-property-writer   ,(and writer (coerce-to-selector writer))
-                               :allocation             :objc)))))
-                 :collect def)
-          (foreign-free properties))))))
+             (loop :for i :below (mem-ref out-count :unsigned-int)
+                   :for property   := (mem-aref properties :pointer i)
+                   :for name       := (property_getName       property)
+                   :for attributes := (property_getAttributes property)
+                   :if (and (not (gethash name super-objc-slots))
+                            (not (gethash name *objc-property-blacklist*)))
+                     :do (ignore-errors
+                          (multiple-value-bind
+                                (lisp-name objc-name encoding reader writer)
+                              (decode-objc-property-attributes name attributes)
+                            (push `(:name                   ,lisp-name
+                                    :objc-property          ,objc-name
+                                    :objc-property-encoding ,encoding
+                                    :objc-property-reader   ,(coerce-to-selector reader)
+                                    :objc-property-writer   ,(and writer (coerce-to-selector writer))
+                                    :allocation             :objc)
+                                  dslots))))
+          (foreign-free properties))))
+    ;; collect non ObjC direct property slots
+    (append dslots (mapcar #'%normalize-objc-class-properties
+                           (remove-if #'objc-property-slot-p
+                                      (c2mop:class-direct-slots objc-class))))))
+
+(defun %coerce-pointer-to-objc-class (pointer &key
+                                                (additional-superclasses ())
+                                                (objc-name (class_getName pointer))
+                                                (lisp-name (objc-intern   objc-name)))
+  "Convert POINTER into ObjC class.
+Return `objc-class'.
+
+Parameter:
++ POINTER: foreign pointer to ObjC Class
++ ADDITIONAL-SUPERCLASSES: list of
++ OBJC-NAME: string of ObjC class name
++ LISP-NAME: symbol of ObjC class name"
+  (let* ((objc-super (let ((super (class_getSuperClass pointer)))
+                       (if (null-pointer-p super)
+                           (find-class 'standard-objc-object)
+                           (coerce-to-objc-class super))))
+         (class      (make-instance
+                      'objc-class
+                      :objc-object-pointer pointer
+                      :direct-superclasses (cons objc-super additional-superclasses)
+                      :objc-class-name     objc-name
+                      :name                lisp-name)))
+    (c2mop:ensure-finalized
+     (c2mop:ensure-class-using-class
+      class lisp-name
+      :name                lisp-name
+      :metaclass           (find-class 'objc-class)
+      :objc-class-name     objc-name
+      :objc-object-pointer pointer
+      :direct-superclasses (cons objc-super additional-superclasses)
+      :direct-slots        (compute-objc-class-direct-slots class)))))
 
 (defun coerce-to-objc-class (class)
   "Coerces its argument to an Objective-C class pointer.
@@ -337,48 +393,32 @@ Parameters:
     (see above as string CLASS input)
 "
   (declare (type (or string symbol objc-class foreign-pointer) class))
-  (flet ((wrap-ptr-as-objc-class (ptr name class-name)
-           (declare (type foreign-pointer ptr)
-                    (type string          name)
-                    (type symbol          class-name))
-           (let* ((super (class_getSuperClass ptr))
-                  (super (if (null-pointer-p super)
-                             (find-class 'standard-objc-object)
-                             (coerce-to-objc-class super)))
-                  (slots (objc-class-additional-direct-slots
-                          ptr (objc-class-property-slots super))))
-             (c2mop:ensure-finalized
-              (c2mop:ensure-class
-               class-name
-               :name                class-name
-               :metaclass           (find-class 'objc-class)
-               :objc-class-name     name
-               :objc-object-pointer ptr
-               :direct-superclasses (list super)
-               :direct-slots        slots)))))
-    (the objc-class
-      (etypecase class
-        (objc-class class)
-        (symbol
-         ;; For symbol (already interned ObjC class):
-         ;; find the `objc-class' of the name of symbol
-         (the objc-class (find-class class)))
-        (string
-         ;; For ObjC class name
-         (with-cached (class *classes*)
-           (let ((ptr (objc_getClass class)))
-             (when (null-pointer-p ptr)
-               (error "Unknown ObjC class `~A' within current ObjC Runtime. " class))
-             (wrap-ptr-as-objc-class ptr class (objc-intern class)))))
-        (foreign-pointer
-         (when (null-pointer-p class)
-           (error "NULL pointer is not a pointer of ObjC class"))
-         (unless (object_isClass class)
-           (error "~S is not a pointer of ObjC class. " class))
-         (let ((name (class_getName class)))
-           (with-cached (name *classes*)
-             (let ((class-name (objc-intern name)))
-               (wrap-ptr-as-objc-class class name class-name)))))))))
+  (the objc-class
+    (etypecase class
+      (objc-class class)
+      (symbol
+       ;; For symbol (already interned ObjC class):
+       ;; find the `objc-class' of the name of symbol
+       (the objc-class (find-class class)))
+      (string
+       ;; For ObjC class name
+       (with-cached (class *classes*)
+         (let ((ptr (objc_getClass class)))
+           (when (null-pointer-p ptr)
+             (error "Unknown ObjC class `~A' within current ObjC Runtime. " class))
+           (%coerce-pointer-to-objc-class ptr
+                                          :lisp-name (objc-intern class)
+                                          :objc-name class))))
+      (foreign-pointer
+       (when (null-pointer-p class)
+         (error "NULL pointer is not a pointer of ObjC class"))
+       (unless (object_isClass class)
+         (error "~S is not a pointer of ObjC class. " class))
+       (let ((name (class_getName class)))
+         (with-cached (name *classes*)
+           (%coerce-pointer-to-objc-class class
+                                          :lisp-name (objc-intern name)
+                                          :objc-name name)))))))
 
 (defun pointer-to-objc-class-nullable (pointer)
   "Convert POINTER to ObjC class.
@@ -387,14 +427,21 @@ Return `nil' if POINTER is NULL, otherwise `objc-class'.
 Parameter:
 + POINTER: foreign pointer to ObjC class.
   can be NULL pointer.
-"
+
+Dev Note:
+This should only be used in ObjC method result wrapping. "
   (declare (type foreign-pointer pointer))
   (if (null-pointer-p pointer)
       nil
       (coerce-to-objc-class pointer)))
 
 (defun %normalize-objc-class-properties (slotd)
-  "Normalize ObjC class properties SLOTD. "
+  "Normalize ObjC class properties SLOTD.
+Return plist of slot definition.
+
+Parameter:
++ SLOTD: slot definition "
+  (declare (type c2mop:slot-definition slotd))
   (if (objc-property-slot-p slotd)
       `(:name                   ,(c2mop:slot-definition-name    slotd)
         :objc-property          ,(objc-property-name            slotd)
@@ -536,41 +583,51 @@ Should be used with caution.
       (setf (slot-value class 'objc-object-pointer) pointer)
       (setf (gethash objc-name *classes*)           class))))
 
+(defun %ensure-objc-class-initialized (class)
+  (let* ((objc-name (objc-class-name class))
+         (objc-ptr  (objc_getClass objc-name)))
+    (cond ((null-pointer-p objc-ptr)
+           ;; Use `%regist-objc-class' if CLASS is not registed in ObjC environment
+           (%regist-objc-class class))
+          (t
+           ;; Make sure ObjC object pointer is bounded if it exists
+           (setf (slot-value class 'objc-object-pointer) objc-ptr)
+           ;; Make sure ObjC class super is in class direct superclass list
+           (let* ((super  (class_getSuperClass objc-ptr))
+                  (super  (if (null-pointer-p super)
+                              (find-class 'standard-objc-object)
+                              (coerce-to-objc-class super)))
+                  (supers (c2mop:class-direct-superclasses class)))
+             (unless (find super supers :test #'equal)
+               (unless (zerop (count-if #'objc-class-p supers))
+                 (error "ObjC super classes of ~S should be ~S but got ~{~S~^, ~}. "
+                        class super supers))
+               (c2mop:ensure-finalized
+                (c2mop:ensure-class-using-class
+                 class (class-name class)
+                 :name (class-name class)
+                 :metaclass (find-class 'objc-class)
+                 :objc-class-name (objc-class-name class)
+                 :objc-object-pointer (objc-object-pointer class)
+                 :direct-superclasses (union (list super) supers :test #'equal)
+                 :direct-slots        (%normalize-objc-class-properties
+                                       (c2mop:class-direct-slots class))))))))))
+
 (defmethod initialize-instance :after ((class objc-class) &key)
   "If `objc-object-pointer' of CLASS is not bound, regist it. "
   ;; Ensure CLASS is properly initialized as ObjC instance
   (unless (slot-boundp class 'objc-object-pointer)
-    (let* ((objc-name (objc-class-name class))
-           (objc-ptr  (objc_getClass objc-name)))
-      (cond ((null-pointer-p objc-ptr)
-             ;; Use `%regist-objc-class' if CLASS is not registed in ObjC environment
-             (%regist-objc-class class))
-            (t
-             ;; Make sure ObjC object pointer is bounded if it exists
-             (setf (slot-value class 'objc-object-pointer) objc-ptr)
-             ;; Make sure ObjC class super is in class direct superclass list
-             (let* ((super  (class_getSuperClass objc-ptr))
-                    (super  (if (null-pointer-p super)
-                                (find-class 'standard-objc-object)
-                                (coerce-to-objc-class super)))
-                    (supers (c2mop:class-direct-superclasses class)))
-               (unless (find super supers :test #'equal)
-                 (unless (zerop (count-if #'objc-class-p supers))
-                   (error "ObjC super classes of ~S should be ~S but got ~{~S~^, ~}. "
-                          class super supers))
-                 (c2mop:ensure-finalized
-                  (c2mop:ensure-class
-                   (class-name class)
-                   :name (class-name class)
-                   :metaclass (find-class 'objc-class)
-                   :objc-class-name (objc-class-name class)
-                   :objc-object-pointer (objc-object-pointer class)
-                   :direct-superclasses (union (list super) supers :test #'equal)
-                   :direct-slots        (%normalize-objc-class-properties
-                                         (c2mop:class-direct-slots class))))))))))
+    (%ensure-objc-class-initialized class))
 
   ;; Regist CLASS in `*classes*'
   (setf (gethash (objc-class-name class) *classes*) class))
+
+(defmethod reinitialize-instance :around ((class objc-class) &key)
+  (%ensure-objc-class-initialized class)
+  (with-slots (objc-instance-methods objc-class-methods) class
+    (clrhash objc-instance-methods)
+    (clrhash objc-class-methods))
+  (call-next-method))
 
 (trivial-indent:define-indentation define-objc-class (4 4 2 &body))
 (defmacro define-objc-class (name direct-superclass direct-ivars &body class-options)
@@ -596,7 +653,10 @@ Syntax:
     (define-objc-class
         { \"OBJC-NAME\" | (\"OBJC-NAME\" &optional LISP-NAME) }
         DIRECT-SUPERCLASS
-        ({ (OBJC-PROPERTY &key before after reader accessor documentation) }*)
+        ({
+             (OBJC-PROPERTY &key before after reader accessor documentation)
+           | (LISP-SLOT &key LISP-SLOT-DEFINITIONS...)
+         }*)
       CLASS-OPTIONS)
 
 + OBJC-NAME: string of ObjC class name
@@ -614,32 +674,38 @@ Syntax:
                  (not (null-pointer-p (objc_getClass objc-name)))))
         `(defclass ,lisp-name ,direct-superclass
            ,(loop :for (name . options) :in direct-ivars
-                  :collect (destructuring-bind (&key
-                                                  before after accessor
-                                                  (reader accessor)
-                                                  (writer accessor)
-                                                  (encoding (error "Missing :encoding for Ivar ~A" name))
-                                                  (getter   name)
-                                                  (setter   (gen-objc-property-set name))
-                                                  documentation
-                                                &allow-other-keys)
-                               options
-                             `(,(objc-intern name)
-                               :allocation                 :objc
-                               :objc-property              ,name
-                               :objc-property-encoding     ,encoding
-                               :objc-property-before-write ,(or before 'identity)
-                               :objc-property-after-read   ,(or after  'identity)
-                               ,@(when getter        `(:objc-property-reader ,getter))
-                               ,@(when setter        `(:objc-property-writer ,setter))
-                               ,@(when reader        `(:reader               ,reader))
-                               ,@(when writer        `(:writer               ,writer))
-                               ,@(when documentation `(:documentation        ,documentation)))))
+                  :if (stringp name)
+                    :collect (destructuring-bind (&key
+                                                    before after accessor
+                                                    (reader accessor)
+                                                    (writer accessor)
+                                                    (encoding (error "Missing :encoding for Ivar ~A" name))
+                                                    (getter   name)
+                                                    (setter   (objc-property-default-setter name))
+                                                    documentation
+                                                  &allow-other-keys)
+                                 options
+                               `(,(objc-intern name)
+                                 :allocation                 :objc
+                                 :objc-property              ,name
+                                 :objc-property-encoding     ,encoding
+                                 :objc-property-before-write ,(or before 'identity)
+                                 :objc-property-after-read   ,(or after  'identity)
+                                 ,@(when getter        `(:objc-property-reader ,getter))
+                                 ,@(when setter        `(:objc-property-writer ,setter))
+                                 ,@(when reader        `(:reader               ,reader))
+                                 ,@(when writer        `(:writer               ,writer))
+                                 ,@(when documentation `(:documentation        ,documentation))))
+                  :else
+                    :collect (cons (the symbol name) options))
            (:metaclass objc-class)
            (:objc-class-name . ,objc-name)
            (:documentation ,(or (second (assoc :documentation class-options))
                                 (format nil "ObjC Class of ~A" objc-name))))
-        `(doc-objc-class ,objc-name ,direct-ivars
+        `(doc-objc-class ,objc-name
+           ,(loop :for (name . options) :in direct-ivars
+                  :if (stringp name)
+                    :collect (cons name options))
            ,@(cdr (assoc :documentation class-options))))))
 
 ;;;; objc-class.lisp ends here

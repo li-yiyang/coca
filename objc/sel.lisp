@@ -60,4 +60,12 @@ Parameters:
                           :objc-object-pointer method
                           :name                name)))))))
 
+(defmethod initialize-instance :after ((sel sel) &key)
+  (unless (slot-boundp sel 'objc-object-pointer)
+    (setf (slot-value sel 'objc-object-pointer) (sel_registerName (sel-name sel)))))
+
+(defmethod reinitialize-instance :around ((sel sel) &key)
+  (setf (slot-value sel 'objc-object-pointer) (sel_registerName (sel-name sel)))
+  (call-next-method))
+
 ;;;; sel.lisp ends here

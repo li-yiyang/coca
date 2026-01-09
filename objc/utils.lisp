@@ -89,4 +89,8 @@ Rules:
 
     (t           (intern (str:upcase (str:param-case name))                    package))))
 
+(defun as-boolean (value)
+  "Convert VALUE as boolean value. "
+  (and value t))
+
 ;;;; utils.lisp ends here

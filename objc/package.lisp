@@ -5,6 +5,7 @@
   (:export
    ;; Utils
    #:objc-error
+   #:as-boolean
 
    ;; CFFI
    #:objc-object-pointer
@@ -36,10 +37,14 @@
    ;; ObjC method
    ;; #:define-objc-method
    ;; #:define-objc-protocol
+   #:self
+   #:super
    #:define-objc-method
    #:send
    #:invoke
-   #:can-invoke-p))
+   #:can-invoke-p
+   #:coca-init
+   #:define-coca-init))
 
 (in-package :coca.objc)
 

@@ -267,27 +267,89 @@ Parameters:
               encoding)
             ,documentation))
         ((:object)
-         `(defparameter ,name
-            (coerce-to-objc-object
-             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                           :pointer))
-            ,documentation))
+         `(flet ((,name ()
+                   (coerce-to-objc-object
+                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                                  :pointer))))
+            (defparameter ,name (,name) ,documentation)
+            (define-coca-init :post (setf ,name (,name)))))
         ((:class)
-         `(defparameter ,name
-            (coerce-to-objc-class
-             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                           :pointer))
-            ,documentation))
+         `(flet ((,name ()
+                   (coerce-to-objc-class
+                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                                  :pointer))))
+            (defparameter ,name (,name) ,documentation)
+            (define-coca-init :post (setf ,name (,name)))))
         ((:sel)
-         `(defparameter ,name
-            (coerce-to-selector
-             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                           :pointer))
-            ,documentation))
+         `(flet ((,name ()
+                   (coerce-to-selector
+                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
+                                  :pointer))))
+            (defparameter ,name (,name) ,documentation)
+            (define-coca-init :post (setf ,name (,name)))))
         (otherwise
          `(defconstant ,name
             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
                           ,(objc-encoding-cffi-type encoding))
             ,documentation)))))
+
+(defparameter *coca-pre-init-hooks* ()
+  "A list of hook functions before Coca init. ")
+
+(defparameter *coca-post-init-hooks* ()
+  "A list of hook functions after Coca init. ")
+
+(defun coca-init ()
+  "Initialize Coca foreign pointers.
+
+Dev Note:
+if you save Coca as standalone executable file, you should call
+this method before all the method calling of ObjC methods or objects.
+
+Use `define-coca-init' to clean up and setup how to reload
+ObjC environment."
+  (map nil #'funcall *coca-pre-init-hooks*)
+  ;; rebind ObjC Class pointer
+  (maphash (lambda (- class) (reinitialize-instance class)) *classes*)
+  ;; rebind ObjC SEL pointer
+  (maphash (lambda (- sel)   (reinitialize-instance sel))   *sels*)
+  ;; clear ObjC objects, should be rebind in *coca-post-init-hooks*
+  (clrhash *objc-objects*)
+  ;; TODO: not clear, but recompile the cif and method calling
+  (clrhash *objc-method-encodings*)
+  ;; Clear ffi_type, re-register it
+  (maphash (lambda (- struct)
+             (tg:cancel-finalization struct)
+             (regist-objc-struct (objc-struct-lisp-name struct)
+                                 (objc-struct-objc-name struct)
+                                 (objc-struct-slots     struct)
+                                 (objc-struct-encodings struct)
+                                 (objc-struct-coerce-p  struct)))
+           *objc-structs*)
+  (map nil #'funcall *coca-post-init-hooks*))
+
+(defmacro define-coca-init (hook &body body)
+  "Define HOOK to be triggered when init Coca.
+
+Syntax:
+
+    (define-coca-init { :pre | :post } &body)
+
+Dev Note:
++ :pre will execute the BODY before `coca-init'
+  this is adviced to remove the interned ObjC object
++ :post will execute the BODY after `coca-init'
+  this is adviced to rebind the ObjC object
+
+For example, if you defines an ObjC object as global parameter:
+
+   (defparameter *foo* (get-objc-object-foo))
+   (define-coca-init :post (setf *foo* (get-objc-object-foo)))
+
+This will ensure that the foreign ObjC pointer is correctly
+reinitialized after you close the ObjC environment. "
+  (ecase hook
+    (:pre  `(push (lambda () ,@body) *coca-pre-init-hooks*))
+    (:post `(push (lambda () ,@body) *coca-post-init-hooks*))))
 
 ;;;; sugar.lisp ends here
