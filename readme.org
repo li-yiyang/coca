@@ -123,5 +123,5 @@ to read the documentation of each symbol.
 
 Below is the developping notes on my blog (mostly Chinese):
 + [[https://li-yiyang.github.io/lisp/objc/objc-0/][ObjC (00): ObjC Runtime Inspector]]
-+ [[https://li-yiyang.github.io/lisp/objc-ns-exception/][ObjC [1.5] NSException (EN)]]
-+ [[https://li-yiyang.github.io/lisp/objc-libffi/][ObjC [1.75] libffi, cffi, cffi-grovel, and C]]
++ [[https://li-yiyang.github.io/lisp/objc-ns-exception/][ObjC (1.5) NSException (EN)]]
++ [[https://li-yiyang.github.io/lisp/objc-libffi/][ObjC (1.75) libffi, cffi, cffi-grovel, and C]]
