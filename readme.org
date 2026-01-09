@@ -14,6 +14,13 @@
 Cocoa in Common Lisp
 #+end_example
 
+*NOTE*: currently, only tested on SBCL (2.5.10) on macOS.
+cannot ensure and won't provide support for other implementation
+or other platform (right now). But contributions are welcomed.
+
+* Examples
+A few examples could be found under [[file:examples][=examples=]] directory.
+
 * Subsystems
 ** Coca/ObjC
 Loads =coca/objc= and use package =:coca.objc= (see [[file:objc/readme.org][objc/readme]] for details).
@@ -107,3 +114,14 @@ to read the documentation of each symbol.
 
 * Reference
 + [[https://developer.apple.com/documentation][Apple's Documentation]]
++ [[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]]
+
+  some of the examples are learnt from this repo
++ [[https://github.com/EimaKve/Silicon][Silicon.h (github:EimaKve/Silicon)]]
+
+  some of the examples are learnt from this repo
+
+Below is the developping notes on my blog (mostly Chinese):
++ [[https://li-yiyang.github.io/lisp/objc/objc-0/][ObjC (00): ObjC Runtime Inspector]]
++ [[https://li-yiyang.github.io/lisp/objc-ns-exception/][ObjC [1.5] NSException (EN)]]
++ [[https://li-yiyang.github.io/lisp/objc-libffi/][ObjC [1.75] libffi, cffi, cffi-grovel, and C]]

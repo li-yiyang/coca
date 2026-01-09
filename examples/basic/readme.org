@@ -1,0 +1,50 @@
+#+title: Basic
+#+author: 凉凉
+* A Very basic window
+:PROPERTIES:
+:header-args:lisp: :package coca :results silent
+:END:
+First, load =coca= package:
+
+#+begin_src lisp
+(ql:quickload :coca)
+#+end_src
+
+the following codes are assuming you're running codes
+under =coca= package.
+
+#+begin_src lisp
+(in-package :coca)
+#+end_src
+
+#+begin_src lisp :noweb yes no-export
+<<terminate-app-loop-when-close-window>>
+
+(tmt:with-body-in-main-thread (:blocking t)
+  (sb-int:set-floating-point-modes :traps nil)
+  (let ((app (ns-app))
+        (win (ns-window (make-ns-rect :x 100 :y 100
+                                      :w 300 :h 300)
+                        :title   "A Very basic window"
+                        :visible t)))
+    (run app)))
+#+end_src
+
+#+html: <details><summary>notes...</summary>
+Here we use =terminate= to terminate =ns-app=,
+which is the =NSApplication= of the application.
+
+#+name: terminate-app-loop-when-close-window
+#+begin_src lisp
+(define-objc-method ("NSWindow" "windowShouldClose:") :bool
+  ((sender :object))
+  (terminate (ns-app) sender)
+  t)
+#+end_src
+
+if you found your lisp also dies, it's normal.
+#+html: </details>
+
+Reference:
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Applications/Application/Application.m][Application.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+

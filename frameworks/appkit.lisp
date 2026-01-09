@@ -1402,14 +1402,14 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
                             ns-rect
                             (ns-window-style-mask style)
                             (ns-backing-store-type backing)
-                            (and defer t)
+                            (as-boolean defer)
                             screen)
                     (invoke object
                             "initWithContentRect:styleMask:backing:defer:"
                             ns-rect
                             (ns-window-style-mask style)
                             (ns-backing-store-type backing)
-                            (and defer t)))))
+                            (as-boolean defer)))))
     (setf (visible    window) visible
           (has-shadow window) has-shadow
           (opaque     window) opaque)
@@ -3393,7 +3393,7 @@ function—it will never be executed. If cleanup is necessary, perform
 that cleanup in the delegate’s applicationWillTerminate: method.
 
 see https://developer.apple.com/documentation/appkit/nsapplication/terminate(_:)?language=objc"
-  (invoke ns-app "terminate:" sender))
+  (invoke app "terminate:" sender))
 
 (defmethod send-event ((app ns-application) (event ns-event))
   "Dispatches an event to other objects.

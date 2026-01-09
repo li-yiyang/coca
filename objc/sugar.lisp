@@ -282,6 +282,8 @@ Parameters:
 (defparameter *coca-post-init-hooks* ()
   "A list of hook functions after Coca init. ")
 
+#+sbcl
+(pushnew 'coca-init sb-ext:*init-hooks*)
 (defun coca-init ()
   "Initialize Coca foreign pointers.
 
