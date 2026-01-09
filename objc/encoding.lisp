@@ -57,6 +57,24 @@ Parameter:
     ((cons (eql :struct) (cons symbol null))
      (objc-struct (second name)))))
 
+(defun %alloc-struct-ffi-type (encodings)
+  "Allocate ffi_type for struct with elements of ENCODINGS.
+Return values are ffi_type foreign pointer and pointer array.
+
+Parameters:
++ ENCODINGS: list of ObjC encoding
+"
+  (declare (type list encodings))
+  (let* ((len      (length encodings))
+         (elements (foreign-alloc :pointer :count (1+ len))))
+    (loop :for i :from 0
+          :for encoding :in encodings
+          :do (setf (mem-aref elements :pointer i)
+                    (objc-encoding-ffi-type encoding)))
+    (setf (mem-aref elements :pointer len) (null-pointer))
+    (values (coca_alloc_struct_ffi_type elements)
+            elements)))
+
 (defun regist-objc-struct (lisp-name objc-name slots encodings coerce-p)
   "Register ObjC struct in `coca.objc::*objc-structs*'.
 Return `coca.objc::objc-struct'.
@@ -68,20 +86,14 @@ Parameters:
 + ENCODINGS: list of `objc-basic-encoding'
 + COERCE-P:  list of boolean, whether or not converting struct values
 "
-  (let* ((len      (length encodings))
-         (elements (foreign-alloc :pointer :count (1+ len))))
-    (loop :for i :from 0
-          :for encoding :in encodings
-          :do (setf (mem-aref elements :pointer i)
-                    (objc-encoding-ffi-type encoding)))
-    (setf (mem-aref elements :pointer len) (null-pointer))
-    (let* ((ffi-type (coca_alloc_struct_ffi_type elements))
-           (struct   (make-objc-struct :objc-name objc-name
-                                       :lisp-name lisp-name
-                                       :slots     slots
-                                       :encodings encodings
-                                       :coerce-p  coerce-p
-                                       :ffi-type  ffi-type)))
+  (multiple-value-bind (ffi-type elements)
+      (%alloc-struct-ffi-type encodings)
+    (let ((struct (make-objc-struct :objc-name objc-name
+                                    :lisp-name lisp-name
+                                    :slots     slots
+                                    :encodings encodings
+                                    :coerce-p  coerce-p
+                                    :ffi-type  ffi-type)))
       (tg:finalize struct (lambda ()
                             (foreign-free ffi-type)
                             (foreign-free elements)))

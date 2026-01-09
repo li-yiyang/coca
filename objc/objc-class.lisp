@@ -18,14 +18,14 @@ VAL: lisp class as ObjC class wrapper")
     :initform (make-hash-table :test 'equal)
     :documentation "Methods cache of instance methods.
 KEY: `sel' of methods
-VAL: a function for FFI calling, see `*methods*'.
+VAL: a function for FFI calling or symbol as ObjC callback.
 
 See `coca.objc::objc-class-instance-method'. ")
    (objc-class-methods
     :initform (make-hash-table :test 'equal)
     :documentation "Methods cache of class methods.
 Key: `sel' of methods
-VAL: a function for FFI calling, see `*methods*'.
+VAL: a function for FFI calling or symbol as ObjC callback.
 
 See `coca.objc::objc-class-class-method'. "))
   (:documentation

@@ -257,36 +257,19 @@ Parameters:
            (type string objc-name)
            (type (or null string) documentation))
   `(progn
-     (declaim (type ,(objc-encoding-lisp-type encoding) ,name))
+     (declaim (type ,(objc-encoding-lisp-type objc-encoding) ,name))
      ,(case (atomize encoding)
         ((:union :array)  (error "Don't support `:union' yet. "))
-        ((:struct :pointer)
-         `(defparameter ,name
-            ,(objc-method-foreign-aref-form
-              `(foreign-symbol-pointer ,objc-name :library ',library)
-              encoding)
-            ,documentation))
-        ((:object)
-         `(flet ((,name ()
-                   (coerce-to-objc-object
-                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                                  :pointer))))
-            (defparameter ,name (,name) ,documentation)
-            (define-coca-init :post (setf ,name (,name)))))
-        ((:class)
-         `(flet ((,name ()
-                   (coerce-to-objc-class
-                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                                  :pointer))))
-            (defparameter ,name (,name) ,documentation)
-            (define-coca-init :post (setf ,name (,name)))))
-        ((:sel)
-         `(flet ((,name ()
-                   (coerce-to-selector
-                    (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
-                                  :pointer))))
-            (defparameter ,name (,name) ,documentation)
-            (define-coca-init :post (setf ,name (,name)))))
+        ((:struct :pointer :object :class :sel)
+         (let ((fn (intern (format nil "%DEFINE-OBJC-CONST-STRUCT-~A" objc-name))))
+           `(progn
+              (defvar ,name)
+              (setf (documentation ',name 'variable) ,documentation)
+              (defun ,fn ()
+                (setf ,name ,(objc-method-foreign-aref-form
+                              `(foreign-symbol-pointer ,objc-name :library ',library)
+                              encoding)))
+              (pushnew ',fn *coca-post-init-hooks*))))
         (otherwise
          `(defconstant ,name
             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
@@ -309,23 +292,49 @@ this method before all the method calling of ObjC methods or objects.
 Use `define-coca-init' to clean up and setup how to reload
 ObjC environment."
   (map nil #'funcall *coca-pre-init-hooks*)
+  ;; Clear ffi_type, re-register it
+  (setf +ffi_type_sint8+   (foreign-symbol-pointer "ffi_type_sint8")
+        +ffi_type_uint8+   (foreign-symbol-pointer "ffi_type_uint8")
+        +ffi_type_sint16+  (foreign-symbol-pointer "ffi_type_sint16")
+        +ffi_type_uint16+  (foreign-symbol-pointer "ffi_type_uint16")
+        +ffi_type_sint32+  (foreign-symbol-pointer "ffi_type_sint32")
+        +ffi_type_uint32+  (foreign-symbol-pointer "ffi_type_uint32")
+        +ffi_type_sint64+  (foreign-symbol-pointer "ffi_type_sint64")
+        +ffi_type_uint64+  (foreign-symbol-pointer "ffi_type_uint64")
+        +ffi_type_float+   (foreign-symbol-pointer "ffi_type_float")
+        +ffi_type_double+  (foreign-symbol-pointer "ffi_type_double")
+        +ffi_type_pointer+ (foreign-symbol-pointer "ffi_type_pointer")
+        +ffi_type_void+    (foreign-symbol-pointer "ffi_type_void"))
+  (maphash (lambda (- struct)
+             (declare (type objc-struct struct))
+             (tg:cancel-finalization struct)
+             (multiple-value-bind (ffi-type elements)
+                 (%alloc-struct-ffi-type (objc-struct-encodings struct))
+               (setf (objc-struct-ffi-type struct) ffi-type)
+               (tg:finalize struct (lambda ()
+                                     (foreign-free ffi-type)
+                                     (foreign-free elements)))
+               struct))
+           *objc-structs*)
+  ;; Clear ffi_cif, re-register it
+  (maphash (lambda (- method-encoding)
+             (declare (type objc-method-encoding method-encoding))
+             (tg:cancel-finalization method-encoding)
+             (multiple-value-bind (cif atypes)
+                 (%alloc-ffi-cif (objc-method-encoding-ret    method-encoding)
+                                 (objc-method-encoding-atypes method-encoding))
+               (setf (objc-method-encoding-cif method-encoding) cif)
+               (tg:finalize method-encoding (lambda ()
+                                              (foreign-free cif)
+                                              (foreign-free atypes)))
+               method-encoding))
+           *objc-method-encodings*)
   ;; rebind ObjC Class pointer
   (maphash (lambda (- class) (reinitialize-instance class)) *classes*)
   ;; rebind ObjC SEL pointer
   (maphash (lambda (- sel)   (reinitialize-instance sel))   *sels*)
   ;; clear ObjC objects, should be rebind in *coca-post-init-hooks*
   (clrhash *objc-objects*)
-  ;; TODO: not clear, but recompile the cif and method calling
-  (clrhash *objc-method-encodings*)
-  ;; Clear ffi_type, re-register it
-  (maphash (lambda (- struct)
-             (tg:cancel-finalization struct)
-             (regist-objc-struct (objc-struct-lisp-name struct)
-                                 (objc-struct-objc-name struct)
-                                 (objc-struct-slots     struct)
-                                 (objc-struct-encodings struct)
-                                 (objc-struct-coerce-p  struct)))
-           *objc-structs*)
   (map nil #'funcall *coca-post-init-hooks*))
 
 (defmacro define-coca-init (hook &body body)
@@ -349,7 +358,7 @@ For example, if you defines an ObjC object as global parameter:
 This will ensure that the foreign ObjC pointer is correctly
 reinitialized after you close the ObjC environment. "
   (ecase hook
-    (:pre  `(push (lambda () ,@body) *coca-pre-init-hooks*))
-    (:post `(push (lambda () ,@body) *coca-post-init-hooks*))))
+    (:pre  `(pushnew (lambda () ,@body) *coca-pre-init-hooks*  :test #'equal))
+    (:post `(pushnew (lambda () ,@body) *coca-post-init-hooks* :test #'equal))))
 
 ;;;; sugar.lisp ends here

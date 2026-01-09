@@ -18,6 +18,31 @@ VAL: `coca.objc::objc-method-encoding'")
   (calling  nil   :type function)
   (cif      nil   :type foreign-pointer))
 
+(defun %alloc-ffi-cif (ret arg-types)
+  "Allocate ffi_cif for method of encoding.
+Return values are
++ ffi_cif foreign pointer,
++ ffi_type pointer array
++ and calling function.
+
+Parameters:
++ RET: basic ObjC encoding
++ ARG-TYPES: list of ObjC encoding
+"
+  (declare (type list                arg-types)
+           (type objc-basic-encoding ret))
+  (let* ((len    (length arg-types))
+         (atypes (foreign-alloc :pointer :count len)))
+    (loop :for i :from 0
+          :for enc :in arg-types
+          :do (setf (mem-aref atypes :pointer i)
+                    (objc-encoding-ffi-type enc)))
+    (let ((cif (coca_alloc_ffi_cif len (objc-encoding-ffi-type ret) atypes)))
+      (values cif
+              atypes
+              (compile nil (objc-method-foreign-call-form
+                            cif ret arg-types))))))
+
 (defun coerce-to-objc-method-encoding (encoding)
   "Make `coca.objc::objc-method-encoding' with ENCODING.
 
@@ -28,20 +53,14 @@ Parameter:
   (with-cached (encoding *objc-method-encodings*)
     (multiple-value-bind (arg-types ret)
         (decode-objc-type-encoding encoding)
-      (let* ((len    (length (the list arg-types)))
-             (atypes (foreign-alloc :pointer :count len)))
-        (loop :for i :from 0
-              :for enc :in arg-types
-              :do (setf (mem-aref atypes :pointer i)
-                        (objc-encoding-ffi-type enc)))
-        (let* ((cif  (coca_alloc_ffi_cif len (objc-encoding-ffi-type ret) atypes))
-               (info (make-objc-method-encoding
+      (multiple-value-bind (cif atypes calling)
+          (%alloc-ffi-cif ret arg-types)
+        (let* ((info (make-objc-method-encoding
                       :encoding encoding
                       :atypes   arg-types
                       :ret      ret
                       :cif      cif
-                      :calling  (compile nil (objc-method-foreign-call-form
-                                              cif ret arg-types)))))
+                      :calling  calling)))
           (tg:finalize info (lambda ()
                               (foreign-free cif)
                               (foreign-free atypes)))
@@ -127,8 +146,7 @@ Return S-expression to be used in `coca.objc::objc-encoding-foreign-aref-form'.
 Parameter:
 + FOREIGN: symbol of variable to the foreign result pointer
 + ENCODING: ObjC encoding"
-  (declare (type symbol foreign)
-           (type objc-basic-encoding encoding))
+  (declare (type objc-basic-encoding encoding))
   (case (atomize encoding)
     (:string                            ; char **FOREIGN;
      `(the string (foreign-string-to-lisp (mem-aref ,foreign :pointer))))
@@ -518,35 +536,39 @@ Example:
            (type string method)
            (type symbol name)
            (type objc-encoding ret))
-  (let* ((class (coerce-to-objc-class class))
-         (name  (or name (intern (format nil "%~A-~A"
-                                         (objc-class-name class)
-                                         method))))
-         (sel   (gensym "SEL")))
+  (let* ((class* (coerce-to-objc-class class))
+         (name   (or name (intern (format nil "%~A-~A"
+                                          (objc-class-name class*)
+                                          method))))
+         (fn     (intern (format nil "%DEFINE-OBJC-METHOD-~A" name)))
+         (sel    (gensym "SEL")))
     (declare (type symbol name))
     `(progn
-       (defcallback ,name ,(objc-encoding-cffi-type ret)
-           ((self :pointer)
-            (,sel :pointer)
-            ,@(loop :for (var enc) :in lambda-list
-                    :collect (list var (objc-encoding-cffi-type enc))))
-         (declare (ignore ,sel))
-         (let ((self (coerce-to-objc-object self))
-               ,@(loop :for (var enc) :in lambda-list
-                       :for type := (atomize enc)
-                       :if (eql type :object)
-                         :collect `(,var (coerce-to-objc-object          ,var))
-                       :if (eql type :class)
-                         :collect `(,var (pointer-to-objc-class-nullable ,var))
-                       :if (eql type :sel)
-                         :collect `(,var (coerce-to-selector             ,var))))
-           (declare (ignorable self))
-           ,@body))
-       (%define-objc-method ,class
-                            (coerce-to-selector ,method)
-                            ',name
-                            (encode-objc-type-encoding
-                             '(,ret :object :sel ,@(mapcar #'second lambda-list))))
-       ',name)))
+       (defun ,fn ()
+         (defcallback ,name ,(objc-encoding-cffi-type ret)
+             ((self :pointer)
+              (,sel :pointer)
+              ,@(loop :for (var enc) :in lambda-list
+                      :collect (list var (objc-encoding-cffi-type enc))))
+           (declare (ignore ,sel))
+           (let ((self (coerce-to-objc-object self))
+                 ,@(loop :for (var enc) :in lambda-list
+                         :for type := (atomize enc)
+                         :if (eql type :object)
+                           :collect `(,var (coerce-to-objc-object          ,var))
+                         :if (eql type :class)
+                           :collect `(,var (pointer-to-objc-class-nullable ,var))
+                         :if (eql type :sel)
+                           :collect `(,var (coerce-to-selector             ,var))))
+             (declare (ignorable self))
+             ,@body))
+         (%define-objc-method (coerce-to-objc-class ,class)
+                              (coerce-to-selector ,method)
+                              ',name
+                              ,(encode-objc-type-encoding
+                                `(,ret :object :sel ,@(mapcar #'second lambda-list))))
+         ',name)
+       (pushnew ',fn *coca-post-init-hooks* :test #'equal)
+       (,fn))))
 
 ;;;; method.lisp ends here
