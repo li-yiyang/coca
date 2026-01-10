@@ -82,8 +82,21 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    ;; App Extensions
 
    ;; Views and Controls
-   #:coca
+   #:ns-view
+   #:ns-text-alignment
+   #:as-ns-text-alignment
+   #:ns-text-alignment-p
+   #:decode-ns-text-alignment
+   #:ns-line-break-mode
+   #:as-ns-line-break-mode
+   #:ns-line-break-mode-p
+   #:decode-ns-line-break-mode
    #:ns-control
+   #:enablep
+   #:string-value
+   #:alignment
+   #:font
+   #:line-break-mode
    #:ns-cell
    #:ns-action-cell
    #:ns-split-view
@@ -201,6 +214,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-event-modifier-flags-p
    #:decode-ns-event-modifier-flags
    #:ns-event-mask
+   #:as-ns-event-mask
    #:ns-event-mask-p
    #:decode-ns-event-mask
    #:ns-event
@@ -362,6 +376,21 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 
    ;; Fonts
    #:ns-font
+   #:font-descriptor
+   #:family-name
+   #:font-name
+   #:as-ns-font-size
+   #:+ns-font-weight-ultra-light+
+   #:+ns-font-weight-thin+
+   #:+ns-font-weight-light+
+   #:+ns-font-weight-regular+
+   #:+ns-font-weight-medium+
+   #:+ns-font-weight-semibold+
+   #:+ns-font-weight-bold+
+   #:+ns-font-weight-heavy+
+   #:+ns-font-weight-black+
+   #:as-ns-font-weight
+   #:as-ns-font
    #:ns-font-descriptor
    #:ns-font-manager
    #:ns-font-collection
@@ -707,9 +736,60 @@ let the parent view handle any events that you don’t.
 
 see https://developer.apple.com/documentation/appkit/nsview?language=objc"))
 
+(define-objc-enum ns-text-alignment
+  "Constants that specify text alignment.
+see https://developer.apple.com/documentation/appkit/nstextalignment?language=objc"
+  (:left       0 "Text is left-aligned.")
+  (:right      2 "Text is right-aligned.")
+  (:center     1 "Text is center-aligned.")
+  (:justified  3 "Text is justified.")
+  (:natural    4 "Text uses the default alignment for the current"
+               "localization of the app."))
+
+(define-objc-enum ns-line-break-mode
+  "Constants that specify what happens when a line is too long for a container.
+see https://developer.apple.com/documentation/appkit/nslinebreakmode?language=objc"
+  (:word-wrapping     0
+                      "The value that indicates wrapping occurs at word "
+                      "boundaries, unless the word doesn’t fit on a "
+                      "single line.")
+  (:char-wrapping     1
+                      "The value that indicates wrapping occurs before the"
+                      "first character that doesn’t fit.")
+  (:clipping          2
+                      "The value that indicates lines don’t extend past the "
+                      "edge of the text container.")
+  (:truncating-head   3
+                      "The value that indicates that a line displays"
+                      "so that the end fits in the container and an"
+                      "ellipsis glyph indicates the missing text at the"
+                      "beginning of the line.")
+  (:truncating-tail   4
+                      "The value that indicates a line displays so"
+                      "that the beginning fits in the container and an"
+                      "ellipsis glyph indicates the missing text at the"
+                      "end of the line.")
+  (:truncating-middle 5
+                      "The value that indicates that a line displays"
+                      "so that the beginning and end fit in the"
+                      "container and an ellipsis glyph indicates the"
+                      "missing text in the middle."))
+
 (define-objc-class "NSControl" ()
-  (("stringValue"
-    :reader string-value
+  (;; Enabling and Disabling the Control
+   ("enabled"
+    :accessor enabledp
+    :documentation
+    "A Boolean value that indicates whether the receiver reacts to
+mouse events.
+
+The value of this property is `t' if the receiver responds to mouse
+events; otherwise, `nil'.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/isenabled?language=objc")
+   ;; Accessing the Control's Value
+   ("stringValue"
+    :reader string-value          ; see (setf string-value) for writer
     :documentation
     "The value of the receiver’s cell as an NSString object.
 
@@ -725,13 +805,47 @@ needing to be redisplayed; NSActionCell performs its own updating of
 cells.
 
 see https://developer.apple.com/documentation/appkit/nscontrol/stringvalue?language=objc")
+   ;; Formatting Text
+   ("alignment"
+    :accessor alignment
+    :before   as-ns-text-alignment
+    :after    decode-ns-text-alignment
+    :documentation
+    "The alignment mode of the text in the receiver’s cell.
+
+The value of this property can be one of the following constants:
+NSLeftTextAlignment, NSRightTextAlignment,NSCenterTextAlignment,
+NSJustifiedTextAlignment, or NSNaturalTextAlignment. The default value
+is NSNaturalTextAlignment. Setting this property while the cell is
+currently being edited aborts the edits to change the alignment.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/alignment?language=objc")
    ("font"
-    :reader font
+    :accessor font
+    :before   as-ns-font
     :documentation
     "The font used to draw text in the receiver’s cell.
-see https://developer.apple.com/documentation/appkit/nscontrol/font?language=objc"))
+
+If the cell is being edited, setting this property causes the text in
+the cell to be redrawn in the new font, and the cell’s editor (the
+`ns-text' object used globally for editing) is updated with the new
+font object.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/font?language=objc")
+   ("lineBreakMode"
+    :accessor line-break-mode
+    :before   ns-line-break-mode
+    :after    decode-ns-line-break-mode
+    :documentation
+    "The line break mode to use for text in the control’s cell.
+
+see `ns-line-break-mode'
+
+see https://developer.apple.com/documentation/appkit/nscontrol/linebreakmode?language=objc"))
   (:documentation
-   "A specialized view, such as a button or text field, that notifies your app of relevant events using the target-action design pattern.
+   "A specialized view, such as a button or text field, that notifies
+your app of relevant events using the target-action design pattern.
+
 see https://developer.apple.com/documentation/appkit/nscontrol?language=objc"))
 
 (defmethod (setf string-value) ((string string) (control ns-control))
@@ -1264,8 +1378,8 @@ see https://developer.apple.com/documentation/appkit/nswindow/contentview?langua
    ;; Configuring the Window's Appearance
    ("styleMask"
     :accessor style-mask
-    :after decode-ns-window-style-mask
-    :before ns-window-style-mask
+    :after    decode-ns-window-style-mask
+    :before   as-ns-window-style-mask
     :documentation
     "Flags that describe the window’s current style,
 such as if it’s resizable or in full-screen mode.
@@ -1551,15 +1665,15 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
       (invoke window
               "initWithContentRect:styleMask:backing:defer:screen:"
               frame
-              (ns-window-style-mask  style)
-              (ns-backing-store-type backing)
+              (as-ns-window-style-mask  style)
+              (as-ns-backing-store-type backing)
               (as-boolean defer)
               screen)
       (invoke window
               "initWithContentRect:styleMask:backing:defer:"
               frame
-              (ns-window-style-mask  style)
-              (ns-backing-store-type backing)
+              (as-ns-window-style-mask  style)
+              (as-ns-backing-store-type backing)
               (as-boolean defer)))
   (setf (visiblep     window) visiblep
         (has-shadow-p window) has-shadow-p
@@ -2050,7 +2164,7 @@ see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift
 (define-objc-class "NSEvent" ()
   (("type"
     :reader event-type
-    :after decode-ns-event-type
+    :after  decode-ns-event-type
     :documentation
     "The event’s type.
 See https://developer.apple.com/documentation/appkit/nsevent/type?language=objc")
@@ -3180,7 +3294,32 @@ The font descriptor contains a mutable dictionary of optional
 attributes for creating an `ns-font' object. For more information about
 font descriptors, see `ns-font-descriptor'.
 
-see https://developer.apple.com/documentation/appkit/nsfont/fontdescriptor?language=objc"))
+see https://developer.apple.com/documentation/appkit/nsfont/fontdescriptor?language=objc")
+   ("familyName"
+    :reader family-name
+    :documentation
+    "The family name of the font.
+For example, \"Times\" or \"Helvetica\".
+
+This name is the one that NSFontManager uses and may differ slightly
+from the AFM name.
+
+The value in this property is intended for an application’s internal
+usage and not for display. To get a name that you can display to the
+user, use the displayName property instead.
+
+see https://developer.apple.com/documentation/appkit/nsfont/familyname?language=objc")
+   ("fontName"
+    :reader font-name
+    :documentation
+    "The full name of the font, as used in PostScript language code.
+For example, \"Times-Roman\" or \"Helvetica-Oblique\".
+
+The value in this property is intended for an application’s internal
+usage and not for display. To get a name that you can display to the
+user, use the displayName property instead.
+
+see https://developer.apple.com/documentation/appkit/nsfont/fontname?language=objc"))
   (:documentation
    "The representation of a font in an app.
 
@@ -3282,27 +3421,152 @@ Return `ns-font'.
 Parameters:
 + SIZE: font size in points (see `as-ns-font-size')
 + WEIGHT: font weight (see `as-ns-font-weight')
-"))
+")
+  (:method ((font ns-font) &key) font)
+  (:method ((font (eql :system)) &key (size :system) (weight :regular weight?))
+    "Returns the standard system font with the specified size.
 
-(defmethod as-ns-font ((system (eql :system))
-                       &key
-                         (size   :system)
-                         (weight :regular weight?))
-  "Returns the standard system font with the specified size."
-  (if weight?
-      (if (eql weight :bold)
-          (invoke 'ns-font "boldSystemFontOfSize:"
-                  (as-ns-font-size size))
-          (invoke 'ns-font "systemFontOfSize:weight:"
-                  (as-ns-font-size   size)
-                  (as-ns-font-weight weight)))
-      (invoke 'ns-font "systemFontOfSize:"
-              (as-ns-font-size size))))
+Parameters:
++ WEIGHT:
+  if `:bold', will call ObjC method boldSystemFontOfSize:
+  otherwise, call systemFontOfSize:weight:
+
+  if not set, call systemFontOfSize: by default
+"
+    (if weight?
+        (if (eql weight :bold)
+            (invoke 'ns-font "boldSystemFontOfSize:"
+                    (as-ns-font-size size))
+            (invoke 'ns-font "systemFontOfSize:weight:"
+                    (as-ns-font-size   size)
+                    (as-ns-font-weight weight)))
+        (invoke 'ns-font "systemFontOfSize:"
+                (as-ns-font-size size))))
+  (:method ((font (eql :system-monospace)) &key (size :system) (weight :regular))
+    "Returns a monospace version of the system font with the specified
+size and weight.
+
+This invokes ObjC method monospacedSystemFontOfSize:weight:.
+
+Use the returned font for interface items that require monospaced
+glyphs.  The returned font includes monospaced glyphs for the Latin
+characters and the symbols commonly found in source code. Glyphs for
+other symbols are usually wider or narrower than the monospaced
+characters. To ensure the font uses fixed spacing for all characters,
+apply the NSFontFixedAdvanceAttribute attribute to the any strings you
+render.
+
+see https://developer.apple.com/documentation/appkit/nsfont/monospacedsystemfont(ofsize:weight:)?language=objc"
+    (invoke 'ns-font "monospacedSystemFontOfSize:weight:"
+            (as-ns-font-size   size)
+            (as-ns-font-weight weight)))
+  (:method ((font (eql :system-monospace-digit)) &key (size :system) (weight :regular))
+    "Returns a version of the standard system font that contains
+monospaced digit glyphs.
+
+This invokes ObjC method monospacedDigitSystemFontOfSize:weight:
+
+The font returned by this method has monospaced digit glyphs. Glyphs
+for other characters and symbols may be wider or narrower than the
+monospaced characters. To ensure the font uses fixed spacing for all
+characters, apply the NSFontFixedAdvanceAttribute attribute to the any
+strings you render.
+
+see https://developer.apple.com/documentation/appkit/nsfont/monospaceddigitsystemfont(ofsize:weight:)?language=objc"
+    (invoke 'ns-font "monospacedDigitSystemFontOfSize:weight:"
+            (as-ns-font-size   size)
+            (as-ns-font-weight weight)))
+  (:method ((font (eql :label)) &key (size :system))
+    "Returns the font used for standard interface labels in the
+specified size.
+
+This invokes ObjC method labelFontOfSize:
+
+The label font (Lucida Grande Regular 10 point) is used for the labels
+on toolbar buttons and to label tick marks on full-size sliders. See
+The macOS Environment in macOS Human Interface Guidelines for more
+information about system fonts.
+
+see https://developer.apple.com/documentation/appkit/nsfont/labelfont(ofsize:)?language=objc"
+    (invoke 'ns-font "labelFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :message)) &key (size :system))
+    "Returns the font used for standard interface items, such as
+button labels, menu items, and so on, in the specified size.
+
+This invokes ObjC method messageFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/messagefont(ofsize:)?language=objc"
+    (invoke 'ns-font "messageFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :menu-bar)) &key (size :system))
+    "Returns the font used for menu bar items, in the specified size.
+
+This invokes ObjC method menuBarFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/menubarfont(ofsize:)?language=objc"
+    (invoke 'ns-font "menuBarFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :menu)) &key (size :system))
+    "Returns the font used for menu items, in the specified size.
+
+This invokes ObjC method menuFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/menufont(ofsize:)?language=objc"
+    (invoke 'ns-font "menuFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :control-content)) &key (size :system))
+    "Returns the font used for the content of controls in the
+specified size.
+
+This invokes ObjC method controlContentFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/controlcontentfont(ofsize:)?language=objc"
+    (invoke 'ns-font "controlContentFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :title-bar)) &key (size :system))
+    "Returns the font used for window title bars, in the specified size.
+
+This invokes ObjC method titleBarFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/titlebarfont(ofsize:)?language=objc"
+    (invoke 'ns-font "titleBarFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :palette)) &key (size :system))
+    "Returns the font used for palette window title bars, in the
+specified size.
+
+This invokes ObjC method paletteFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/palettefont(ofsize:)?language=objc"
+    (invoke 'ns-font "paletteFontOfSize:" (as-ns-font-size size)))
+  (:method ((font (eql :tool-tips)) &key (size :system))
+    "Returns the font used for tool tips labels, in the specified size.
+
+This invokes ObjC method toolTipsFontOfSize:
+
+see https://developer.apple.com/documentation/appkit/nsfont/tooltipsfont(ofsize:)?language=objc"
+    (invoke 'ns-font "toolTipsFontOfSize:" (as-ns-font-size size))))
 
 (define-objc-class "NSFontDescriptor" ()
   ()
   (:documentation
    "A dictionary of attributes that describe a font.
+
+A font descriptor can be used to create or modify an `ns-font'
+object. The system provides a font matching capability, so that you
+can partially describe a font by creating a font descriptor with, for
+example, just a family name. You can then find all the available fonts
+on the system with a matching family name using
+matchingFontDescriptorsWithMandatoryKeys:.
+
+There are several ways to create a new `ns-font-descriptor' object.
+You can use alloc and initWithFontAttributes:,
+fontDescriptorWithFontAttributes:, fontDescriptorWithName:matrix:, or
+fontDescriptorWithName:size:. to create a font descriptor based on
+either your custom attributes dictionary or on a specific font’s name
+and size. Alternatively you can use one of the fontDescriptor…
+instance methods (such as fontDescriptorWithFace:) to create a
+modified version of an existing descriptor. The latter methods are
+useful if you have an existing descriptor and simply want to change
+one aspect.
+
+All attributes in the attributes dictionary are optional.
+
 see https://developer.apple.com/documentation/appkit/nsfontdescriptor?language=objc"))
 
 ;;; Management
@@ -3608,7 +3872,7 @@ see https://developer.apple.com/documentation/appkit/nsapplication/nextevent(mat
            (type (or ns-string string)   mode))
   (invoke app
           "nextEventMatchingMask:untilDate:inMode:dequeue:"
-          (apply #'ns-event-mask (coca.objc::listfy mask))
+          (apply #'as-ns-event-mask (coca.objc::listfy mask))
           (or util (ns-date-distant-future))
           mode
           (and deque t)))

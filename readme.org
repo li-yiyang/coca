@@ -158,7 +158,10 @@ caution.
   + =as-ns-font=:
 
 + =decode-xxx=:
-  defined by =define-objc-enum= to convert ObjC mask/enum as lisp flags
+  convert ObjC values into lisp value
+
+  by default, =define-objc-enum= will automatically generate decoder
+  for enum numbers
 
 *Methods*:
 + use lisp methods rather than ObjC methods
@@ -209,6 +212,12 @@ caution.
   Example:
 
   + =(init (alloc 'ns-window) :frame (make-ns-rect :w 200 :h 200))=
++ =xxxp= and =xxx-xxx-p=: boolean test slots should have accessor function
+  with =p= (lisp style) testing names
+
+  Example:
+
+  + =(visiblep window)=
 
 *** Optimization of =Coca/ObjC=
 I cannot say that current =Coca/ObjC= is perfectly working.

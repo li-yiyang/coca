@@ -131,7 +131,7 @@ Dev Note:
 this will define:
 + lisp type of NAME
 + a lisp function <NAME>-p to test if is valid flag
-+ an encoder function of NAME to convert enum keywords to unsigned-byte
++ an encoder function of as-<NAME> to convert enum keywords to unsigned-byte
 + a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
 "
   (let ((docstring (pop bindings)))
@@ -172,7 +172,7 @@ this will define:
            (flet ((flagp (flag) (and (keywordp flag) (typep flag ',name))))
              (or (flagp flag)
                  (and (listp flag) (every #'flagp flag)))))
-         (defun ,name (flag &rest flags)
+         (defun ,(intern (str:concat "AS-" (symbol-name name))) (flag &rest flags)
            ,(format nil
                     "Convert FLAGS into ObjC enum numbers.
 Return `unsigned-byte' as enum numbers.

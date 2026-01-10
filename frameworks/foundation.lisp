@@ -170,6 +170,7 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-compound-predicate
    #:ns-sort-descriptor
    #:ns-ordered
+   #:as-ns-ordered
    #:ns-ordered-p
    #:decode-ns-ordered
 
