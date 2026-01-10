@@ -2,7 +2,7 @@
 
 (defsystem #:coca
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   :version "0.0.0"
   :description "Cocoa in Common Lisp"
   :depends-on (:coca/objc
@@ -12,7 +12,7 @@
 
 (defsystem #:coca/objc
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   ;; ROADMAP:
   ;; + 0.1.0: can call ObjC method
   ;; + 0.2.0: can define ObjC class, can implement ObjC method
@@ -52,7 +52,7 @@ LispWorks' API."
 
 (defsystem #:coca/frameworks
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   ;; Version Rules
   ;; ================
   ;; major.minor.patch
@@ -89,7 +89,7 @@ exported symbols.
 
 (defsystem #:coca/frameworks/appkit
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   :description "ObjC bindings of AppKit Framework"
   :long-description
   "Construct and manage a graphical, event-driven user interface for your macOS app.
@@ -106,7 +106,7 @@ see https://developer.apple.com/documentation/AppKit?language=objc"
 
 (defsystem #:coca/frameworks/foundation
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   :description "ObjC bindings of Foundation Framework"
   :long-description
   "Access essential data types, collections, and operating-system services to
@@ -125,7 +125,7 @@ see https://developer.apple.com/documentation/Foundation?language=objc"
 
 (defsystem #:coca/frameworks/webkit
   :author ("凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   :description "ObjC bindings of Webkit Framework"
   :long-description
   "Integrate web content seamlessly into your app,

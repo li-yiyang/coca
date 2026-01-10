@@ -18,7 +18,12 @@ Cocoa in Common Lisp
 cannot ensure and won't provide support for other implementation
 or other platform (right now). But contributions are welcomed.
 
-* Examples
+* Documentations
+Coca is (or *SHOULD BE*) self-documented.
+Load the system and use =sly-describe-symbol= or SLIME functions
+to read the documentation of each symbol.
+
+** Examples
 A few examples could be found under [[file:examples][=examples=]] directory.
 
 * Subsystems
@@ -107,10 +112,107 @@ For more information about WebKit, go to https://webkit.org.
 see https://developer.apple.com/documentation/WebKit?language=objc
 #+end_example
 
-* Documentations
-Coca is (or *SHOULD BE*) self-documented.
-Load the system and use =sly-describe-symbol= or SLIME functions
-to read the documentation of each symbol.
+* Dev Note
+** License
+=Coca= is distributed under the LLGPL (Lisp Lesser General Public
+License). You are free to use =Coca= as a library within your commercial
+Cocoa applications. However, I kindly ask that any improvements or
+modifications to Coca itself remain open-sourced, so that the entire
+community can benefit and Coca can continue to evolve through your
+contributions.
+
+** How to Contribute
+*** ObjC frameworks
+**** No wrapping, just use =Coca/ObjC=
+If you just want to do some rapid prototyping or you need something
+that are not provided with =Coca= currently, you can use functions
+provided in =Coca/ObjC= to call ObjC methods directly:
+
+For example:
++ =[object SEL ...]= could be written as =(invoke object SEL ...)=
+
+Note that it's also recommanded to load =Coca/Frameworks= system
+(or at least =Coca/Frameworks/Foundation=) since it wrapps a lot
+of ObjC method in the lispy style.
+
+**** Trivial wrapping with =devtools/parse-apple-docs.js=
+I wrote a helper script in =devtools/parse-apple-docs.js=, which
+could be used to extract definitions from Apple's documentation
+website. It maynot always generate correct code so use it with
+caution.
+
+**** Lispy wrapper codes
+*Style Guide*:
++ =define-objc-const=:
+  the const should be named like =+const-name+=
+
+  Example:
+  + =+ns-foundation-version-number+=
+
+*Values converting*:
++ =as-xxx=:
+  convert lisp values into ObjC form
+
+  Example:
+  + =as-boolean=: convert values as ObjC =:bool=
+  + =as-ns-font=:
+
++ =decode-xxx=:
+  defined by =define-objc-enum= to convert ObjC mask/enum as lisp flags
+
+*Methods*:
++ use lisp methods rather than ObjC methods
+
+  Example:
+  + instead of writing
+
+    #+begin_src lisp :eval no
+    (define-objc-method ("MyWindow" "init") :object ()
+      (invoke (super) "init")
+      (invoke self "..."))
+    #+end_src
+
+    use lisp method to replace the initialize logic like:
+
+    #+begin_src lisp :eval no
+    (defmethod init ((window 'my-window))
+      (call-next-method)
+      (invoke window "..."))
+    #+end_src
+  + instead of writing
+
+    #+begin_src lisp :eval no
+    (define-objc-method ("ClassA" "method") :void ()
+      (do-something))
+
+    (define-objc-method ("SubclassOfClassA" "method") :void ()
+      (invoke (super) "method")
+      (do-something))
+    #+end_src
+
+    regist ObjC method in "root" class and use CLOS method
+    to process different classes
+
+    #+begin_src lisp :eval no
+    (defgeneric method (object))
+
+    (define-objc-method ("ClassA" "method") :void
+      (method self))
+
+    (defmethod ((object subclass-of-class-a))
+      ...)
+    #+end_src
+
+*Generic functions*:
++ =init=: implement =init= to set the logic of creating an ObjC object
+
+  Example:
+
+  + =(init (alloc 'ns-window) :frame (make-ns-rect :w 200 :h 200))=
+
+*** Optimization of =Coca/ObjC=
+I cannot say that current =Coca/ObjC= is perfectly working.
+The code and the performance should be more robust.
 
 * Reference
 + [[https://developer.apple.com/documentation][Apple's Documentation]]

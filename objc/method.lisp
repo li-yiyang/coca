@@ -508,6 +508,10 @@ Parameters:
   "Return `coca.objc::objc-super' as wrapper of self. "
   `(make-objc-super :self ,self :class (objc-super-class-of ,self)))
 
+(setf (documentation 'self 'variable)
+      "SELF is locally bind within `define-objc-method' body.
+SELF refers to the current object being called in the ObjC method. ")
+
 (trivial-indent:define-indentation define-objc-method (4 4 &lambda &body))
 (defmacro define-objc-method ((class method &optional name) ret lambda-list &body body)
   "Define ObjC instance METHOD for CLASS.

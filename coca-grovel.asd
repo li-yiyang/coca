@@ -3,7 +3,7 @@
 (defsystem #:coca-grovel
   :author ("Dan Knapp <dankna@accela.net>" ; original author of cffi-grovel
            "凉凉")
-  :license "LGPL"
+  :license "LLGPL"
   ;; ROADMAP:
   ;; + 0.0.1: :objc-file as replacement of :cffi-wrapper-file
   ;; + 0.0.2: lispy sugar to write the :objc-file

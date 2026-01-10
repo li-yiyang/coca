@@ -708,10 +708,37 @@ let the parent view handle any events that you don’t.
 see https://developer.apple.com/documentation/appkit/nsview?language=objc"))
 
 (define-objc-class "NSControl" ()
-  ()
+  (("stringValue"
+    :reader string-value
+    :documentation
+    "The value of the receiver’s cell as an NSString object.
+
+If the control contains many cells (for example, NSMatrix), then this
+property contains the value of the currently selected cell. If the
+control is in the process of editing the affected cell, then it
+invokes the validateEditing method before getting the value.
+
+If the cell is being edited, setting this property aborts all editing
+before setting the value. If the cell does not inherit from
+NSActionCell, setting this property marks the cell’s interior as
+needing to be redisplayed; NSActionCell performs its own updating of
+cells.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/stringvalue?language=objc")
+   ("font"
+    :reader font
+    :documentation
+    "The font used to draw text in the receiver’s cell.
+see https://developer.apple.com/documentation/appkit/nscontrol/font?language=objc"))
   (:documentation
    "A specialized view, such as a button or text field, that notifies your app of relevant events using the target-action design pattern.
 see https://developer.apple.com/documentation/appkit/nscontrol?language=objc"))
+
+(defmethod (setf string-value) ((string string) (control ns-control))
+  (invoke control "setStringValue:" (string-to-ns-string string)))
+
+(defmethod (setf string-value) ((string ns-string) (control ns-control))
+  (invoke control "setStringValue:" string))
 
 (define-objc-class "NSCell" ()
   ()
@@ -2644,7 +2671,7 @@ see https://developer.apple.com/documentation/appkit/nstextfield/bezelstyle-swif
 (define-objc-class "NSTextField" ()
   (;; Controlling Selection and Editing
    ("selectable"
-    :accessor selectable
+    :accessor selectablep
     :documentation
     "A Boolean value that determines whether the user can select the
 content of the text field.
@@ -2656,7 +2683,7 @@ If `nil', the text is neither editable nor selectable.
 
 see https://developer.apple.com/documentation/appkit/nstextfield/isselectable?language=objc")
    ("editable"
-    :accessor editable
+    :accessor editablep
     :before   as-boolean
     :documentation
     "A Boolean value that controls whether the user can edit the value
@@ -2828,6 +2855,53 @@ switches to this compatibility mode when it encounters text content
 that’s not yet supported.
 
 see https://developer.apple.com/documentation/appkit/nstextfield?language=objc"))
+
+(defmethod init ((field ns-text-field)
+                 &key
+                 frame
+                 text
+                 (draws-background-p nil draws-background?)
+                 (background-color   nil background-color?)
+                 (text-color         nil text-color?)
+                 (editablep          nil editable?)
+                 (selectablep        nil selectable?)
+                 (font               nil font?)
+                 (bezeledp           nil bezeled?)
+                 &allow-other-keys)
+  "Initialize TEXT.
+
+Parameters:
++ FRAME: `ns-rect'
+  The frame rectangle for the created view object.
+  If setting, will use initWithFrame: method to initialize the
+  `ns-text-field'.
++ TEXT:
+  The text value of
+
+Styles Parameters:
++ EDITABLEP:
++ SELECTABLEP: "
+  (declare (type (or null ns-rect) frame))
+  (cond (frame (invoke field "initWithFrame:" frame)
+               (when text (setf (string-value field) text)))
+        (t     (error "Does not know how to init ~S. "
+                      (class-name (class-of field)))))
+  (if background-color?
+      ;; Ignore `draws-background-p'
+      (if (null background-color)
+          (setf (draws-background-p field) nil)
+          (setf (draws-background-p field) t
+                (background-color   field) background-color))
+      ;; if not setting `background-color',
+      ;; `draws-background-p' will modify the `text' attributes
+      (when draws-background?
+        (setf (draws-background-p field) draws-background-p)))
+  (when bezeled?
+    (setf (bezeledp field) bezeledp))
+  (when text-color? (setf (text-color  field) text-color))
+  (when editable?   (setf (editablep   field) editablep))
+  (when selectable? (setf (selectablep field) selectablep))
+  (when font?       (setf (font        field) font)))
 
 (define-objc-class "NSTextView" ()
   ()
@@ -3097,10 +3171,133 @@ see https://developer.apple.com/documentation/appkit/nstypesetter?language=objc"
 ;;; Font Data
 
 (define-objc-class "NSFont" ()
-  ()
+  (("fontDescriptor"
+    :reader font-descriptor
+    :documentation
+    "The font descriptor object for the font.
+
+The font descriptor contains a mutable dictionary of optional
+attributes for creating an `ns-font' object. For more information about
+font descriptors, see `ns-font-descriptor'.
+
+see https://developer.apple.com/documentation/appkit/nsfont/fontdescriptor?language=objc"))
   (:documentation
    "The representation of a font in an app.
+
+`ns-font' objects represent fonts to an app, providing access to
+characteristics of the font and assistance in laying out glyphs
+relative to one another. Font objects are also used to establish the
+current font for drawing text directly into a graphics context, using
+the set method.
+
+You don’t create `ns-font' objects using the `alloc' and `init'
+methods. Instead, you use either fontWithDescriptor:size: or
+fontWithName:size: to look up an available font and alter its size or
+matrix to your needs. These methods check for an existing font object
+with the specified characteristics, returning it if there is
+one. Otherwise, they look up the font data requested and create the
+appropriate object. NSFont also defines a number of methods for
+getting standard system fonts, such as systemFontOfSize:,
+userFontOfSize:, and messageFontOfSize:. To request the default size
+for these standard fonts, pass a negative number or 0 as the font
+size. See macOS Human Interface Guidelines for more information about
+system fonts.
+
 see https://developer.apple.com/documentation/appkit/nsfont?language=objc"))
+
+(defgeneric as-ns-font-size (size)
+  (:documentation
+   "Convert SIZE into `ns-font' size.
+Return value is double float in points. ")
+  (:method ((size number))       (coerce size 'double-float))
+  (:method ((size double-float)) size)
+  (:method ((size null))         (as-ns-font-size :system))
+  (:method ((label (eql :system)))
+    "Returns the size of the standard system font."
+    (invoke 'ns-font "systemFontSize"))
+  (:method ((label (eql :system-small)))
+    "Returns the size of the standard small system font."
+    (invoke 'ns-font "smallSystemFontSize"))
+  (:method ((label (eql :label)))
+    "Returns the size of the standard label font."
+    (invoke 'ns-font "labelFontSize")))
+
+(define-objc-const +ns-font-weight-ultra-light+
+    ("NSFontWeightUltraLight" :double)
+  "The font weight for system ultra light font.")
+
+(define-objc-const +ns-font-weight-thin+
+    ("NSFontWeightThin"       :double)
+  "The font weight for system thin font.")
+
+(define-objc-const +ns-font-weight-light+
+    ("NSFontWeightLight"      :double)
+  "The font weight for system light font.")
+
+(define-objc-const +ns-font-weight-regular+
+    ("NSFontWeightRegular"    :double)
+  "The font weight for system regular font.")
+
+(define-objc-const +ns-font-weight-medium+
+  ("NSFontWeightMedium"       :double)
+  "The font weight for system medium font.")
+
+(define-objc-const +ns-font-weight-semibold+
+    ("NSFontWeightSemibold"   :double)
+  "The font weight for system semibold font.")
+
+(define-objc-const +ns-font-weight-bold+
+    ("NSFontWeightBold"       :double)
+  "The font weight for system bold font.")
+
+(define-objc-const +ns-font-weight-heavy+
+    ("NSFontWeightHeavy"      :double)
+  "The font weight for system heavy font.")
+
+(define-objc-const +ns-font-weight-black+
+    ("NSFontWeightBlack"      :double)
+  "The font weight for system black font.")
+
+(defgeneric as-ns-font-weight (size)
+  (:documentation
+   "Convert SIZE into `ns-font' weight. ")
+  (:method ((size number))       (coerce size 'double-float))
+  (:method ((size double-float)) size)
+  (:method ((size null))         (as-ns-font-weight :regular))
+  (:method ((size (eql :ultra-light))) +ns-font-weight-ultra-light+)
+  (:method ((size (eql :thin)))        +ns-font-weight-thin+)
+  (:method ((size (eql :light)))       +ns-font-weight-light+)
+  (:method ((size (eql :regular)))     +ns-font-regular+)
+  (:method ((size (eql :medium)))      +ns-font-weight-medium+)
+  (:method ((size (eql :semibold)))    +ns-font-weight-semibold+)
+  (:method ((size (eql :bold)))        +ns-font-weight-bold+)
+  (:method ((size (eql :heavy)))       +ns-font-weight-heavy+)
+  (:method ((size (eql :black)))       +ns-font-weight-black+))
+
+(defgeneric as-ns-font (object &key size weight &allow-other-keys)
+  (:documentation
+   "Convert OBJECT into `ns-font'.
+Return `ns-font'.
+
+Parameters:
++ SIZE: font size in points (see `as-ns-font-size')
++ WEIGHT: font weight (see `as-ns-font-weight')
+"))
+
+(defmethod as-ns-font ((system (eql :system))
+                       &key
+                         (size   :system)
+                         (weight :regular weight?))
+  "Returns the standard system font with the specified size."
+  (if weight?
+      (if (eql weight :bold)
+          (invoke 'ns-font "boldSystemFontOfSize:"
+                  (as-ns-font-size size))
+          (invoke 'ns-font "systemFontOfSize:weight:"
+                  (as-ns-font-size   size)
+                  (as-ns-font-weight weight)))
+      (invoke 'ns-font "systemFontOfSize:"
+              (as-ns-font-size size))))
 
 (define-objc-class "NSFontDescriptor" ()
   ()
