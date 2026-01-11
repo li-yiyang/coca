@@ -91,6 +91,18 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:as-ns-line-break-mode
    #:ns-line-break-mode-p
    #:decode-ns-line-break-mode
+   #:ns-window-ordering-mode
+   #:add-subview
+   #:remove-from-superview
+   #:replace-subview
+   #:ns-text-alignment
+   #:ns-text-alignment-p
+   #:as-ns-text-alignment
+   #:decode-ns-text-alignment
+   #:ns-line-break-mode
+   #:ns-line-break-mode-p
+   #:as-ns-line-break-mode
+   #:decode-ns-line-break-mode
    #:ns-control
    #:enablep
    #:string-value
@@ -659,7 +671,23 @@ see https://developer.apple.com/documentation/appkit/nsniboutletconnector?langua
 ;;; View fundamentals
 
 (define-objc-class "NSView" ()
-  ()
+  (;; View Hierarchy
+   ("superview"
+    :reader superview
+    :documentation
+    "The view that is the parent of the current view.
+see https://developer.apple.com/documentation/appkit/nsview/superview?language=objc")
+   ("subviews"
+    :reader subviews
+    :after  ns-array-to-list
+    :documentation
+    "The array of views embedded in the current view.
+see https://developer.apple.com/documentation/appkit/nsview/subviews?language=objc")
+   ("window"
+    :reader window
+    :documentation
+    "The view’s window object, if it is installed in a window.
+see https://developer.apple.com/documentation/appkit/nsview/window?language=objc"))
   (:documentation
    "The infrastructure for drawing, printing, and handling events in an app.
 
@@ -752,6 +780,91 @@ If your view descends from a class other than `ns-view', call super to
 let the parent view handle any events that you don’t.
 
 see https://developer.apple.com/documentation/appkit/nsview?language=objc"))
+
+;;; Creating a view object
+
+;;; Configuring the view
+
+;;; View Hierarchy
+;; Manage the subviews, superview, and window of a view and respond to
+;; notifications when the view hierarchy changes.
+;; see https://developer.apple.com/documentation/appkit/view-hierarchy?language=objc
+
+;; Getting the Related Objects
+;; Adding and Removing Subviews
+
+(define-objc-enum ns-window-ordering-mode
+  "Constants that let you specify how a window is ordered relative to
+another window.
+
+For more information, see orderWindow:relativeTo:.
+
+see https://developer.apple.com/documentation/appkit/nswindow/orderingmode?language=objc"
+  (:above 1                    "Moves the window above the indicated window.")
+  (:below 18446744073709551615 "Moves the window below the indicated window.")
+  (:out   0                    "Moves the window off the screen."))
+
+(defgeneric add-subview (view subview &key &allow-other-keys)
+  (:documentation "Add SUBVIEW to VIEW. ")
+  (:method ((view ns-view) (subview ns-view)
+            &key
+              (positioned  :above positioned?)
+              (relative-to nil    relative-to?))
+    "Add SUBVIEW to VIEW.
+
+Parameters:
++ POSITIONED: can be `:above' and `:below'
+  see `ns-window-ordering-mode' (default `:above')
++ RELATIVE-TO: (`ns-view')
+  the other `ns-view' SUBVIEW should be positioned relative to.
+  if `nil' or isn't a subview of the VIEW, SUBVIEW will be added
+  above or below all of its neww siblings
+"
+    (declare (type (member :above :below) positioned)
+             (type (or null ns-view) relative-to))
+    (if (or positioned? relative-to?)
+        (invoke view "addSubview:positioned:relativeTo:"
+                subview
+                (as-ns-window-ordering-mode positioned)
+                relative-to)
+        (invoke view "addSubview:" subview))))
+
+(defgeneric remove-from-superview (view &key &allow-other-keys)
+  (:documentation
+   "Unlinks the view from its superview and its window, removes it
+from the responder chain, and invalidates its cursor rectangles.")
+  (:method ((view ns-view) &key (displayp t))
+    "If DISPLAYP is nil, invoke removeFromSuperviewWithoutNeedingDisplay;
+otherwise invoke removeFromSuperview. "
+    (if displayp
+        (invoke view "removeFromSuperview")
+        (invoke view "removeFromSuperviewWithoutNeedingDisplay"))))
+
+(defmethod replace-subview ((view ns-view) (old ns-view) (new ns-view))
+  "Replaces one of the view’s subviews with another view.
+
+Parameters:
++ VIEW: superview
++ OLD: The view to be replaced by newView. May not be nil.
++ NEW: The view to replace oldView. May not be nil.
+
+This method does nothing if oldView is not a subview of the view.
+
+Neither oldView nor newView may be nil, and the behavior is undefined
+if either of these parameters is nil.
+
+This method causes oldView to be released; if you plan to reuse it, be
+sure to retain it before sending this message and to release it as
+appropriate when adding it as a subview of another NSView.
+
+Calling this method also removes any constraints associated with
+oldView and its subtree."
+    (invoke view "replaceSubview:with:" old new))
+
+;; Responding to View-Related Notifications
+;; Identifying Views by Tag
+
+;;; Managing interactions
 
 (define-objc-enum ns-text-alignment
   "Constants that specify text alignment.
@@ -1700,6 +1813,9 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 ;; Managing the Window's Behavior
 
 ;; Configuring the Window's Content
+
+(defmethod add-subview ((window ns-window) (subview ns-view) &rest keys &key)
+  (apply #'add-subview (content-view window) subview keys))
 
 ;; Configuring the Window's Appearance
 
@@ -3492,8 +3608,10 @@ Parameters:
   The text value of
 
 Styles Parameters:
-+ EDITABLEP:
-+ SELECTABLEP: "
++ EDITABLEP: set the text field is editable or not
++ SELECTABLEP: set the text field is selectable or not
++ FONT: set the text field (see `as-ns-font')
+"
   (declare (type (or null ns-rect) frame))
   (cond (frame (invoke field "initWithFrame:" frame)
                (when text (setf (string-value field) text)))
@@ -3509,8 +3627,7 @@ Styles Parameters:
       ;; `draws-background-p' will modify the `text' attributes
       (when draws-background?
         (setf (draws-background-p field) draws-background-p)))
-  (when bezeled?
-    (setf (bezeledp field) bezeledp))
+  (when bezeled?    (setf (bezeledp    field) bezeledp))
   (when text-color? (setf (text-color  field) text-color))
   (when editable?   (setf (editablep   field) editablep))
   (when selectable? (setf (selectablep field) selectablep))
