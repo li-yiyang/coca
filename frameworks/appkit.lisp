@@ -296,6 +296,23 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 
    ;; Color
    #:ns-color
+   #:alpha-component
+   #:white-component
+   #:red-component
+   #:green-component
+   #:blue-component
+   #:cyan-component
+   #:magenta-component
+   #:yellow-component
+   #:black-component
+   #:hue-component
+   #:saturation-component
+   #:brightness-component
+   #:catalog-name-component
+   #:localized-catalog-name-component
+   #:color-name-component
+   #:localized-color-name-component
+   #:as-ns-color
    #:ns-color-list
    #:ns-color-space
    #:ns-color-picker
@@ -2670,10 +2687,492 @@ see https://developer.apple.com/documentation/appkit/nsshadow?language=objc"))
 ;;; Colors
 
 (define-objc-class "NSColor" ()
-  ()
+  (;; Retrieving individual components
+   ("alphaComponent"
+    :reader alpha-component
+    :documentation
+    "The alpha (opacity) component value of the color.")
+   ("whiteComponent"
+    :reader white-component
+    :documentation
+    "The white component value of the color.")
+   ("redComponent"
+    :reader red-component
+    :documentation
+    "The red component value of the color.")
+   ("greenComponent"
+    :reader green-component
+    :documentation
+    "The green component value of the color.")
+   ("blueComponent"
+    :reader blue-component
+    :documentation
+    "The blue component value of the color.")
+   ("cyanComponent"
+    :reader cyan-component
+    :documentation
+    "The cyan component value of the color.")
+   ("magentaComponent"
+    :reader magenta-component
+    :documentation
+    "The magenta component value of the color.")
+   ("yellowComponent"
+    :reader yellow-component
+    :documentation
+    "The yellow component value of the color.")
+   ("blackComponent"
+    :reader black-component
+    :documentation
+    "The black component value of the color.")
+   ("hueComponent"
+    :reader hue-component
+    :documentation
+    "The hue component value of the color.")
+   ("saturationComponent"
+    :reader saturation-component
+    :documentation
+    "The saturation component value of the color.")
+   ("brightnessComponent"
+    :reader brightness-component
+    :documentation
+    "The brightness component value of the color.")
+   ("catalogNameComponent"
+    :reader catalog-name-component
+    :documentation
+    "The catalog containing the color’s name.")
+   ("localizedCatalogNameComponent"
+    :reader localized-catalog-name-component
+    :documentation
+    "The localized version of the catalog name containing the color.")
+   ("colorNameComponent"
+    :reader color-name-component
+    :documentation
+    "The name of the color.")
+   ("localizedColorNameComponent"
+    :reader localized-color-name-component
+    :documentation
+    "The localized version of the color name."))
   (:documentation
    "An object that stores color data and sometimes opacity (alpha value).
+
+Many methods in AppKit require you to specify color data using an
+NSColor object; when drawing you use them to set the current fill and
+stroke colors. Color objects are immutable and thread-safe. You can
+create color objects in many ways:
+
++ Load colors from an asset catalog. Colors created from assets can
+  adapt automatically to system appearance changes.
+
++ Use the semantic colors for custom UI elements, so that they match
+  the appearance of other AppKit views; see UI element colors.
+
++ Use the adaptable system colors, such as systemBlueColor, when you
+  want a specific tint that looks correct in both light and dark
+  environments.
+
++ Create a color object from another object, such as a Core Graphics
+  representation of a color, or a Core Image color.
+
++ Create a color from an NSImage object, and paint a repeating
+  pattern instead of using a solid color.
+
++ Create a color by applying a transform to another NSColor
+  object. For example, you might perform a blend operation between
+  two colors, or you might create a color that represents the same
+  color, but in a different color space.
+
++ Create custom colors using raw component values, and a variety of
+  color spaces, when you need to represent user-specified colors.
+
+For user-specified colors, you can also display a color panel and let
+the user specify the color. For information about color panels, see
+NSColorPanel.
+
+Color and color spaces
+A color object is typically represented internally as a Core Graphics
+color (CGColorRef) in a Core Graphics color space
+(CGColorSpaceRef). Colors can also be created in extended color
+spaces:
+
+    extendedSRGBColorSpace
+
+    extendedGenericGamma22GrayColorSpace
+
+When you need to worry about color spaces, use extended color spaces
+as working color spaces. When you need to worry about representing
+that color as closely as possible in a specific color space, convert
+the color from the extended color space into the target color space.
+
+When working in an extended color space, color values are not clamped
+to fit inside the color gamut, meaning that component values may be
+less than 0.0 or greater than 1.0. When displayed on an sRGB display,
+such colors are outside the gamut and won’t render
+accurately. However, extended color spaces are useful as working color
+spaces when you want a pixel format and representation that other
+color spaces can be easily converted into. For example, a color in the
+Display P3 color space can convert to an extended sRGB format, even if
+it isn’t within the sRGB color gamut. While some of the converted
+color’s values are outside of the 0-1.0 range, the color renders
+correctly when viewed on a device with a P3 display gamut.
+
+It is a programmer error to access color components of a color space
+that the NSColor object does not support. For example, you cannot
+access the redComponent property and getRed:green:blue:alpha: method
+on a color that uses the CMYK color space. Further, the getComponents:
+method and numberOfComponents property work only in color spaces that
+have individual components. As such, they return the components of
+color objects as individual floating-point values regardless of
+whether they’re based on NSColorSpace objects or named color
+spaces. However, older component-fetching methods such as
+getRed:green:blue:alpha: are effective only on color objects based on
+named color spaces.
+
+If you have a color object in an unknown color space and you want to
+extract its components, convert the color object to a known color
+space and then use the component accessor methods of that color space.
+
+For design guidance, see Human Interface Guidelines > Color.
+
 see https://developer.apple.com/documentation/appkit/nscolor?language=objc"))
+
+(defgeneric as-ns-color (object &key &allow-other-keys)
+  (:documentation
+   "Convert OBJECT into `ns-color' object.
+Return `ns-color' element. ")
+  (:method ((color null) &key)     (as-ns-color :clear))
+  (:method ((color ns-color) &key) ns-color)
+  ;; UI element colors
+  ;; Retrieve standard color objects for use with windows, controls,
+  ;; labels, text, selections and other content in your app.
+  ;; https://developer.apple.com/documentation/appkit/ui-element-colors?language=objc
+  ;;
+  ;; Label colors
+  (:method ((color (eql :label)) &key)
+    "The primary color to use for text labels.
+see https://developer.apple.com/documentation/appkit/nscolor/labelcolor?language=objc"
+    (invoke 'ns-color "labelColor"))
+  (:method ((color (eql :secondary-label)) &key)
+    "The secondary color to use for text labels.
+see https://developer.apple.com/documentation/appkit/nscolor/secondarylabelcolor?language=objc"
+    (invoke 'ns-color "secondaryLabelColor"))
+  (:method ((color (eql :teriary-label)) &key)
+    "The tertiary color to use for text labels.
+see https://developer.apple.com/documentation/appkit/nscolor/tertiarylabelcolor?language=objc"
+    (invoke 'ns-color "tertiaryLabelColor"))
+  (:method ((color (eql :quaternary-label)) &key)
+    "The quaternary color to use for text labels and separators.
+see https://developer.apple.com/documentation/appkit/nscolor/quaternarylabelcolor?language=objc"
+    (invoke 'ns-color "quaternaryLabelColor"))
+  ;; Text colors
+  (:method ((color (eql :text)) &key)
+    "The color to use for text.
+see https://developer.apple.com/documentation/appkit/nscolor/textcolor?language=objc"
+    (invoke 'ns-color "textColor"))
+  (:method ((color (eql :placeholder-text)) &key)
+    "The color to use for placeholder text in controls or text views.
+see https://developer.apple.com/documentation/appkit/nscolor/placeholdertextcolor?language=objc"
+    (invoke 'ns-color "placeholderText"))
+  (:method ((color (eql :selected-text)) &key)
+    "The color to use for selected text.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedtextcolor?language=objc"
+    (invoke 'ns-color "selectedTextColor"))
+  (:method ((color (eql :text-background)) &key)
+    "The color to use for the background area behind text.
+see https://developer.apple.com/documentation/appkit/nscolor/textbackgroundcolor?language=objc"
+    (invoke 'ns-color "textBackgroundColor"))
+  (:method ((color (eql :selected-text-background)) &key)
+    "The color to use for the background of selected text.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedtextbackgroundcolor?language=objc"
+    (invoke 'ns-color "selectedTextBackgroundColor"))
+  (:method ((color (eql :keyboard-focus-indicator)) &key)
+    "The color to use for the keyboard focus ring around controls.
+see https://developer.apple.com/documentation/appkit/nscolor/keyboardfocusindicatorcolor?language=objc"
+    (invoke 'ns-color "keyboardFocusIndicatorColor"))
+  (:method ((color (eql :unemphasized-selected-text)) &key)
+    "The color to use for selected text in an unemphasized context.
+see https://developer.apple.com/documentation/appkit/nscolor/unemphasizedselectedtextcolor?language=objc"
+    (invoke 'ns-color "unemphasizedSelectedTextColor"))
+  (:method ((color (eql :unemphasized-selected-text-background)) &key)
+    "The color to use for the text background in an unemphasized context.
+see https://developer.apple.com/documentation/appkit/nscolor/unemphasizedselectedtextbackgroundcolor?language=objc"
+    (invoke 'ns-color "unemphasizedSelectedTextBackgroundColor"))
+  ;; Content colors
+  (:method ((color (eql :link)) &key)
+    "The color to use for links.
+see https://developer.apple.com/documentation/appkit/nscolor/linkcolor?language=objc"
+    (invoke 'ns-color "linkColor"))
+  (:method ((color (eql :separator)) &key)
+    "The color to use for separators between different sections of content.
+see https://developer.apple.com/documentation/appkit/nscolor/separatorcolor?language=objc"
+    (invoke 'ns-color "separatorColor"))
+  (:method ((color (eql :selected-content-background)) &key)
+    "The color to use for the background of selected and emphasized content.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedcontentbackgroundcolor?language=objc"
+    (invoke 'ns-color "selectedContentBackgroundColor"))
+  (:method ((color (eql :unemphasized-selected-content-background)) &key)
+    "The color to use for selected and unemphasized content.
+see https://developer.apple.com/documentation/appkit/nscolor/unemphasizedselectedcontentbackgroundcolor?language=objc"
+    (invoke 'ns-color "unemphasizedSelectedContentBackgroundColor"))
+  ;; Menu colors
+  (:method ((color (eql :selected-menu-item-text)) &key)
+    "The color to use for the text in menu items.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedmenuitemtextcolor?language=objc"
+    (invoke 'ns-color "selectedMenuItemTextColor"))
+  ;; Table colors
+  (:method ((color (eql :grid)) &key)
+    "The color to use for the optional gridlines, such as those in a table view.
+see https://developer.apple.com/documentation/appkit/nscolor/gridcolor?language=objc"
+    (invoke 'ns-color "gridColor"))
+  (:method ((color (eql :header-text)) &key)
+    "The color to use for text in header cells in table views and outline views.
+see https://developer.apple.com/documentation/appkit/nscolor/headertextcolor?language=objc"
+    (invoke 'ns-color "headerTextColor"))
+  (:method ((color (eql :alternating-content-background)) &key)
+    "The colors to use for alternating content, typically found in
+table views and collection views.
+see https://developer.apple.com/documentation/appkit/nscolor/alternatingcontentbackgroundcolors?language=objc"
+    (invoke 'ns-color "alternatingContentBackgroundColors"))
+  ;; Control colors
+  (:method ((color (eql :control-accent)) &key)
+    "The user’s current accent color preference.
+see https://developer.apple.com/documentation/appkit/nscolor/controlaccentcolor?language=objc"
+    (invoke 'ns-color "controlAccentColor"))
+  (:method ((color (eql :control)) &key)
+    "The color to use for the flat surfaces of a control.
+see https://developer.apple.com/documentation/appkit/nscolor/controlcolor?language=objc"
+    (invoke 'ns-color "controlColor"))
+  (:method ((color (eql :control-background)) &key)
+    "The color to use for the background of large controls, such as
+scroll views or table views.
+see https://developer.apple.com/documentation/appkit/nscolor/controlbackgroundcolor?language=objc"
+    (invoke 'ns-color "controlBackgroundColor"))
+  (:method ((color (eql :control-text)) &key)
+    "The color to use for text on enabled controls.
+see https://developer.apple.com/documentation/appkit/nscolor/controltextcolor?language=objc"
+    (invoke 'ns-color "controlTextColor"))
+  (:method ((color (eql :disabled-control-text)) &key)
+    "The color to use for text on disabled controls.
+see https://developer.apple.com/documentation/appkit/nscolor/disabledcontroltextcolor?language=objc"
+    (invoke 'ns-color "disabledControlTextColor"))
+  (:method ((color (eql :current-control-tint)) &key)
+    "The current system control tint color.
+see https://developer.apple.com/documentation/appkit/nscolor/currentcontroltint?language=objc"
+    (invoke 'ns-color "currentControlTint"))
+  (:method ((color (eql :selected-control)) &key)
+    "The color to use for the face of a selected control—that is, a
+control that has been clicked or is being dragged.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedcontrolcolor?language=objc"
+    (invoke 'ns-color "selectedControlColor"))
+  (:method ((color (eql :selected-control-text)) &key)
+    "The color to use for text in a selected control—that is, a
+control being clicked or dragged.
+see https://developer.apple.com/documentation/appkit/nscolor/selectedcontroltextcolor?language=objc"
+    (invoke 'ns-color "selectedControlTextColor"))
+  (:method ((color (eql :alternate-selected-control-text)) &key)
+    "The color to use for text in a selected control."
+    (invoke 'ns-color "alternateSelectedControlTextColor"))
+  (:method ((color (eql :scrubber-textured-background)) &key)
+    "The patterned color to use for the background of a scrubber control.
+see https://developer.apple.com/documentation/appkit/nscolor/scrubbertexturedbackground?language=objc"
+    (invoke 'ns-color "scrubberTexturedBackgroundColor"))
+  ;; Window colors
+  (:method ((color (eql :window-background)) &key)
+    "The color to use for the window background.
+see https://developer.apple.com/documentation/appkit/nscolor/windowbackgroundcolor?language=objc"
+    (invoke 'ns-color "windowBackgroundColor"))
+  (:method ((color (eql :window-frame-text)) &key)
+    "The color to use for text in a window’s frame."
+    (invoke 'ns-color "windowFrameTextColor"))
+  (:method ((color (eql :under-page-background)) &key)
+    "The color to use in the area beneath your window’s views."
+    (invoke 'ns-color "underPageBackgroundColor"))
+  ;; Highlights and shadows
+  (:method ((color (eql :find-highlight)) &key)
+    "The highlight color to use for the bubble that shows inline
+search result values.
+see https://developer.apple.com/documentation/appkit/nscolor/findhighlightcolor?language=objc"
+    (invoke 'ns-color "findHighlightColor"))
+  (:method ((color (eql :highlight-color)) &key)
+    "The color to use as a virtual light source on the screen."
+    (invoke 'ns-color "highlightColor"))
+  (:method ((color (eql :shadow)) &key)
+    "The color to use for virtual shadows cast by raised objects on the screen.
+see https://developer.apple.com/documentation/appkit/nscolor/shadowcolor?language=objc"
+    (invoke 'ns-color "shadowColor"))
+  ;; Fill colors
+  (:method ((color (eql :quaternary-system-fill)) &key)
+    (invoke 'ns-color "quaternarySystemFillColor"))
+  (:method ((color (eql :quinary-label)) &key)
+    (invoke 'ns-color "quinaryLabelColor"))
+  (:method ((color (eql :quinary-system-fill)) &key)
+    (invoke 'ns-color "quinarySystemFillColor"))
+  (:method ((color (eql :secondary-system-fill)) &key)
+    (invoke 'ns-color "secondarySystemFillColor"))
+  (:method ((color (eql :system-fill)) &key)
+    (invoke 'ns-color "systemFillColor"))
+  (:method ((color (eql :teriary-system-fill)) &key)
+    (invoke 'ns-color "tertiarySystemFillColor"))
+  (:method ((color (eql :text-insertion-point)) &key)
+    (invoke 'ns-color "textInsertionPointColor"))
+
+  ;; Standard colors
+  ;; Retrieve the standard color objects for common colors like red,
+  ;; blue, green, black, white, and more.
+  ;;
+  ;; For design guidance, see Human Interface Guidelines.
+  ;; https://developer.apple.com/design/human-interface-guidelines/macos/visual-design/color#system-colors
+  ;;
+  ;; see https://developer.apple.com/documentation/appkit/standard-colors?language=objc
+
+  ;; Adaptable system colors
+  (:method ((color (eql :system-blue)) &key)
+    "Returns a color object for blue that automatically adapts to
+vibrancy and accessibility settings.
+see https://developer.apple.com/documentation/appkit/nscolor/systemblue?language=objc"
+    (invoke 'ns-color "systemBlueColor"))
+  (:method ((color (eql :system-brown)) &key)
+    "Returns a color object for brown that automatically adapts to
+vibrancy and accessibility settings.
+see https://developer.apple.com/documentation/appkit/nscolor/systembrown?language=objc"
+    (invoke 'ns-color "systemBrownColor"))
+  (:method ((color (eql :system-cyan)) &key)
+    "Returns a color object for cyan that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemCyanColor"))
+  (:method ((color (eql :system-gray)) &key)
+    "Returns a color object for gray that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemGrayColor"))
+  (:method ((color (eql :system-green)) &key)
+    "Returns a color object for green that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemGreenColor"))
+  (:method ((color (eql :system-indigo-color)) &key)
+    "Returns a color object for indigo that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemIndigoColor"))
+  (:method ((color (eql :system-mint)) &key)
+    "Returns a color object for mint that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemMintColor"))
+  (:method ((color (eql :system-orange)) &key)
+    "Returns a color object for orange that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemOrangeColor"))
+  (:method ((color (eql :system-pink)) &key)
+    "Returns a color object for pink that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemPinkColor"))
+  (:method ((color (eql :system-purple)) &key)
+    "Returns a color object for purple that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemPurpleColor"))
+  (:method ((color (eql :system-red)) &key)
+    "Returns a color object for red that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemRedColor"))
+  (:method ((color (eql :system-teal)) &key)
+    "Returns a color object for teal that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemTealColor"))
+  (:method ((color (eql :system-yellow)) &key)
+    "Returns a color object for yellow that automatically adapts to
+vibrancy and accessibility settings.
+see "
+    (invoke 'ns-color "systemYellowColor"))
+  ;; Transparent color
+  (:method ((color (eql :clear)) &key)
+    "Returns a color object whose grayscale and alpha values are both
+0.0.
+see "
+    (invoke 'ns-color "clearColor"))
+  ;; Fixed colors
+  (:method ((color (eql :black)) &key)
+    "Returns a color object whose grayscale value is 0.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "blackColor"))
+  (:method ((color (eql :blue)) &key)
+    "Returns a color object whose RGB value is 0.0, 0.0, 1.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "blueColor"))
+  (:method ((color (eql :brown)) &key)
+    "Returns a color object whose RGB value is 0.6, 0.4, 0.2 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "brownColor"))
+  (:method ((color (eql :cyan)) &key)
+    "Returns a color object whose RGB value is 0.0, 1.0, 1.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "cyanColor"))
+  (:method ((color (eql :dark-gray)) &key)
+    "Returns a color object whose grayscale value is 1/3 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "darkGrayColor"))
+  (:method ((color (eql :gray)) &key)
+    "Returns a color object whose grayscale value is 0.5 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "grayColor"))
+  (:method ((color (eql :green)) &key)
+    "Returns a color object whose RGB value is 0.0, 1.0, 0.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "greenColor"))
+  (:method ((color (eql :light-gray)) &key)
+    "Returns a color object whose grayscale value is 2/3 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "lightGrayColor"))
+  (:method ((color (eql :magenta)) &key)
+    "Returns a color object whose RGB value is 1.0, 0.0, 1.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "magentaColor"))
+  (:method ((color (eql :orange)) &key)
+    "Returns a color object whose RGB value is 1.0, 0.5, 0.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "orangeColor"))
+  (:method ((color (eql :purple)) &key)
+    "Returns a color object whose RGB value is 0.5, 0.0, 0.5 and whose
+alpha value is 1.0.  "
+    (invoke 'ns-color "purpleColor"))
+  (:method ((color (eql :red)) &key)
+    "Returns a color object whose RGB value is 1.0, 0.0, 0.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "redColor"))
+  (:method ((color (eql :white)) &key)
+    "Returns a color object whose grayscale and alpha values are both
+1.0."
+    (invoke 'ns-color "whiteColor"))
+  (:method ((color (eql :yellow)) &key)
+    "Returns a color object whose RGB value is 1.0, 1.0, 0.0 and whose
+alpha value is 1.0."
+    (invoke 'ns-color "yellowColor"))
+
+  ;; Color creation
+  ;; Load colors from asset catalogs, and create colors from raw
+  ;; component values, such as those used by grayscale, RGB, HSB, and
+  ;; CMYK colors.
+  ;; see https://developer.apple.com/documentation/appkit/color-creation?language=objc
+
+  ;; Loading color objects from asset catalogs
+  ;; Creating a color using RGB components
+  ;; Creating a color using HSB components
+  ;; Creating a color using CMYK components
+  ;; Creating a color using white components
+  ;; Creating a high dynamic range (HDR) color
+  ;; Creating a pattern-based color
+  ;; Creating a color dynamically
+  ;; Creating a color in an arbitrary color space
+  ;; Creating a system tint color
+  ;; Converting other types of color objects
+  ;; Creating color objects
+  )
 
 (define-objc-class "NSColorList" ()
   ()
