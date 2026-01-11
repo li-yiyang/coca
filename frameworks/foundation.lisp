@@ -77,7 +77,10 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:invoke-into-string
 
    ;; Collections
+   #:len
    #:ns-array
+   #:as-ns-array
+   #:ns-array-to-list
    #:ns-mutable-array
    #:ns-dictionary
    #:ns-mutable-dictionary
@@ -888,10 +891,41 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 ;;; Basic Collections
 
 (define-objc-class "NSArray" ()
-  ()
+  (("count"
+    :reader len
+    :documentation
+    "The number of objects in the array."))
   (:documentation
    "A static ordered collection of objects.
 see https://developer.apple.com/documentation/foundation/nsarray?language=objc"))
+
+(defgeneric as-ns-array (object)
+  (:documentation
+   "Convert OBJECT as NSArray. ")
+  (:method ((list list))
+    "Initializes a newly allocated array to include a given number of
+objects from a given C array.
+
+Dev Note:
+This will copy LIST into foreign array, and then invoke ObjC method
+initWithObjects:count: to create NSArray. "
+    (let ((len (length list)))
+      (cffi:with-foreign-pointer (arr (* len (cffi:foreign-type-size :pointer)))
+        (loop :for i :from 0
+              :for elem :in list
+              :do (setf (cffi:mem-aref arr :pointer i)
+                        (objc-object-pointer elem)))
+        (invoke 'ns-array "initWithObjects:count:" arr len)))))
+
+(defun ns-array-to-list (ns-array)
+  "Convert an ObjC NSArray NS-ARRAY to Lisp list.
+Return list.
+
+Dev Note:
+this collects objects using ObjC method objectAtIndex:"
+  (declare (type ns-array ns-array))
+  (loop :for i :below (len ns-array)
+        :collect (invoke ns-array "objectAtIndex:" i)))
 
 (define-objc-class "NSMutableArray" ()
   ()
