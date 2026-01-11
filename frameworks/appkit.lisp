@@ -1917,6 +1917,95 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Constants
 
+;;; NSWindowDelegate (protocoal)
+;; A set of optional methods that a window’s delegate can implement to
+;; respond to events, such as window resizing, moving, exposing, and
+;; minimizing.
+;; https://developer.apple.com/documentation/appkit/nswindowdelegate?language=objc
+
+;; Managing Sheets
+
+;; Sizing Windows
+
+;; Minmizing Windows
+
+;; Zooming Window
+
+;; Managing Full-Screen Presentation
+
+;; Custom Full-Screen Presentation Animations
+
+;; Moving Windows
+
+;; Closing Windows
+
+(defgeneric window-should-close (window sender)
+  (:documentation
+   "Tells the delegate that the user has attempted to close a window or
+the window has received a performClose: message.
+
+Parameters:
++ WINDOW:
++ SENDER: the window being closed
+
+This method may not always be called during window closing.
+Specifically, this method is not called when a user quits an
+application.
+
+Dev Note:
+Return `t' to allow sender to be closed; otherwise `nil'.")
+  (:method :around (window sender)
+    "Ensure the return value is boolean. "
+    (as-boolean (call-next-method)))
+  (:method ((window ns-window) sender)
+    "By default, SENDER should be closed. "
+    t))
+
+(define-objc-method ("NSWindow" "windowShouldClose:") :bool
+    ((sender :object))
+  (window-should-close self sender))
+
+(defgeneric window-will-close (window notification)
+  (:documentation
+   "Tells the delegate that the window is about to close.
+
+Parameters:
++ WINDOW: WINDOW to be closed
++ NOTIFICATION: A notification named NSWindowWillCloseNotification.
+
+You can retrieve the NSWindow object in question by sending object to
+notification.")
+  (:method ((window ns-window) (notification ns-notification))
+    "By default, do nothing. "))
+
+(define-objc-method ("NSWindow" "windowWillClose:") :void
+    ((notification :object))
+  (window-will-close self notification))
+
+;; Managing Key Status
+
+;; Managing Main Status
+
+;; Managing Field Editors
+
+;; Updating Windows
+
+;; Exposing Windows
+
+;; Managing Occlusion State
+
+;; Dragging Windows
+
+;; Getting the Undo Manager
+
+;; Managing Titles
+
+;; Managing Restorable State
+
+;; Managing Presentation in Version Browsers
+
+;; Instance Methods
+
 ;; Notifications
 
 (define-objc-class "NSPanel" ()
