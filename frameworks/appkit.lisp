@@ -177,7 +177,6 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:content-view
    #:style-mask
    #:alpha-value
-   #:alpha-value
    #:background-color
    #:color-space
    #:can-hide-p
@@ -191,6 +190,8 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-backing-store-type
    #:*ns-window-style*
    #:*ns-backing-store*
+   #:window-should-close
+   #:window-will-close
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -1939,7 +1940,8 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Closing Windows
 
-(defgeneric window-should-close (window sender)
+(define-objc-method ("NSWindow" "windowShouldClose:" window-should-close) :bool
+    ((sender :object))
   (:documentation
    "Tells the delegate that the user has attempted to close a window or
 the window has received a performClose: message.
@@ -1953,19 +1955,12 @@ Specifically, this method is not called when a user quits an
 application.
 
 Dev Note:
-Return `t' to allow sender to be closed; otherwise `nil'.")
-  (:method :around (window sender)
-    "Ensure the return value is boolean. "
-    (as-boolean (call-next-method)))
-  (:method ((window ns-window) sender)
-    "By default, SENDER should be closed. "
-    t))
+Return `t' to allow sender to be closed; otherwise `nil'.
+By default this function returns `t'. ")
+  (:default t))
 
-(define-objc-method ("NSWindow" "windowShouldClose:") :bool
-    ((sender :object))
-  (window-should-close self sender))
-
-(defgeneric window-will-close (window notification)
+(define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
+    ((notification :object))
   (:documentation
    "Tells the delegate that the window is about to close.
 
@@ -1974,13 +1969,10 @@ Parameters:
 + NOTIFICATION: A notification named NSWindowWillCloseNotification.
 
 You can retrieve the NSWindow object in question by sending object to
-notification.")
-  (:method ((window ns-window) (notification ns-notification))
-    "By default, do nothing. "))
+notification.
 
-(define-objc-method ("NSWindow" "windowWillClose:") :void
-    ((notification :object))
-  (window-will-close self notification))
+Dev Note:
+this is called when window will close, do nothing by default"))
 
 ;; Managing Key Status
 

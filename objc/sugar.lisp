@@ -282,8 +282,14 @@ Parameters:
 (defparameter *coca-post-init-hooks* ()
   "A list of hook functions after Coca init. ")
 
-#+sbcl
-(pushnew 'coca-init sb-ext:*init-hooks*)
+;; TODO: this should not be called every time
+;; loading Coca...
+;;
+;; #+sbcl
+;; (pushnew 'coca-init sb-ext:*init-hooks*)
+;;
+;; there should be a `deliver' function to do this
+
 (defun coca-init ()
   "Initialize Coca foreign pointers.
 
@@ -337,6 +343,8 @@ ObjC environment."
   (maphash (lambda (- sel)   (reinitialize-instance sel))   *sels*)
   ;; clear ObjC objects, should be rebind in *coca-post-init-hooks*
   (clrhash *objc-objects*)
+  ;; rebind the ObjC methods
+  (maphash (lambda (- args)  (apply #'%define-objc-method args)) *objc-methods*)
   (map nil #'funcall *coca-post-init-hooks*))
 
 (defmacro define-coca-init (hook &body body)
