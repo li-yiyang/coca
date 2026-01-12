@@ -72,6 +72,7 @@ https://developer.apple.com/documentation/foundation?language=objc")
    ;; Strings and Text
    #:ns-string
    #:ns-mutable-string
+   #:as-ns-string
    #:string-to-ns-string
    #:ns-string-to-string
    #:invoke-into-string
@@ -194,6 +195,10 @@ https://developer.apple.com/documentation/foundation?language=objc")
 
    ;; Resources
    #:ns-bundle
+   #:ns-main-bundle
+   #:ns-bundle-all-frameworks
+   #:ns-bundle-all-bundles
+   #:as-ns-bundle
    #:ns-bundle-resource-request
 
    ;; Notifications
@@ -882,6 +887,11 @@ See https://developer.apple.com/documentation/foundation/nsstring/utf8string?lan
 Dev Note:
 The original METHOD should return `ns-string' and it would be turned into lisp string. "
   `(ns-string-to-string (invoke ,object ,method ,@args)))
+
+(defgeneric as-ns-string (string)
+  (:documentation "Convert STRING into NSString. ")
+  (:method ((ns-string ns-string)) ns-string)
+  (:method ((string string))       (string-to-ns-string string)))
 
 
 ;;;; Collections
@@ -1702,8 +1712,214 @@ see https://developer.apple.com/documentation/foundation/nsusernotificationcente
 (define-objc-class "NSBundle" ()
   ()
   (:documentation
-   "A representation of the code and resources stored in a bundle directory on disk.
+   "A representation of the code and resources stored in a bundle
+directory on disk.
+
+Apple uses bundles to represent apps, frameworks, plug-ins, and many
+other specific types of content. Bundles organize their contained
+resources into well-defined subdirectories, and bundle structures vary
+depending on the platform and the type of the bundle. By using a
+bundle object, you can access a bundle’s resources without knowing the
+structure of the bundle. The bundle object provides a single interface
+for locating items, taking into account the bundle structure, user
+preferences, available localizations, and other relevant factors.
+
+Any executable can use a bundle object to locate resources, either
+inside an app’s bundle or in a known bundle located elsewhere. You
+don’t use a bundle object to locate files in a container directory or
+in other parts of the file system.
+
+The general pattern for using a bundle object is as follows:
+
+1. Create a bundle object for the intended bundle directory.
+2. Use the methods of the bundle object to locate or load the needed
+   resource.
+3. Use other system APIs to interact with the resource.
+
+Some types of frequently used resources can be located and opened
+without a bundle. For example, when loading images, you store images
+in asset catalogs and load them using the imageNamed: methods of
+UIImage or NSImage. Similarly, for string resources, you use
+NSLocalizedString to load individual strings instead of loading the
+entire .strings file yourself.
+
+Note
+Unlike some other Foundation classes with corresponding Core
+Foundation names (such as NSString and CFStringRef), NSBundle objects
+cannot be cast to CFBundleRef references. If you need functionality
+provided by CFBundleRef, you can still create a CFBundleRef and use
+the CFBundleRef API. See Toll-Free Bridging for more information.
+
+Finding and Opening a Bundle
+Before you can locate a resource, you must first specify which bundle
+contains it. The NSBundle class has many constructors, but the one you
+use most often is mainBundle. The main bundle represents the bundle
+directory that contains the currently executing code. So for an app,
+the main bundle object gives you access to the resources that shipped
+with your app.
+
+If your app interacts directly with plug-ins, frameworks, or other
+bundled content, you can use other methods of this class to create
+appropriate bundle objects. You can always create bundle objects from
+a known URL or path, but other methods make it easier to access
+bundles your app is already using. For example, if you link to a
+framework, you can use the bundleForClass: method to locate the
+framework bundle based on a class defined in that framework.
+
+    ;; Get the app's main bundle
+    (ns-main-bundle)
+    ;; Get the bundle containing the specified private class
+    (as-ns-bundle (coerce-to-objc-class 'my-private-class))
+
+You use NSBundle objects to obtain the location of specific resources
+inside the bundle. When looking for resources, you provide the name of
+the resource and its type at a minimum. For resources in a specific
+subdirectory, you can also specify that directory. After locating the
+resource, the bundle routines return a path string or URL that you can
+use to open the file.
+
+Locating a single resource in a bundle
+
+    (as-ns-bundle #P\"Seagull\" :type :jpg)
+
+Bundle objects follow a specific search pattern when looking for
+resources on disk. Global resources—that is, resources not in a
+language-specific .lproj directory—are returned first, followed by
+region- and language-specific resources. This search pattern means
+that the bundle looks for resources in the following order:
+
+1. Global (nonlocalized) resources
+2. Region-specific localized resources (based on the user’s region
+   preferences)
+3. Language-specific localized resources (based on the user’s
+   language preferences)
+4. Development language resources (as specified by the
+   CFBundleDevelopmentRegion key in the bundle’s Info.plist file)
+
+Because global resources take precedence over language-specific
+resources, you should never include both a global and localized
+version of a given resource in your app. When a global version of a
+resource exists, language-specific versions are never returned. The
+reason for this precedence is performance. If localized resources were
+searched first, the bundle object might waste time searching for a
+nonexistent localized resource before returning the global resource.
+
+Important
+Bundle objects always consider case when searching for resource files,
+even on file systems that support case-insensitive filenames. Always
+make sure that you specify filenames with case sensitivity in mind.
+
+When locating resource files, the bundle object automatically
+considers many standard filename modifiers when determining which file
+to return. Resources may be tagged for a specific device (~iphone,
+~ipad) or for a specific screen resolution (@2x, @3x). Do not include
+these modifiers when specifying the name of the resource you want. The
+bundle object selects the file that is most appropriate for the
+underlying device. For more information, see App Icons on iPhone, iPad
+and Apple Watch.
+
+Understanding Bundle Structures
+Bundle structures vary depending on the target platform and the type
+of bundle you are building. The NSBundle class hides this underlying
+structure in most (but not all) cases. Many of the methods you use to
+load resources from a bundle automatically locate the appropriate
+starting directory and look for resources in known places. You can
+also use the methods and properties of this class to get the location
+of known bundle directories and to retrieve resources specifically
+from those directories.
+
+For information about the bundle structure of iOS and macOS apps, see
+Bundle Programming Guide. For information about the structure of
+framework bundles, see Framework Programming Guide. For information
+about the structure of macOS plug-ins, see Code Loading Programming
+Topics.
+
 see https://developer.apple.com/documentation/foundation/bundle?language=objc"))
+
+;; Getting Standard Bundle Objects
+
+(declaim (type (or null ns-bundle) *ns-main-bundle*))
+(defparameter *ns-main-bundle* nil
+  "The bundle object contains the current executable. ")
+
+(defun ns-main-bundle ()
+  "Returns the bundle object that contains the current executable.
+see https://developer.apple.com/documentation/foundation/bundle/main?language=objc"
+  (or *ns-main-bundle*
+      (setf *ns-main-bundle* (invoke 'ns-bundle "mainBundle"))))
+
+(define-coca-init :pre (setf *ns-main-bundle* nil))
+
+(defun ns-bundle-all-frameworks ()
+  "Returns a list of all of the application’s bundles that represent frameworks.
+
+Return a list of all of the application’s bundles that represent
+frameworks. Only frameworks with one or more Objective-C classes in
+them are included.
+
+The returned array includes frameworks that are linked into an
+application when the application is built and bundles for frameworks
+that have been dynamically created.
+
+see https://developer.apple.com/documentation/foundation/bundle/allframeworks?language=objc"
+  (ns-array-to-list (invoke 'ns-bundle "allFrameworks")))
+
+(defun ns-bundle-all-bundles ()
+  "Returns a list of all the application’s non-framework bundles.
+
+The returned array includes the main bundle and all bundles that have
+been dynamically created but doesn’t contain any bundles that
+represent frameworks.
+
+see https://developer.apple.com/documentation/foundation/bundle/allbundles?language=objc"
+  (ns-array-to-list (invoke 'ns-bundle "allBundles")))
+
+;; Creating and Initializing a Bundle
+
+;; TODO: more
+(defgeneric as-ns-bundle (bundle &key &allow-other-keys)
+  (:documentation "Convert BUNDLE into `ns-bundle'. ")
+  (:method ((bundle ns-bundle) &key) bundle)
+  (:method ((path pathname) &key)
+    "Returns an NSBundle object that corresponds to the specified directory.
+
+This method allocates and initializes the returned object if there is
+no existing NSBundle associated with path, in which case it returns
+the existing object.
+
+Dev Note:
+invoke bundleWithPath:
+
+see https://developer.apple.com/documentation/foundation/nsbundle/bundlewithpath:?language=objc"
+    (invoke 'ns-bundle
+            "bundleWithPath:"
+            (string-to-ns-string (uiop:native-namestring path)))))
+
+;; Loading Nib Files
+
+;; Finding Resource Files
+
+;; Finding Image Resources
+
+;; Finding Sound Resources
+
+;; Fetching Localized Strings
+
+;; Fetching Context Help Resources
+
+;; Getting the Standard Bundle Directories
+
+;; Getting Bundle Information
+
+;; Getting Localization Information
+
+;; Managing Preservation Priority for On Demand Resources
+
+;; Getting Classes from a Bundle
+
+;; Loading Code from a Bundle
+
+;; Errors
 
 ;;; On-Demand Resources
 
