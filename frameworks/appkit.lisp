@@ -423,6 +423,12 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:as-ns-font
    #:ns-font-descriptor
    #:ns-font-manager
+   #:available-fonts
+   #:available-font-families
+   #:ns-font-trait-mask
+   #:ns-font-trait-mask-p
+   #:as-ns-font-trait-mask
+   #:decode-ns-font-trait-mask
    #:ns-font-collection
    #:ns-mutable-font-collection
 
@@ -1816,6 +1822,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 ;; Configuring the Window's Content
 
 (defmethod add-subview ((window ns-window) (subview ns-view) &rest keys &key)
+  "This is equal to calling (add-subview (content-view WINDOW) SUBVIEW). "
   (apply #'add-subview (content-view window) subview keys))
 
 ;; Configuring the Window's Appearance
@@ -3593,6 +3600,7 @@ see https://developer.apple.com/documentation/appkit/nstextfield/preferredmaxlay
    ;; Setting the Text Color
    ("textColor"
     :accessor text-color
+    :before   as-ns-color
     :documentation
     "The color of the text field’s content.
 see https://developer.apple.com/documentation/appkit/nstextfield/textcolor?language=objc")
@@ -3678,7 +3686,7 @@ see https://developer.apple.com/documentation/appkit/nstextfield?language=objc")
                  (font               nil font?)
                  (bezeledp           nil bezeled?)
                  &allow-other-keys)
-  "Initialize TEXT.
+  "Initialize NSTextField.
 
 Parameters:
 + FRAME: `ns-rect'
@@ -3686,14 +3694,22 @@ Parameters:
   If setting, will use initWithFrame: method to initialize the
   `ns-text-field'.
 + TEXT:
-  The text value of
+  The string value of `ns-text-field' (see `string-value')
 
 Styles Parameters:
-+ EDITABLEP: set the text field is editable or not
-+ SELECTABLEP: set the text field is selectable or not
-+ FONT: set the text field (see `as-ns-font')
++ DRAWS-BACKGROUND-P:
+  if or not draws background (see `draws-background-p')
++ BACKGROUND-COLOR:
+  set the text field background color (see `background-color')
+  if setting, will force DRAWS-BACKGROUND-P as `t'
++ TEXT-COLOR:  set the text color (see `text-color')
++ EDITABLEP:   set the text field is editable or not (see `editablep')
++ SELECTABLEP: set the text field is selectable or not (see `selectablep')
++ FONT:        set the text field (see `as-ns-font')
++ BEZELEDP:    set if draws bezeled background (boarder) (see `bezeledp')
 "
   (declare (type (or null ns-rect) frame))
+  ;; TODO: initWithFrame: should be moved to NSControl init method
   (cond (frame (invoke field "initWithFrame:" frame)
                (when text (setf (string-value field) text)))
         (t     (error "Does not know how to init ~S. "
@@ -4119,7 +4135,14 @@ Parameters:
 + SIZE: font size in points (see `as-ns-font-size')
 + WEIGHT: font weight (see `as-ns-font-weight')
 ")
-  (:method ((font ns-font) &key) font)
+  (:method ((font ns-font) &key size)
+    (let ((font font))
+      (when size
+        (setf font (invoke (ns-font-manager)
+                           "convertFont:toSize:"
+                           font
+                           (coerce size 'double-float))))
+      font))
   (:method ((font (eql :system)) &key (size :system) (weight :regular weight?))
     "Returns the standard system font with the specified size.
 
@@ -4272,7 +4295,139 @@ see https://developer.apple.com/documentation/appkit/nsfontdescriptor?language=o
   ()
   (:documentation
    "The center of activity for the font-conversion system.
+
+The font manager records the currently selected font, updates the Font
+panel and Font menu to reflect the selected font, initiates font
+changes, and converts fonts in response to requests from text-bearing
+objects. In a more prosaic role, `ns-font-manager' can be queried for the
+fonts available to the application and for the particular attributes
+of a font, such as whether it’s condensed or extended.
+
+You typically set up a font manager and the Font menu using Interface
+Builder. However, you can also do so programmatically by getting the
+shared font manager instance and having it create the standard Font
+menu at runtime:
+
+  (ns-font-manager)                          ; NSFontManager
+  (invoke (ns-font-manager) \"fontMenu:\" t) ; NSMenu
+
+You can then add the Font menu to your app’s main menu. After the Font
+menu is installed, your app automatically gains the functionality of
+both the Font menu and the Font panel.
+
+Font collections are managed by NSFontManager.
+
 see https://developer.apple.com/documentation/appkit/nsfontmanager?language=objc"))
+
+;; Getting the Shared Font Manager
+
+(declaim (type (or null ns-font-manager) *ns-font-manager*))
+(defparameter *ns-font-manager* nil
+  "")
+
+(defmethod initialize-instance :after ((manager ns-font-manager) &key)
+  "After [NSFont sharedFontManager], set global `*ns-font-manager*'. "
+  (setf *ns-font-manager* manager))
+
+(defun ns-font-manager ()
+  "Returns the shared instance of the font manager for the
+application, creating it if necessary."
+  (invoke 'ns-font-manager "sharedFontManager"))
+
+;; `*ns-font-manager*' should be cleared when `coca-init'
+(define-coca-init :pre (setf *ns-font-manager* nil))
+
+;; Changing the Default Font Conversion Classes
+
+;; Getting Available Fonts
+
+;; TODO: should it be cached?
+(defmethod available-fonts ((manager ns-font-manager))
+  "The names of the fonts available in the system (not the NSFont objects themselves).
+Note that these fonts are in various system font directories.
+Return a list of font names string.
+see https://developer.apple.com/documentation/appkit/nsfontmanager/availablefonts?language=objc"
+  (mapcar #'ns-string-to-string (ns-array-to-list (invoke manager "availableFonts"))))
+
+(defmethod available-font-families ((manager ns-font-manager))
+  "The names of the font families available in the system.
+Note that these fonts are in various system font directories.
+see https://developer.apple.com/documentation/appkit/nsfontmanager/availablefontfamilies?language=objc"
+  (mapcar #'ns-string-to-string (ns-array-to-list (invoke manager "availableFontFamilies"))))
+
+;; Setting and Examining the Selected Font
+
+;; Sending Action Methods
+
+;; Converting Fonts Automatically
+
+;; Converting Fonts Manually
+
+(define-objc-enum ns-font-trait-mask
+  "Constants for isolating specific traits of a font.
+
+NSFontManager categorizes fonts according to a small set of
+traits. You can convert fonts by adding and removing individual
+traits, and you can get a font with a specific combination of traits.
+
+These pairs of traits are mutually exclusive:
+
+    :condensed and :expanded
+
+    :bold and :unbold
+
+    :italic and :unitalic
+"
+  "Trait Masks"
+  (:bold                       2        "A mask that specifies a bold font.")
+  (:compressed                 512      "A mask that specifies a compressed font.")
+  (:condensed                  64       "A mask that specifies a condensed font.")
+  (:expanded                   32       "A mask that specifies an expanded font.")
+  (:fixed-pitch                1024     "A mask that specifies a fixed pitch font.")
+  (:italic                     1        "A mask that specifies an italic font.")
+  (:narrow                     16       "A mask that specifies a narrow font.")
+  (:non-standard-character-set 8        "A mask that specifies a font containing a non-standard character set.")
+  (:poster                     256      "A mask that specifies a poster-style font.")
+  (:small-caps                 128      "A mask that specifies a small-caps font.")
+  (:unbold                     4        "A mask that specifies a font that is not bold.")
+  (:unitalic                   16777216 "A mask that specifies a font that is not italic."))
+
+(defmethod as-ns-font :around (font &rest modification
+                               &key face family traits no-traits)
+  (declare (type (or null string) face family))
+  (let ((font (the ns-font (call-next-method))))
+    (when modification
+      (when face
+        (setf font (invoke (ns-font-manager)
+                           "convertFont:toFace:"
+                           font
+                           (string-to-ns-string face))))
+      (when family
+        (setf font (invoke (ns-font-manager)
+                           "convertFont:toFamily:"
+                           font
+                           (string-to-ns-string family))))
+      (when traits
+        (setf font (invoke (ns-font-manager)
+                           "convertFont:toHaveTrait:"
+                           font
+                           (as-ns-font-trait-mask traits))))
+      (when no-traits
+        (setf font (invoke (ns-font-manager)
+                           "convertFont:toNotHaveTrait:"
+                           font
+                           (as-ns-font-trait-mask no-traits)))))
+    font))
+
+;; Getting a Particular Font
+
+;; Examining Fonts
+
+;; Managing the Font Panel and Font Menu
+
+;; Accessing the Action Property
+
+;; Setting Attributes
 
 (define-objc-class "NSFontCollection" ()
   ()

@@ -1,5 +1,6 @@
 #+title: Basic
 #+author: 凉凉
+#+OPTIONS: ^:{}
 * A Very basic window
 :PROPERTIES:
 :header-args:lisp: :package coca :results silent
@@ -23,11 +24,11 @@ under =coca= package.
 (tmt:with-body-in-main-thread (:blocking t)
   (sb-int:set-floating-point-modes :traps nil)
   (let ((app (ns-app))
-        (win (init (alloc 'ns-window)
-                   :frame   (make-ns-rect :x 100 :y 100
-                                          :w 300 :h 300)
-                   :title   "A Very basic window"
-                   :visiblep t)))
+        (win (alloc-init 'ns-window
+                         :frame   (make-ns-rect :x 100 :y 100
+                                                :w 300 :h 300)
+                         :title   "A Very basic window"
+                         :visiblep t)))
     (run app)))
 #+end_src
 
@@ -45,5 +46,193 @@ which is the =NSApplication= of the application.
 if you found your lisp also dies, it's normal.
 #+html: </details>
 
-Reference:
+*Reference*:
 + [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Applications/Application/Application.m][Application.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*:
++ =ns-app= invokes =[NSApplication sharedApplication]= and return the =NSApp=,
+  which handles the application event-loop of a Cocoa application (ref: [[https://developer.apple.com/documentation/appkit/nsapp?language=objc][NSApp]])
++ =alloc-init= is equal to calling =(init (alloc 'ns-window) ...)=,
+  you could implement your own =init= (lisp generic function) to customize
+  how to initialize the ObjC object.
+
+  Note: =init= doesn't overwrites ObjC method =init=, so you can invoke
+  ObjC =init= like =(invoke object "init")= within your lisp =init= [fn:lispworks-init].
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace
+  (documentation (find-method #'init () (list (find-class 'ns-window))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Initializes the window with the specified values.
+  Return the initialized `ns-window'.
+
+  Parameters:
+  + FRAME: `ns-rect'
+    Origin and size of the window’s content area in screen
+    coordinates. Note that the window server limits window position
+    coordinates to ±16,000 and sizes to 10,000.
+  + STYLE: see `ns-window-style-mask' (default `*ns-window-style*')
+    The window’s style. It can be NSBorderlessWindowMask, or it can
+    contain any of the options described in NSWindowStyleMask, combined
+    using the C bitwise OR operator. Borderless windows display none of
+    the usual peripheral elements and are generally useful only for
+    display or caching purposes; you should normally not need to create
+    them. Also, note that a window’s style mask should include
+    NSTitledWindowMask if it includes any of the others.
+  + BACKING: see `ns-backing-store-type' (default `*ns-backing-store*')
+    Specifies how the drawing done in the window is buffered by the
+    window device, and possible values are described in
+    NSBackingStoreType.
+  + DEFER:
+    Specifies whether the window server creates a window device for the
+    window immediately. When true, the window server defers creating the
+    window device until the window is moved onscreen. All display
+    messages sent to the window or its views are postponed until the
+    window is created, just before it’s moved onscreen.
+  + SCREEN: `ns-screen'
+    Specifies the screen on which the window is positioned. The content
+    rectangle is positioned relative to the bottom-left corner of
+    screen. When nil, the content rectangle is positioned relative to
+    (0, 0), which is the origin of the primary screen.
+
+  Styls Modification:
+  + VISIBLE:
+    if window is visible on screen (default `t')
+  + HAS-SHADOW:
+    if window has shadow (default `t')
+  + OPAQUE:
+    if window is opaque (default `nil')
+  + TITLE:
+    the title of window (default not set)
+
+  Dev Note:
+  this invokes
+  + initWithContentRect:styleMask:backing:defer:screen:
+  + initWithContentRect:styleMask:backing:defer:
+
+  see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:)?language=objc
+  see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:screen:)?language=objc
+  #+end_example
+  #+html: </details>
++ =(sb-int:set-floating-point-modes :traps nil)= is needed on SBCL to avoid
+  float traps stucking the main loop
+
+* A Very basic window II
+:PROPERTIES:
+:header-args:lisp: :package coca :results silent
+:END:
+
+#+begin_src lisp :noweb yes no-export
+<<terminate-app-loop-when-close-window>>
+
+(tmt:with-body-in-main-thread ()
+  (sb-int:set-floating-point-modes :traps nil)
+  (let ((app   (ns-app))
+        (win   (alloc-init 'ns-window
+                           :frame   (make-ns-rect :x 100 :y 100
+                                                  :w 300 :h 300)
+                           :title   "A Very basic window"
+                           :visiblep t))
+        (label (alloc-init 'ns-text-field
+                           :frame       (make-ns-rect :x 5 :y 100 :w 290 :h 100)
+                           :font        (as-ns-font :label
+                                                    :traits '(:italic :bold)
+                                                    :size   45)
+                           :text        "Hello World! "
+                           :bezeledp    nil
+                           :backgroundp nil
+                           :editablep   nil
+                           :selectablep t
+                           :text-color  :green)))
+    (add-subview win label)
+    (run app)))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Hello World (with label)
+[[file:./hello-world.png]]
+
+*Reference*:
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/HelloWorlds/HelloWorld/HelloWorld.m][HelloWorld.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*:
++ =(alloc-init 'ns-text-field)=
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace
+  (documentation (find-method #'init () (list (find-class 'ns-text-field))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Initialize NSTextField.
+
+  Parameters:
+  + FRAME: `ns-rect'
+    The frame rectangle for the created view object.
+    If setting, will use initWithFrame: method to initialize the
+    `ns-text-field'.
+  + TEXT:
+    The string value of `ns-text-field' (see `string-value')
+
+  Styles Parameters:
+  + DRAWS-BACKGROUND-P:
+    if or not draws background (see `draws-background-p')
+  + BACKGROUND-COLOR:
+    set the text field background color (see `background-color')
+    if setting, will force DRAWS-BACKGROUND-P as `t'
+  + TEXT-COLOR:  set the text color (see `text-color')
+  + EDITABLEP:   set the text field is editable or not (see `editablep')
+  + SELECTABLEP: set the text field is selectable or not (see `selectablep')
+  + FONT:        set the text field (see `as-ns-font')
+  + BEZELEDP:    set if draws bezeled background (boarder) (see `bezeledp')
+  #+end_example
+  #+html: </details>
++ =:label= font in Coca is wrapped by =as-ns-font= method
+
+  #+begin_src lisp :exports results :results verbatim replace
+  (documentation (find-method #'as-ns-font () (list (c2mop:intern-eql-specializer :label))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns the font used for standard interface labels in the
+  specified size.
+
+  This invokes ObjC method labelFontOfSize:
+
+  The label font (Lucida Grande Regular 10 point) is used for the labels
+  on toolbar buttons and to label tick marks on full-size sliders. See
+  The macOS Environment in macOS Human Interface Guidelines for more
+  information about system fonts.
+
+  see https://developer.apple.com/documentation/appkit/nsfont/labelfont(ofsize:)?language=objc
+  #+end_example
+
++ =:green= color in Coca is wrapped by =as-ns-color= method
+
+  #+begin_src lisp :exports results :results verbatim replace
+  (documentation (find-method #'as-ns-color () (list (c2mop:intern-eql-specializer :green))) t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns a color object whose RGB value is 0.0, 1.0, 0.0 and whose
+  : alpha value is 1.0.
++ =add-subview= add =label= to subview (like HTML children) of =win=
+
+  #+begin_src lisp :exports results :results verbatim replace
+  (documentation (find-method #'add-subview () (list (find-class 'ns-window) (find-class 'ns-view))) t)
+  #+end_src
+
+  #+RESULTS:
+  : This is equal to calling (add-subview (content-view WINDOW) SUBVIEW).
+
+* Footnotes
+
+[fn:lispworks-init] This may more likely to be LispWorks' =:init-function=
+when defining a new ObjC class, which is called to initialize ObjC object
+from the lisp side.
