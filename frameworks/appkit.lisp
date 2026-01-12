@@ -325,6 +325,22 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:localized-catalog-name-component
    #:color-name-component
    #:localized-color-name-component
+   #:ns-color-srgba
+   #:ns-color-rgba
+   #:ns-color-display-p3-rgba
+   #:ns-color-calibrated-rgba
+   #:ns-color-device-rgba
+   #:ns-color-calibrated-hsb
+   #:ns-color-device-hsb
+   #:ns-color-hsb
+   #:ns-color-cmyk
+   #:ns-color-white
+   #:ns-color-calibrated-white
+   #:ns-color-device-white
+   #:ns-color-generic-gamma-22-white
+   #:ns-color-hdr-rgba-linear
+   #:ns-color-hdr-rgba-exposure
+   #:ns-color-pattern-image
    #:as-ns-color
    #:ns-color-list
    #:ns-color-space
@@ -3039,12 +3055,279 @@ For design guidance, see Human Interface Guidelines > Color.
 
 see https://developer.apple.com/documentation/appkit/nscolor?language=objc"))
 
+(defun ns-color-srgba (red green blue &optional (alpha 1.0d0))
+  "Creates a color object from the specified components in the sRGB
+colorspace.
+
+Parameters:
++ RED:   (0-1)
++ GREEN: (0-1)
++ BLUE:  (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(srgbred:green:blue:alpha:)?language=objc"
+  (declare (type double-float red green blue alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithSRGBRed:green:blue:alpha:"
+            red green blue alpha)))
+
+(defun ns-color-display-p3-rgba (red green blue &optional (alpha 1.0d0))
+  "Creates a color object from the specified components in the Display
+P3 color space.
+
+Parameters:
++ RED:   (0-1)
++ GREEN: (0-1)
++ BLUE:  (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(displayp3red:green:blue:alpha:)?language=objc"
+  (declare (type double-float red green blue alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithDisplayP3Red:green:blue:alpha:"
+            red green blue alpha)))
+
+(defun ns-color-rgba (red green blue &optional (alpha 1.0d0))
+  "Creates a color object with the specified red, green, blue, and
+alpha channel values.
+
+Parameters:
++ RED:   (0-1)
++ GREEN: (0-1)
++ BLUE:  (0-1)
++ ALPHA: (0-1)
+
+This method accepts extended color component values. If the red,
+green, blue, or alpha values are outside of the 0-1.0 range, the
+method creates a color in the extended range color space. This method
+is provided for easier reuse of code that uses UIColor in iOS.
+
+Where possible, it is preferable to specify the colorspace explicitly
+using the colorWithSRGBRed:green:blue:alpha: or
+colorWithGenericGamma22White:alpha: method.
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(red:green:blue:alpha:)?language=objc"
+  (declare (type double-float red green blue alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithRed:green:blue:alpha:"
+            red green blue alpha)))
+
+(defun ns-color-calibrated-rgba (red green blue &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity and RGB components.
+
+Parameters:
++ RED:   (0-1)
++ GREEN: (0-1)
++ BLUE:  (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(calibratedred:green:blue:alpha:)?language=objc"
+  (declare (type double-float red green blue alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithCalibratedRed:green:blue:alpha:"
+            red green blue alpha)))
+
+(defun ns-color-device-rgba (red green blue &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity value and RGB components.
+
+Parameters:
++ RED:   (0-1)
++ GREEN: (0-1)
++ BLUE:  (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(devicered:green:blue:alpha:)?language=objc"
+  (declare (type double-float red green blue alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithDeviceRed:green:blue:alpha:"
+            red green blue alpha)))
+
+(defun ns-color-calibrated-hsb (hue saturation brightness &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity and HSB color space
+components.
+
+Parameters:
++ HUE:        (0-1)
++ SATURATION: (0-1)
++ BRIGHTNESS: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(calibratedhue:saturation:brightness:alpha:)?language=objc"
+  (declare (type double-float hue saturation brightness alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithCalibratedHue:saturation:brightness:alpha:"
+            hue saturation brightness alpha)))
+
+(defun ns-color-device-hsb (hue saturation brightness &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity value and HSB color
+space components.
+
+Parameters:
++ HUE:        (0-1)
++ SATURATION: (0-1)
++ BRIGHTNESS: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(devicehue:saturation:brightness:alpha:)?language=objc"
+  (declare (type double-float hue saturation brightness alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithDeviceHue:saturation:brightness:alpha:"
+            hue saturation brightness alpha)))
+
+(defun ns-color-hsb (hue saturation brightness &optional (alpha 1.0d0))
+  "Creates a color object with the specified hue, saturation,
+brightness, and alpha channel values.
+
+Parameters:
++ HUE:        (0-1)
++ SATURATION: (0-1)
++ BRIGHTNESS: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(hue:saturation:brightness:alpha:)?language=objc"
+  (declare (type double-float hue saturation brightness alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithHue:saturation:brightness:alpha:"
+            hue saturation brightness alpha)))
+
+(defun ns-color-cmyk (cyan magenta yellow black &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity value and CMYK
+components.
+
+Parameters:
++ CYAN:    (0-1)
++ MAGENTA: (0-1)
++ YELLOW:  (0-1)
++ BLACK:   (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(devicecyan:magenta:yellow:black:alpha:)?language=objc"
+  (declare (type double-float cyan magenta yellow black alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithDeviceCyan:magenta:yellow:black:alpha:"
+             cyan magenta yellow black alpha)))
+
+(defun ns-color-white (white &optional (alpha 1.0d0))
+  "Creates a color object with the specified brightness and alpha
+channel values.
+
+Parameters:
++ WHITE: (0-1)
++ ALPHA: (0-1)
+
+This method accepts extended color component values. If the alpha or
+white values are outside of the 0-1.0 range, the method creates a
+color in the extended range or extendedGenericGamma22GrayColorSpace
+color space that is compatible with the sRGB colorspace. This method
+is provided for easier reuse of code that uses UIColor in iOS.
+
+Where possible, it is preferable to specify the colorspace explicitly
+using the colorWithSRGBRed:green:blue:alpha: or
+colorWithGenericGamma22White:alpha: method.
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(white:alpha:)?language=objc"
+  (declare (type double-float white alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithWhite:alpha:" white alpha)))
+
+(defun ns-color-calibrated-white (white &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity and grayscale values.
+
+Parameters:
++ WHITE: (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(calibratedwhite:alpha:)?language=objc"
+  (declare (type double-float white alpha))
+  (the ns-color
+    (invoke 'ns-color "colorWithCalibratedWhite:alpha:" white alpha)))
+
+(defun ns-color-device-white (white &optional (alpha 1.0d0))
+  "Creates a color object using the given opacity and grayscale values.
+
+Parameters:
++ WHITE: (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(devicewhite:alpha:)?language=objc"
+  (declare (type real white alpha))
+  (the ns-color (invoke 'ns-color "colorWithDeviceWhite:alpha:" white alpha)))
+
+(defun ns-color-generic-gamma-22-white (white &optional (alpha 1.0d0))
+  "Returns a color object with the specified white and alpha values in
+the GenericGamma22 colorspace.
+
+Parameters:
++ WHITE: (0-1)
++ ALPHA: (0-1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(genericgamma22white:alpha:)?language=objc"
+  (declare (type real white alpha))
+  (the ns-color (invoke 'ns-color "colorWithGenericGamma22White:alpha:" white alpha)))
+
+(defun ns-color-hdr-rgba-linear (red green blue &optional (alpha 1d0) (linear 1d0))
+  "Generates an HDR color in the extended sRGB colorspace by applying
+an exposure to the SDR color defined by the red, green, and blue
+components. The red, green, and blue components have a nominal range
+of [0..1], linearExposure is a value >= 1. To produce an HDR color, we
+process the given color in a linear color space, multiplying component
+values by linearExposure . The produced color will have a
+contentHeadroom equal to linearExposure. Each doubling of
+linearExposure produces a color that is twice as bright.
+
+Parameters:
++ RED:    (0-1)
++ GREEN:  (0-1)
++ BLUE:   (0-1)
++ ALPHA:  (0-1)
++ LINEAR: (>=1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(red:green:blue:alpha:linearexposure:)?language=objc"
+  (declare (type double-float red green blue alpha)
+           (type (double-float 1d0) linear))
+  (the ns-color
+    (invoke 'ns-color "colorWithRed:green:blue:alpha:linearExposure:"
+            red green blue alpha linear)))
+
+(defun ns-color-hdr-rgba-exposure (red green blue &optional (alpha 1d0) (exposure 1d0))
+  "Generates an HDR color in the extended sRGB colorspace by applying
+an exposure to the SDR color defined by the red, green, and blue
+components. The red, green, and blue components have a nominal range
+of [0..1], exposure is a value >= 0. To produce an HDR color, we
+process the given color in a linear color space, multiplying component
+values by 2^exposure. The produced color will have a contentHeadroom
+equal to the linearized exposure value. Each whole value of exposure
+produces a color that is twice as bright.
+
+Parameters:
++ RED:    (0-1)
++ GREEN:  (0-1)
++ BLUE:   (0-1)
++ ALPHA:  (0-1)
++ LINEAR: (>=1)
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(red:green:blue:alpha:exposure:)?language=objc"
+  (declare (type double-float red green blue alpha)
+           (type (double-float 1d0) exposure))
+  (the ns-color (invoke 'ns-color
+                        "colorWithRed:green:blue:alpha:exposure:"
+                        red green blue alpha exposure)))
+
+(defun ns-color-pattern-image (image)
+  "Creates a color object that uses the specified image pattern to
+paint the target area.
+
+Parameters:
++ IMAGE: `ns-image'
+  The image to use as the pattern for the color object. The image is
+  tiled starting at the bottom of the window. The image is not scaled.
+
+see https://developer.apple.com/documentation/appkit/nscolor/init(patternimage:)?language=objc"
+  (declare (type ns-image image))
+  (the ns-color (invoke 'ns-color "colorWithPatternImage:" image)))
+
 (defgeneric as-ns-color (object &key &allow-other-keys)
   (:documentation
    "Convert OBJECT into `ns-color' object.
 Return `ns-color' element. ")
   (:method ((color null) &key)     (as-ns-color :clear))
-  (:method ((color ns-color) &key) ns-color)
+  (:method ((color ns-color) &key) color)
   ;; UI element colors
   ;; Retrieve standard color objects for use with windows, controls,
   ;; labels, text, selections and other content in your app.
@@ -3365,6 +3648,40 @@ alpha value is 1.0."
   ;; see https://developer.apple.com/documentation/appkit/color-creation?language=objc
 
   ;; Loading color objects from asset catalogs
+  (:method ((name ns-string) &key catalog bundle)
+    "Creates a color object from the provided name, which corresponds
+to a color in the default asset catalog of the app’s main bundle.
+
+Parameters:
++ NAME:    name of the color in the asset catalog.
++ CATALOG: name of the asset catalog in which to find the specified color
+  this may be a standard color catalog. (see `as-ns-string')
++ BUNDLE:  the app bundle (see `as-ns-bundle')
+
+Dev Note:
++ if given CATALOG: invoke colorWithCatalogName:colorName:
++ if given BUNDLE:  invoke colorNamed:bundle:
++ if given both CATALOG and BUNDLE, raise error
+"
+    (declare (type (or null string ns-string) catalog)
+             (type (or null ns-bundle)        bundle))
+    (cond ((and catalog bundle)
+           (error "Cannot setting CATALOG and BUNDLE at same time. "))
+          (catalog
+           (invoke 'ns-color
+                   "colorWithCatalogName:colorName:"
+                   catalog
+                   name))
+          (bundle
+           (invoke 'ns-color
+                   "colorNamed:bundle:"
+                   name
+                   bundle))
+          (t (invoke 'ns-color "colorNamed:" name))))
+  (:method ((name string) &key catalog bundle)
+    "See (as-ns-color ns-string &key catalog bundle)"
+    (as-ns-color (string-to-ns-string name) :catalog catalog :bundle bundle))
+
   ;; Creating a color using RGB components
   ;; Creating a color using HSB components
   ;; Creating a color using CMYK components
@@ -3376,7 +3693,40 @@ alpha value is 1.0."
   ;; Creating a system tint color
   ;; Converting other types of color objects
   ;; Creating color objects
-  )
+  (:method ((args sequence) &key (color-space :rgba))
+    "COLOR-SPACE could be `:rgb' `:rgba' `:cmyk' `:white', `:hsb' or
+function to apply ARGS (default :rgba).
+
+see
++ `ns-color-srgba' (:srgba :srgb)
++ `ns-color-rgba'  (:rgba :rgb)
++ `ns-color-display-p3-rgba'
++ `ns-color-calibrated-rgba'
++ `ns-color-device-rgba'
++ `ns-color-hsb'   (:hsb)
++ `ns-color-cmyk'  (:cmyk)
++ `ns-color-white' (:white)
++ `ns-color-calibrated-white'
++ `ns-color-device-white'
++ `ns-color-generic-gamma-22-white'
++ `ns-color-hdr-rgba-linear'
++ `ns-color-hdr-rgba-exposure'
+"
+    (apply (etypecase color-space
+             (function color-space)
+             (keyword (ecase color-space
+                        ((:rgba  :rgb)  #'ns-color-rgba)
+                        ((:srgba :srgb) #'ns-color-srgba)
+                        (:hsb           #'ns-color-hsb)
+                        (:cmyk          #'ns-color-cmyk)
+                        (:white         #'ns-color-white))))
+           (map 'list (lambda (val) (coerce val 'double-float)) args)))
+  (:method ((white real) &key)
+    "ns-color-white"
+    (ns-color-white white))
+  (:method ((image ns-image) &key)
+    "ns-color-pattern-image"
+    (ns-color-pattern-image image)))
 
 (define-objc-class "NSColorList" ()
   ()

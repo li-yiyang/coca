@@ -145,8 +145,8 @@ if you found your lisp also dies, it's normal.
                            :bezeledp    nil
                            :backgroundp nil
                            :editablep   nil
-                           :selectablep t
-                           :text-color  :green)))
+                           :selectablep nil
+                           :text-color  #(0.0 0.5 0.0))))
     (add-subview win label)
     (run app)))
 #+end_src
