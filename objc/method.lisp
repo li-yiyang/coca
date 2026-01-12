@@ -570,7 +570,13 @@ Example:
   (let* ((class-root  (coerce-to-objc-class class))
          (class-name  (class-name           class-root))
          (name        (or name (objc-intern method)))
-         (callback    (intern (format nil "OBJC-CALLBACK-~:@(~A~)" name)))
+         ;; callback is made up by CLASS-NAME and NAME,
+         ;; allowing to redefine the ObjC methods for
+         ;; different ObjC classes if needed
+         (callback    (intern (format nil
+                                      "OBJC-CALLBACK-~:@(~A~)-~:@(~A~)"
+                                      class-name
+                                      name)))
          (ret         (as-objc-encoding ret))
          (lambda-list (loop :for (var enc) :in lambda-list
                             :collect (list var (as-objc-encoding enc))))
@@ -606,7 +612,7 @@ Example:
                          :collect `(,var (coerce-to-selector             ,var))))
            (,name self ,@rest-args)))
        (%define-objc-method (coerce-to-objc-class ,class)
-                            (coerce-to-selector ,method)
+                            (coerce-to-selector   ,method)
                             ',callback
                             ,encodings)
        ',name)))

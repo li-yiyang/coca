@@ -186,21 +186,20 @@ caution.
 
     #+begin_src lisp :eval no
     (define-objc-method ("ClassA" "method") :void ()
-      (do-something))
+      (:default (do-something)))
 
     (define-objc-method ("SubclassOfClassA" "method") :void ()
-      (invoke (super) "method")
-      (do-something))
+      (:default
+       (invoke (super) "method")
+       (do-something)))
     #+end_src
 
     regist ObjC method in "root" class and use CLOS method
     to process different classes
 
     #+begin_src lisp :eval no
-    (defgeneric method (object))
-
-    (define-objc-method ("ClassA" "method") :void
-      (method self))
+    (define-objc-method ("ClassA" "method") :void ()
+      (:default (do-some-thing self)))
 
     (defmethod ((object subclass-of-class-a))
       ...)

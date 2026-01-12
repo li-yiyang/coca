@@ -37,8 +37,7 @@ which is the =NSApplication= of the application.
 
 #+name: terminate-app-loop-when-close-window
 #+begin_src lisp
-(define-objc-method ("NSWindow" "windowShouldClose:") :bool
-  ((sender :object))
+(defmethod window-should-close ((self ns-window) sender)
   (terminate (ns-app) sender)
   t)
 #+end_src
