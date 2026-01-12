@@ -1,10 +1,12 @@
 #+title: Basic
+#+subtitle: Examples about how to use Coca
 #+author: 凉凉
 #+OPTIONS: ^:{}
 * A Very basic window
 :PROPERTIES:
-:header-args:lisp: :package coca :results silent
+:header-args:lisp: :package coca :results silent :eval no-export
 :END:
+** Plain =ns-window=
 First, load =coca= package:
 
 #+begin_src lisp
@@ -60,7 +62,7 @@ if you found your lisp also dies, it's normal.
   ObjC =init= like =(invoke object "init")= within your lisp =init= [fn:lispworks-init].
 
   #+html: <details><summary>documentation</summary>
-  #+begin_src lisp :exports results :results verbatim replace
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
   (documentation (find-method #'init () (list (find-class 'ns-window))) t)
   #+end_src
 
@@ -120,11 +122,7 @@ if you found your lisp also dies, it's normal.
 + =(sb-int:set-floating-point-modes :traps nil)= is needed on SBCL to avoid
   float traps stucking the main loop
 
-* A Very basic window II
-:PROPERTIES:
-:header-args:lisp: :package coca :results silent
-:END:
-
+** =ns-window= with =ns-text-field=
 #+begin_src lisp :noweb yes no-export
 <<terminate-app-loop-when-close-window>>
 
@@ -163,7 +161,7 @@ if you found your lisp also dies, it's normal.
 + =(alloc-init 'ns-text-field)=
 
   #+html: <details><summary>documentation</summary>
-  #+begin_src lisp :exports results :results verbatim replace
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
   (documentation (find-method #'init () (list (find-class 'ns-text-field))) t)
   #+end_src
 
@@ -194,7 +192,7 @@ if you found your lisp also dies, it's normal.
   #+html: </details>
 + =:label= font in Coca is wrapped by =as-ns-font= method
 
-  #+begin_src lisp :exports results :results verbatim replace
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
   (documentation (find-method #'as-ns-font () (list (c2mop:intern-eql-specializer :label))) t)
   #+end_src
 
@@ -215,7 +213,7 @@ if you found your lisp also dies, it's normal.
 
 + =:green= color in Coca is wrapped by =as-ns-color= method
 
-  #+begin_src lisp :exports results :results verbatim replace
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
   (documentation (find-method #'as-ns-color () (list (c2mop:intern-eql-specializer :green))) t)
   #+end_src
 
@@ -224,12 +222,169 @@ if you found your lisp also dies, it's normal.
   : alpha value is 1.0.
 + =add-subview= add =label= to subview (like HTML children) of =win=
 
-  #+begin_src lisp :exports results :results verbatim replace
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
   (documentation (find-method #'add-subview () (list (find-class 'ns-window) (find-class 'ns-view))) t)
   #+end_src
 
   #+RESULTS:
   : This is equal to calling (add-subview (content-view WINDOW) SUBVIEW).
+
+** Custom ObjC class and custom ObjC methods
+If don't want =(ns-app)= being terminated for all the =ns-window=,
+we could define a new ObjC class and use CLOS generic method to implement
+different logic for the ObjC class.
+
+#+begin_src lisp
+(define-objc-class ("MyWindow" my-window) (ns-window)
+  ((label :accessor my-label))
+  (:documentation "The window will stop `ns-app' when closed. "))
+
+(defmethod window-should-close ((self my-window) sender)
+  (terminate (ns-app) sender)
+  t)
+
+(defmethod init ((self my-window)
+                 &rest plist
+                 &key
+                   (label "Hello ObjC Class")
+                   (title "Hello World"))
+  (setf (getf plist :title) title)
+  (apply #'call-next-method self plist)
+  (setf (my-label self)
+        (alloc-init 'ns-text-field
+                    :frame       (make-ns-rect :x 5 :y 100 :w 290 :h 100)
+                    :font        (as-ns-font :label
+                                             :traits '(:italic :bold)
+                                             :size   45)
+                    :text        label
+                    :bezeledp    nil
+                    :backgroundp nil
+                    :editablep   nil
+                    :selectablep nil
+                    :text-color  #(0.0 0.5 0.0)))
+  (add-subview self (my-label self)))
+
+(tmt:with-body-in-main-thread (:blocking t)
+  (sb-int:set-floating-point-modes :traps nil)
+  (let ((app (ns-app)))
+    (alloc-init 'my-window
+                :frame   (make-ns-rect :x 100 :y 100
+                                       :w 300 :h 300)
+                :visiblep t)
+    (run app)))
+#+end_src
+
+*Explain*
++ =define-objc-class=: this defines a new ObjC class =MyClass=
+  and wrap as lisp class of name =my-window=.
+
+  Note that although it's possible to define a ObjC Ivar using
+  syntax like =("IvarName" :reader balabala)=. But it's not
+  recommanded since this does not support dynamically redefine
+  like CLOS =defclass=.
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (macro-function 'define-objc-class) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC Class of NAME.
+
+  Example:
+
+      ;; for existing ObjC class,
+      ;; `define-objc-class' acts like declaration
+      ;; it's direct super class could be ignored
+      (define-objc-class \"NSWindow\" ()
+        ((\"objcProperty\" :getter \"getObjCProperty\"
+                           :setter \"setObjCProperty:\"
+                           :before string-to-ns-string))
+        (:documentation \"Foo... \"))
+
+      ;; for non-existing ObjC class,
+      ;; `define-objc-class' defines a new ObjC class
+      (define-objc-class \"MyWindow\" (ns-window) ())
+
+  Syntax:
+
+      (define-objc-class
+          { \"OBJC-NAME\" | (\"OBJC-NAME\" &optional LISP-NAME) }
+          DIRECT-SUPERCLASS
+          ({
+               (OBJC-PROPERTY &key before after reader accessor documentation)
+             | (LISP-SLOT &key LISP-SLOT-DEFINITIONS...)
+           }*)
+        CLASS-OPTIONS)
+
+  + OBJC-NAME: string of ObjC class name
+  + LISP-NAME: lisp name of ObjC class (optional)
+  + DIRECT-SUPERCLASS:
+    if not empty, will be used to declare new ObjC class
+    if the ObjC class is not defined before;
+    if empty, it's equal to modify the class infomations
+  + CLASS-OPTIONS:
+    + :documentation: set the documentation of the class
+  #+end_example
+  #+html: </details>
++ =call-next-method=: this works like =super= in ObjC, but you
+  could make full use of ObjC method combination. ([[https://www.lispworks.com/documentation/HyperSpec/Body/f_call_n.htm][ref (CLHS)]])
+
+  Note: if you want to wrap ObjC method as lisp generic methods,
+  you could use =define-objc-method=. The =window-should-close=
+  is defined like:
+
+  #+begin_src lisp
+  (define-objc-method ("NSWindow" "windowShouldClose:" window-should-close) :bool
+    ((sender :object)))
+  #+end_src
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (macro-function 'define-objc-method) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC instance METHOD for CLASS.
+
+  Syntax:
+
+      (define-objc-method (CLASS METHOD &optional NAME) RET
+          ( { (VAR OBJC-ENCODING) }* )
+        (:documentation \"docstring\")
+        (:method ((self class) (arg ...))
+          body)
+        (:wrapper wrapper-function)
+        (:default . BODY))
+
+  + CLASS: symbol or string of ObjC class
+    this should be the root of ObjC class where the lisp generic function
+    would be used to replace / define ObjC method IMP as callback
+  + METHOD: string of method SEL name
+  + NAME: lisp generic method name
+    if not given, would generated by METHOD (see `coca.objc::objc-intern')
+  + RET: ObjC type encoding
+    it is recommanded to use `objc-basic-encoding'
+  + LAMBDA-LIST:
+    VAR: symbol of argument
+    OBJC-ENCODING: ObjC type encoding for argument
+  + BODY: method body,
+    use `self' when referring current ObjC object (adviced, not force)
+    use `super' when referring current ObjC object super class
+
+  Example:
+
+      (define-objc-method (ns-window \"foo\") :bool ()
+        (:documentation \"...\")
+        (:default (invoke self balabala))
+        (:wrapper as-boolean)
+        (:method ((self ns-window))
+          (call-next-method) ;; like [super ...] in ObjC
+          (foo self)))
+  #+end_example
+  #+html: </details>
 
 * Footnotes
 
