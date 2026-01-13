@@ -5,7 +5,7 @@
 
 ;;;; objc-method-encoding
 
-(defparameter *objc-method-encodings* (make-hash-table :test 'equal)
+(defvar *objc-method-encodings* (make-hash-table :test 'equal)
   "ObjC method encodings.
 
 KEY: method type encoding string
@@ -478,7 +478,7 @@ Use with caution. "
 
 ;;; define-objc-method
 
-(defparameter *objc-methods* (make-hash-table :test 'eql)
+(defvar *objc-methods* (make-hash-table :test 'eql)
   "Cache of Lisp generic functions in ObjC environment.
 
 KEY: CFFI callback name symbol

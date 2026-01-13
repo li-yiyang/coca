@@ -5,7 +5,7 @@
 
 ;;; objc-struct
 
-(defparameter *objc-struct-names* (make-hash-table :test 'equal)
+(defvar *objc-struct-names* (make-hash-table :test 'equal)
   "Named ObjC structs.
 
 KEY: string of ObjC struct name
@@ -15,7 +15,7 @@ Example:
 KEY: \"CGRect\"
 VAL: `ns-rect'")
 
-(defparameter *objc-structs* (make-hash-table)
+(defvar *objc-structs* (make-hash-table)
   "Infomations of ObjC structs.
 
 KEY: symbol of ObjC struct name
@@ -133,7 +133,7 @@ Parameters:
 
 ;;; objc-encoding
 
-(defparameter *objc-encoding-aliases* (make-hash-table)
+(defvar *objc-encoding-aliases* (make-hash-table)
   "Aliases of ObjC encoding.
 
 KEY: symbol of ObjC encoding
@@ -292,18 +292,18 @@ Return lisp type declaration. "
 
 ;;; objc-encoding-ffi-type -> ffi_type
 
-(defparameter +ffi_type_sint8+   (foreign-symbol-pointer "ffi_type_sint8"))
-(defparameter +ffi_type_uint8+   (foreign-symbol-pointer "ffi_type_uint8"))
-(defparameter +ffi_type_sint16+  (foreign-symbol-pointer "ffi_type_sint16"))
-(defparameter +ffi_type_uint16+  (foreign-symbol-pointer "ffi_type_uint16"))
-(defparameter +ffi_type_sint32+  (foreign-symbol-pointer "ffi_type_sint32"))
-(defparameter +ffi_type_uint32+  (foreign-symbol-pointer "ffi_type_uint32"))
-(defparameter +ffi_type_sint64+  (foreign-symbol-pointer "ffi_type_sint64"))
-(defparameter +ffi_type_uint64+  (foreign-symbol-pointer "ffi_type_uint64"))
-(defparameter +ffi_type_float+   (foreign-symbol-pointer "ffi_type_float"))
-(defparameter +ffi_type_double+  (foreign-symbol-pointer "ffi_type_double"))
-(defparameter +ffi_type_pointer+ (foreign-symbol-pointer "ffi_type_pointer"))
-(defparameter +ffi_type_void+    (foreign-symbol-pointer "ffi_type_void"))
+(defvar +ffi_type_sint8+   (foreign-symbol-pointer "ffi_type_sint8"))
+(defvar +ffi_type_uint8+   (foreign-symbol-pointer "ffi_type_uint8"))
+(defvar +ffi_type_sint16+  (foreign-symbol-pointer "ffi_type_sint16"))
+(defvar +ffi_type_uint16+  (foreign-symbol-pointer "ffi_type_uint16"))
+(defvar +ffi_type_sint32+  (foreign-symbol-pointer "ffi_type_sint32"))
+(defvar +ffi_type_uint32+  (foreign-symbol-pointer "ffi_type_uint32"))
+(defvar +ffi_type_sint64+  (foreign-symbol-pointer "ffi_type_sint64"))
+(defvar +ffi_type_uint64+  (foreign-symbol-pointer "ffi_type_uint64"))
+(defvar +ffi_type_float+   (foreign-symbol-pointer "ffi_type_float"))
+(defvar +ffi_type_double+  (foreign-symbol-pointer "ffi_type_double"))
+(defvar +ffi_type_pointer+ (foreign-symbol-pointer "ffi_type_pointer"))
+(defvar +ffi_type_void+    (foreign-symbol-pointer "ffi_type_void"))
 
 (defun objc-encoding-ffi-type (encoding)
   "Return ffi_type of ObjC encoding ENCODING.

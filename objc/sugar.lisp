@@ -276,10 +276,10 @@ Parameters:
                           ,(objc-encoding-cffi-type encoding))
             ,documentation)))))
 
-(defparameter *coca-pre-init-hooks* ()
+(defvar *coca-pre-init-hooks* ()
   "A list of hook functions before Coca init. ")
 
-(defparameter *coca-post-init-hooks* ()
+(defvar *coca-post-init-hooks* ()
   "A list of hook functions after Coca init. ")
 
 ;; TODO: this should not be called every time

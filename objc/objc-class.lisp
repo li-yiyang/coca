@@ -3,7 +3,7 @@
 
 (in-package :coca.objc)
 
-(defparameter *classes* (make-hash-table :test 'equal)
+(defvar *classes* (make-hash-table :test 'equal)
   "Cache of ObjC classes.
 
 KEY: name of ObjC class
@@ -211,13 +211,13 @@ Parameter:
   (declare (type string name))
   (concatenate 'string "set" (the string (str:pascal-case name)) ":"))
 
-(defparameter *objc-property-names* (make-hash-table :test 'equal)
+(defvar *objc-property-names* (make-hash-table :test 'equal)
   "Cache of ObjC property names in lisp.
 
 KEY: ObjC property name string
 VAL: symbol of ObjC property in lisp (as slot name)")
 
-(defparameter *objc-property-blacklist*
+(defvar *objc-property-blacklist*
   (let* ((slots    '(
                      "debugDescription"
                      "className"        ; not needed

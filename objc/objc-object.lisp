@@ -2,7 +2,7 @@
 
 (in-package :coca.objc)
 
-(defparameter *objc-objects* (tg:make-weak-hash-table :weakness :value)
+(defvar *objc-objects* (tg:make-weak-hash-table :weakness :value)
   "Cache of ObjC Objects in Lisp side. ")
 
 (defun coerce-to-objc-object (pointer)

@@ -2,7 +2,7 @@
 
 (in-package :coca.objc)
 
-(defparameter *sels* (make-hash-table :test 'equal)
+(defvar *sels* (make-hash-table :test 'equal)
   "Cache of ObjC SEL.
 
 KEY: string of SEL name
