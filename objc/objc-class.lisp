@@ -465,52 +465,69 @@ Parameters:
 + OBJC-CLASS: should be coerce to objc class
 + OBJC-PROPERTIES: a list like:
 
-     (NAME &KEY BEFORE AFTER READER ACCESSOR DOCUMENTAION)
+     (OBJC-NAME &KEY BEFORE AFTER READER ACCESSOR DOCUMENTAION)
+     (LISP-NAME &KEY LISP-SLOT-PLIST...)
 
 "
   (declare (type objc-class class))
   (let* ((name   (class-name class))
          (super  (c2mop:class-direct-superclasses class))
-         (direct (loop
-                   :for slotd :in (c2mop:class-direct-slots class)
-                   :for objc-p := (eq (c2mop:slot-definition-allocation slotd) :objc)
-                   :for update := (and objc-p
-                                       (assoc (objc-property-name slotd)
-                                              objc-properties
-                                              :test #'string=))
-                   :if update
-                     :collect
-                     (destructuring-bind (name &key
-                                                 before after accessor
-                                                 (reader accessor)
-                                                 (writer accessor)
-                                                 (encoding (objc-property-encoding slotd))
-                                                 (getter   (objc-property-reader   slotd))
-                                                 (setter   (objc-property-writer   slotd))
-                                                 documentation
-                                          &allow-other-keys)
-                         update
-                       (declare (ignore name))
-                       `(:name                       ,(c2mop:slot-definition-name slotd)
-                         :objc-property              ,(objc-property-name   slotd)
-                         :objc-property-encoding     ,encoding
-                         :objc-property-reader       ,(coerce-to-selector getter)
-                         :objc-property-writer       ,(and setter (coerce-to-selector setter))
-                         :objc-property-before-write ,(or before #'identity)
-                         :objc-property-after-read   ,(or after  #'identity)
-                         :initargs                   ()
-                         :readers                    ,(when reader `(,reader))
-                         :writers                    ,(when writer `((setf ,writer)))
-                         :allocation                 :objc
-                         :documentation              ,documentation))
-                   :else
-                     :collect (%normalize-objc-class-properties slotd))))
+         (slotd  (loop :for (name . lisp-slots) :in objc-properties
+                       :if (symbolp name)
+                         :collect `(,@(loop :for (key val) :on lisp-slots :by #'cddr
+                                            :if (eql key :initarg)
+                                              :collect val :into initargs
+                                            :if (eql key :reader)
+                                              :collect val :into readers
+                                            :if (eql key :writer)
+                                              :collect val :into writers
+                                            :if (eql key :accessor)
+                                              :collect val :into readers
+                                              :and :collect val :into writers
+                                            :finally (return (list :readers  readers
+                                                                   :writers  writers
+                                                                   :initargs initargs)))
+                                    :name ,name)))
+         (direct (loop :for slotd :in (c2mop:class-direct-slots class)
+                       :for objc-p := (eq (c2mop:slot-definition-allocation slotd) :objc)
+                       :for update := (and objc-p
+                                           (assoc (objc-property-name slotd)
+                                                  objc-properties
+                                                  :test #'string=))
+                       :if update
+                         :collect
+                         (destructuring-bind (name &key
+                                                     before after accessor
+                                                     (reader accessor)
+                                                     (writer accessor)
+                                                     (encoding (objc-property-encoding slotd))
+                                                     (getter   (objc-property-reader   slotd))
+                                                     (setter   (objc-property-writer   slotd))
+                                                     documentation
+                                              &allow-other-keys)
+                             update
+                           (declare (ignore name))
+                           `(:name                       ,(c2mop:slot-definition-name slotd)
+                             :objc-property              ,(objc-property-name   slotd)
+                             :objc-property-encoding     ,encoding
+                             :objc-property-reader       ,(coerce-to-selector getter)
+                             :objc-property-writer       ,(and setter (coerce-to-selector setter))
+                             :objc-property-before-write ,(or before #'identity)
+                             :objc-property-after-read   ,(or after  #'identity)
+                             :initargs                   ()
+                             :readers                    ,(when reader `(,reader))
+                             :writers                    ,(when writer `((setf ,writer)))
+                             :allocation                 :objc
+                             :documentation              ,documentation))
+                       :else
+                         :collect (%normalize-objc-class-properties slotd))))
     (c2mop:ensure-finalized
-     (c2mop:ensure-class name
-                         :metaclass           (find-class 'objc-class)
-                         :name                name
-                         :direct-superclasses super
-                         :direct-slots        direct))))
+     (c2mop:ensure-class
+      name
+      :metaclass           (find-class 'objc-class)
+      :name                name
+      :direct-superclasses super
+      :direct-slots        (union direct slotd :key (lambda (plist) (getf plist :name)))))))
 
 (defmacro doc-objc-class (name &body documentations)
   "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
@@ -703,9 +720,7 @@ Syntax:
            (:documentation ,(or (second (assoc :documentation class-options))
                                 (format nil "ObjC Class of ~A" objc-name))))
         `(doc-objc-class ,objc-name
-           ,(loop :for (name . options) :in direct-ivars
-                  :if (stringp name)
-                    :collect (cons name options))
+           ,direct-ivars
            ,@(cdr (assoc :documentation class-options))))))
 
 ;;;; objc-class.lisp ends here

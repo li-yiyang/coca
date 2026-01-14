@@ -344,7 +344,7 @@ ObjC environment."
   ;; clear ObjC objects, should be rebind in *coca-post-init-hooks*
   (clrhash *objc-objects*)
   ;; rebind the ObjC methods
-  (maphash (lambda (- args)  (apply #'%define-objc-method args)) *objc-methods*)
+  (maphash (lambda (- fn)    (reinitialize-instance fn))    *objc-methods*)
   (map nil #'funcall *coca-post-init-hooks*))
 
 (defmacro define-coca-init (hook &body body)
