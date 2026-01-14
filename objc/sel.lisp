@@ -29,6 +29,37 @@ So not recommanded to use `make-instance' to alloc `sel' instance."))
               name
               (pointer-address (objc-object-pointer sel))))))
 
+(defclass objc-generic-function (c2mop:standard-generic-function objc-pointer)
+  ((objc-class
+    :type    objc-class
+    :initarg :objc-class
+    :documentation
+    "The most root class of ObjC generic function rewrites.
+
+If setted with new ObjC class:
++ the new class is super class of old ObjC class:
+  replace with new ObjC class and updating the objc-object-pointer
++ the new class is subclass of old ObjC class:
+  do nothing
+
+")
+   (objc-type
+    :type    string
+    :initarg :objc-type
+    :documentation
+    "ObjC method type encoding string.
+see `coca.objc::encode-objc-type-encoding'. ")
+   (sel
+    :type    sel
+    :initarg :sel))
+  (:metaclass c2mop:funcallable-standard-class)
+  (:documentation
+   "Generic function of ObjC object. "))
+
+(defun objc-generic-function-p (gf)
+  "Test if GF is `coca.objc::objc-generic-function'. "
+  (typep gf 'objc-generic-function))
+
 (defun coerce-to-selector (method)
   "Coerces its argument to an Objective-C method selector.
 Return `sel'.
@@ -44,7 +75,7 @@ Parameters:
     assuming it is a pointer to SEL (not checked)
     see `coca.objc::sel_getName'
 "
-  (declare (type (or string sel foreign-pointer) method))
+  (declare (type (or string sel foreign-pointer symbol objc-generic-function) method))
   (the sel
     (etypecase method
       (sel    method)
@@ -58,7 +89,12 @@ Parameters:
          (with-cached (name *sels*)
            (make-instance 'sel
                           :objc-object-pointer method
-                          :name                name)))))))
+                          :name                name))))
+      (symbol
+       (let ((gf (the objc-generic-function (symbol-function method))))
+         (slot-value gf 'sel)))
+      (objc-generic-function
+       (slot-value method 'sel)))))
 
 (defmethod initialize-instance :after ((sel sel) &key)
   (unless (slot-boundp sel 'objc-object-pointer)

@@ -472,8 +472,7 @@ LispWorks' API.
         (:documentation "docstring")
         (:method ((self class) (arg ...))
           body)
-        (:wrapper wrapper-function)
-        (:default . BODY))
+        (:wrapper wrapper-function))
 
   + CLASS: symbol or string of ObjC class
     this should be the root of ObjC class where the lisp generic function
@@ -486,9 +485,6 @@ LispWorks' API.
   + LAMBDA-LIST:
     VAR: symbol of argument
     OBJC-ENCODING: ObjC type encoding for argument
-  + BODY: method body,
-    use `self' when referring current ObjC object (adviced, not force)
-    use `super' when referring current ObjC object super class
 
   Example:
 

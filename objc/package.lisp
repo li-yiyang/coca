@@ -37,8 +37,6 @@
    ;; ObjC method
    ;; #:define-objc-method
    ;; #:define-objc-protocol
-   #:self
-   #:super
    #:define-objc-method
    #:send
    #:invoke

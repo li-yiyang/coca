@@ -478,51 +478,86 @@ Use with caution. "
 
 ;;; define-objc-method
 
-(defvar *objc-methods* (make-hash-table :test 'eql)
-  "Cache of Lisp generic functions in ObjC environment.
+;; `objc-generic-function' is defined in coca/objc;sel.lisp
 
-KEY: CFFI callback name symbol
-VAL: (CLASS-NAME SEL-NAME CALLBACK-SYMBOL OBJC-TYPE-STRING)
-
-Dev Note:
-this is used in `coca-init' to restore ObjC lisp environment")
-
-(defun %define-objc-method (class sel callback objc-type)
-  "Define ObjC CLASS method of SEL with CALLBACK and OBJC-TYPE encoding.
+(defun %update-objc-generic-function-objc-class (gf old-class)
+  "Update GF's `objc-class' if new class is superclass of OLD-CLASS.
 
 Parameters:
-+ CLASS: `objc-class'
-+ SEL: `sel'
-+ CALLBACK: ObjC method callback name symbol
-+ OBJC-TYPE: ObjC method type encoding string
-"
-  (declare (type objc-class class)
-           (type sel        sel)
-           (type symbol     callback)
-           (type string     objc-type))
-  (class_replaceMethod (objc-object-pointer class)
-                       (objc-object-pointer sel)
-                       (get-callback callback)
-                       objc-type)
-  ;; regist ObjC callback in `*objc-methods*',
-  ;; this should support `coca-init' to rewrite the ObjC methods
-  (setf (gethash callback *objc-methods*) (list class sel callback objc-type))
-  (with-slots (objc-instance-methods) class
-    (setf (gethash sel objc-instance-methods) nil)))
++ GF: updated or initialized `coca.objc::objc-generic-function'
++ OLD-CLASS: previous objc-class of the GF or nil
 
-(defun objc-super-class-of (object)
-  "Return ObjC super class of OBJECT. "
-  (declare (type standard-objc-object object))
-  (let ((class (class-of object)))
-    (find-if #'objc-class-p (c2mop:class-direct-superclasses class))))
+Dev Note:
+use only in `reinitialize-instance', `initialize-instance' and
+`add-method' for `coca.objc::objc-generic-function'. "
+  (declare (type objc-generic-function gf)
+           (type (or null objc-class)  old-class))
+  ;; Make sure that GF is properly initialized
+  (when (slot-boundp gf 'objc-class)
+    (with-slots (objc-class sel objc-type objc-object-pointer) gf
+      (if (and old-class (c2mop:subclassp objc-class old-class))
+          ;; if new OBJC-CLASS is just subclass of OLD-CLASS,
+          ;; reset the `objc-clas' of GF by OLD-CLASS
+          (setf objc-class old-class)
+          ;; if OLD-CLASS is unbound (nil), or subclass of new OBJC-CLASS,
+          ;; set the default implementation of GF
+          (let (;; the IMP should be get by `class_replaceMethod',
+                ;; the ObjC callback should be
+                (imp (class_replaceMethod (objc-object-pointer objc-class)
+                                          (objc-object-pointer sel)
+                                          (get-callback (c2mop:generic-function-name gf))
+                                          objc-type)))
+            ;; Clear previously cached ObjC instance-methods (if any)
+            (setf (gethash sel (slot-value objc-class 'objc-instance-methods)) nil)
+            ;; if original IMP is not NULL, which means existing previously
+            ;; defined ObjC method, define the default callback
+            (unless (null-pointer-p imp)
+              (let* ((lambda-list  (c2mop:generic-function-lambda-list gf))
+                     ;; the default method should have specializer like
+                     ;; (OBJC-CLASS t t ...), to make it, just replace
+                     ;; the first with OBJC-CLASS and leave the rest as t class
+                     (specializers (cons objc-class
+                                         (loop :with tclass := (find-class t)
+                                               :repeat (1- (length lambda-list))
+                                               :collect tclass))))
+                ;; if the definition of generic method already exists,
+                ;; do not overwrite it (this should be overwrite when `defmethod')
+                (unless (find-method gf () specializers nil)
+                  (let* ((function  (compile-objc-method-calling imp objc-type))
+                         (gf-method (make-instance
+                                     'standard-method
+                                     :lambda-list   lambda-list
+                                     :qualifier     ()
+                                     :specializers  specializers
+                                     :function      function
+                                     :documentation (format nil
+                                                            "Invokes ObjC method ~A. "
+                                                            (sel-name sel)))))
+                    (add-method gf gf-method))))))))))
 
-(defmacro super (&optional (self 'self))
-  "Return `coca.objc::objc-super' as wrapper of self. "
-  `(make-objc-super :self ,self :class (objc-super-class-of ,self)))
+(defmethod reinitialize-instance :around ((gf objc-generic-function) &key)
+  (let ((old-class (when (slot-boundp gf 'objc-class)
+                     (slot-value gf 'objc-class))))
+    (call-next-method)
+    (%update-objc-generic-function-objc-class gf old-class)
+    gf))
 
-(setf (documentation 'self 'variable)
-      "SELF is locally bind within `define-objc-method' body.
-SELF refers to the current object being called in the ObjC method. ")
+(defmethod initialize-instance :around ((gf objc-generic-function) &key)
+  (let ((old-class (when (slot-boundp gf 'objc-class)
+                     (slot-value gf 'objc-class))))
+    (call-next-method)
+    (%update-objc-generic-function-objc-class gf old-class)
+    gf))
+
+;; TODO: maybe i should modify the `%update-objc-generic-function-objc-class'
+;; function to make sure that it's more efficient.
+(defmethod add-method :around ((gf objc-generic-function) (method method))
+  (let ((new-class (car (c2mop:method-specializers method)))
+        (old-class (slot-value gf 'objc-class)))
+    (setf (slot-value gf 'objc-class) new-class)
+    (call-next-method)
+    (%update-objc-generic-function-objc-class gf old-class)
+    method))
 
 (trivial-indent:define-indentation define-objc-method (4 4 &lambda &body))
 (defmacro define-objc-method ((class method &optional name) ret lambda-list &body options)
@@ -535,8 +570,7 @@ Syntax:
       (:documentation \"docstring\")
       (:method ((self class) (arg ...))
         body)
-      (:wrapper wrapper-function)
-      (:default . BODY))
+      (:wrapper wrapper-function))
 
 + CLASS: symbol or string of ObjC class
   this should be the root of ObjC class where the lisp generic function
@@ -549,9 +583,6 @@ Syntax:
 + LAMBDA-LIST:
   VAR: symbol of argument
   OBJC-ENCODING: ObjC type encoding for argument
-+ BODY: method body,
-  use `self' when referring current ObjC object (adviced, not force)
-  use `super' when referring current ObjC object super class
 
 Example:
 
@@ -570,32 +601,17 @@ Example:
   (let* ((class-root  (coerce-to-objc-class class))
          (class-name  (class-name           class-root))
          (name        (or name (objc-intern method)))
-         ;; callback is made up by CLASS-NAME and NAME,
-         ;; allowing to redefine the ObjC methods for
-         ;; different ObjC classes if needed
-         (callback    (intern (format nil
-                                      "OBJC-CALLBACK-~:@(~A~)-~:@(~A~)"
-                                      class-name
-                                      name)))
          (ret         (as-objc-encoding ret))
          (lambda-list (loop :for (var enc) :in lambda-list
                             :collect (list var (as-objc-encoding enc))))
          (rest-args   (mapcar #'first lambda-list))
          (wrapper     (or (second (assoc :wrapper options))
                           (when (eql ret :bool) 'as-boolean)))
-         (default     (cdr    (assoc :default options)))
          (encodings   (encode-objc-type-encoding
                        `(,ret :object :sel ,@(mapcar #'second lambda-list))))
          (sel         (gensym "SEL")))
     `(progn
-       (defgeneric ,name (self ,@rest-args)
-         (:method ((self ,class-name) ,@rest-args)
-           ,@default)
-         ,@(when wrapper
-             `((:method :around ((self ,class-name) ,@rest-args)
-                 (,wrapper (call-next-method)))))
-         ,@(remove-alist options :wrapper :default))
-       (defcallback ,callback ,(objc-encoding-cffi-type ret)
+       (defcallback ,name ,(objc-encoding-cffi-type ret)
            ((self :pointer)
             (,sel :pointer)
             ,@(loop :for (var enc) :in lambda-list
@@ -611,10 +627,23 @@ Example:
                        :if (eql type :sel)
                          :collect `(,var (coerce-to-selector             ,var))))
            (,name self ,@rest-args)))
-       (%define-objc-method (coerce-to-objc-class ,class)
-                            (coerce-to-selector   ,method)
-                            ',callback
-                            ,encodings)
+       ;; ensure `objc-class' and `sel' is correctly setted
+       (c2mop:ensure-generic-function
+        ',name
+        :generic-function-class (find-class 'objc-generic-function)
+        :objc-type              ,encodings
+        :objc-class             (coerce-to-objc-class ,class)
+        :sel                    (coerce-to-selector   ,method)
+        :documentation          ,(or (second (assoc :documentation options))
+                                     (format nil
+                                             "Implements ObjC method ~S"
+                                             method)))
+       ,@(when wrapper
+           `((defmethod ,name :around ((self ,class-name) ,@rest-args)
+               (,wrapper (call-next-method)))))
+       ,@(loop :for (car . cdr) :in options
+               :if (eql car :method)
+                 :collect `(defmethod ,name ,@cdr))
        ',name)))
 
 
