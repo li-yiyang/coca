@@ -269,7 +269,9 @@ Parameters:
                 (setf ,name ,(objc-method-foreign-aref-form
                               `(foreign-symbol-pointer ,objc-name :library ',library)
                               encoding)))
-              (pushnew ',fn *coca-post-init-hooks*))))
+              (pushnew ',fn *coca-post-init-hooks*)
+              (,fn)
+              ',name)))
         (otherwise
          `(defconstant ,name
             (cffi:mem-ref (foreign-symbol-pointer ,objc-name :library ',library)
