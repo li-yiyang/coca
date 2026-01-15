@@ -33,6 +33,7 @@
 
    ;; ObjC const
    #:define-objc-const
+   #:define-objc-mask
 
    ;; ObjC method
    ;; #:define-objc-method

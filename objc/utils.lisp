@@ -89,6 +89,18 @@ Rules:
 
     (t           (intern (str:upcase (str:param-case name))                    package))))
 
+(defun tree-find-if (tree pred)
+  "Search by PRED in TREE.
+
+Parameters:
++ TREE: list or atom
++ PRED: test function"
+  (declare (type function pred))
+  (if (funcall pred tree) t
+      (if (listp tree)
+          (find-if (lambda (elem) (tree-find-if elem pred)) tree)
+          nil)))
+
 (defun as-boolean (value)
   "Convert VALUE as boolean value. "
   (and value t))

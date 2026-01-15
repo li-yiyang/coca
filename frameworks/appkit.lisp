@@ -823,14 +823,15 @@ another window.
 For more information, see orderWindow:relativeTo:.
 
 see https://developer.apple.com/documentation/appkit/nswindow/orderingmode?language=objc"
-  (:above 1                    "Moves the window above the indicated window.")
-  (:below 18446744073709551615 "Moves the window below the indicated window.")
-  (:out   0                    "Moves the window off the screen."))
+  (:above 1                  "Moves the window above the indicated window.")
+  (:below #xFFFFFFFFFFFFFFFF "Moves the window below the indicated window.")
+  (:out   0                  "Moves the window off the screen."))
 
 (defgeneric add-subview (view subview &key &allow-other-keys)
   (:documentation "Add SUBVIEW to VIEW. ")
   (:method ((view ns-view) (subview ns-view)
             &key
+              (frame       nil    frame?)
               (positioned  :above positioned?)
               (relative-to nil    relative-to?))
     "Add SUBVIEW to VIEW.
@@ -1376,40 +1377,44 @@ see https://developer.apple.com/documentation/appkit/nsanimation?language=objc")
 
 ;;; Windows
 
-(define-objc-enum ns-window-style-mask
+(define-objc-mask ns-window-style-mask
   "Constants that specify the style of a window,
 and that you can combine with the C bitwise OR operator.
 
 See https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.struct?language=objc"
-  (:borderless                        0  "The window displays none of the usual peripheral elements. ")
-  (:titled                    (ash 1  0) "The window displays a title bar. ")
-  (:closable                  (ash 1  1) "The window displays a close button. ")
-  (:miniaturizable            (ash 1  2) "The window displays a minimize button. ")
-  (:resizable                 (ash 1  3) "The window can be resized by the user. ")
-  (:textured-background       (ash 1  8) "Deprecated"
-                              "The window uses a textured background that darkens"
-                              "when the window is key or main and lightens when it is inactive,"
-                              "and may have a second gradient in the section below the window content.")
-  (:unified-title-and-toolbar (ash 1 12) "This constant has no effect,"
-                              "because all windows that include a toolbar use the unified style. ")
-  (:full-screen               (ash 1 14) "The window can appear full screen. "
-                              "A fullscreen window does not draw its title bar, "
-                              "and may have special handling for its toolbar. "
-                              "(This mask is automatically toggled when toggleFullScreen: is called.)")
-  (:full-size-content-view    (ash 1 15)
-                              "When set, the window's contentView consumes the full size of the window."
-                              "Although you can combine this constant with other window style masks, "
-                              "it is respected only for windows with a title bar. "
-                              "Note that using this mask opts in to layer-backing. "
-                              "Use the contentLayoutRect or the contentLayoutGuide to lay out views "
-                              "underneath the title bar–toolbar area.")
-  (:utility-window            (ash 1  4) "The window is a panel or a subclass of `ns-panel'.")
-  (:doc-modal-window          (ash 1  6) "The window is a document-modal panel (or a subclass of `ns-panel').")
-  (:nonactivating-panel       (ash 1  7) "The window is a panel or a subclass of NSPanel"
-                              "that does not activate the owning app.")
-  (:hud-window                (ash 1 13) "The window is a HUD panel. "))
+  (:borderless                0    "The window displays none of the usual peripheral elements. ")
+  (:titled                    1    "The window displays a title bar. ")
+  (:closable                  2    "The window displays a close button. ")
+  (:miniaturizable            4    "The window displays a minimize button. ")
+  (:resizable                 8    "The window can be resized by the user. ")
+  (:textured-background       256
+                                   "Deprecated"
+                                   "The window uses a textured background that darkens"
+                                   "when the window is key or main and lightens when it is inactive,"
+                                   "and may have a second gradient in the section below the window content.")
+  (:unified-title-and-toolbar 4096
+                                   "This constant has no effect,"
+                                   "because all windows that include a toolbar use the unified style. ")
+  (:full-screen               16384
+                                   "The window can appear full screen. "
+                                   "A fullscreen window does not draw its title bar, "
+                                   "and may have special handling for its toolbar. "
+                                   "(This mask is automatically toggled when toggleFullScreen: is called.)")
+  (:full-size-content-view    32768
+                                   "When set, the window's contentView consumes the full size of the window."
+                                   "Although you can combine this constant with other window style masks, "
+                                   "it is respected only for windows with a title bar. "
+                                   "Note that using this mask opts in to layer-backing. "
+                                   "Use the contentLayoutRect or the contentLayoutGuide to lay out views "
+                                   "underneath the title bar–toolbar area.")
+  (:utility-window            16   "The window is a panel or a subclass of `ns-panel'.")
+  (:doc-modal-window          64   "The window is a document-modal panel (or a subclass of `ns-panel').")
+  (:nonactivating-panel       128
+                                   "The window is a panel or a subclass of NSPanel"
+                                   "that does not activate the owning app.")
+  (:hud-window                8192 "The window is a HUD panel. "))
 
-(define-objc-enum ns-window-collection-behavior
+(define-objc-mask ns-window-collection-behavior
   "Window collection behaviors related to Mission Control, Spaces, and
 Stage Manager.
 
@@ -2274,7 +2279,7 @@ see https://developer.apple.com/documentation/appkit/nsalignmentfeedbackfilter?l
 ;; Handle events related to mouse, keyboard, and trackpad input.
 ;; see https://developer.apple.com/documentation/appkit/mouse-keyboard-and-trackpad?language=objc
 
-(define-objc-enum ns-event-mask
+(define-objc-mask ns-event-mask
   "Constants that you use to filter out specific event types
 from the stream of incoming events.
 see https://developer.apple.com/documentation/appkit/nsevent/eventtypemask?language=objc"
@@ -2383,7 +2388,7 @@ These subtypes apply when the event type is `:system-defined'. "
   (:tablet-proximity          2 "A tablet-proximity event occurred.")
   (:touch                     3 "A touch event occurred."))
 
-(define-objc-enum ns-event-modifier-flags
+(define-objc-mask ns-event-modifier-flags
   "Flags that represent key states in an event object.
 see https://developer.apple.com/documentation/appkit/nsevent/modifierflags-swift.struct?language=objc"
   "Event Modifer Flags. "
@@ -3815,7 +3820,7 @@ see https://developer.apple.com/documentation/appkit/nsprintoperation?language=o
 
 ;;; Text views
 
-(define-objc-enum ns-line-break-strategy
+(define-objc-mask ns-line-break-strategy
   "Constants that specify how the text system breaks lines while laying out paragraphs.
 see https://developer.apple.com/documentation/appkit/nsparagraphstyle/linebreakstrategy-swift.struct?language=objc"
   (:push-out              1
@@ -4713,7 +4718,7 @@ see https://developer.apple.com/documentation/appkit/nsfontmanager/availablefont
 
 ;; Converting Fonts Manually
 
-(define-objc-enum ns-font-trait-mask
+(define-objc-mask ns-font-trait-mask
   "Constants for isolating specific traits of a font.
 
 NSFontManager categorizes fonts according to a small set of

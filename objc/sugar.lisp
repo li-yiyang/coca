@@ -116,16 +116,59 @@ This will define:
                            (,reader struct)))
        (regist-objc-struct ',lisp-name ',objc-name ',slots ',encodings ',coerce-p))))
 
-(defmacro define-objc-enum (name &body bindings)
-  "Define ObjC enum of NAME with BINDINGS.
+(flet ((extract-bindings (name bindings)
+         (let ((docstring (pop bindings)))
+           (unless (stringp docstring)
+             (push docstring bindings)
+             (setf docstring (format nil "ObjC enum of ~A. " name)))
+           (values
+            ;; [DOCSTRING]
+            (with-output-to-string (doc)
+              (write-line docstring doc)
+              (format doc "~&~%")
+              ;; + KEYWORD (LITERAL-VALUE)
+              ;;   documentation string
+              ;; ...
+              (loop :for binding :in bindings :do
+                (if (stringp binding)
+                    (format doc "~%~A~%" binding)
+                    (destructuring-bind (keyword val . docs) binding
+                      (format doc "+ ~S (~D)~%" keyword (eval val))
+                      (format doc "~{  ~A~%~}" docs))))
+              ;; Use functions ...
+              (format doc
+                      "~&Use functions `~S' to convert ~S flags into enum numbers. "
+                      name name))
+            ;; BINDINGS:
+            ;; ((KEYWORD LITERAL-VALUE) ...)
+            (loop :for binding :in bindings
+                  :if (listp binding)
+                    :collect (destructuring-bind (keyword val . ignore) binding
+                               (declare (ignore ignore))
+                               (let ((keyword (listfy keyword)))
+                                 (unless (every #'keywordp keyword)
+                                   (error "Expecting keywords as flags, but got:~{~S~^, ~}, "
+                                          keyword))
+                                 (list keyword val))))))))
+  (defmacro define-objc-mask (name &body bindings)
+    "Define ObjC enum as mask of NAME with BINDINGS.
 
 Example:
 
 Syntax:
 
-    (define-objc-enum NAME
+    (define-objc-mask NAME
       [docstring]
       (KEYWORD VAL [docstring]))
+
+    KEYWORD* := KEYWORD
+              | (KEYWORD ...MORE-KEYWORDS)
+
+Parameters:
++ NAME: the name of enum values as lisp type
++ KEYWORD*: when decoding the enum value,
+  the first KEYWORD would be returned as decoded value
+  the rest could be used when generating the enum value
 
 Dev Note:
 this will define:
@@ -133,43 +176,19 @@ this will define:
 + a lisp function <NAME>-p to test if is valid flag
 + an encoder function of as-<NAME> to convert enum keywords to unsigned-byte
 + a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
++ different to `define-objc-enum' the mask could also be a list of keyword
 "
-  (let ((docstring (pop bindings)))
-    (unless (stringp docstring)
-      (push docstring bindings)
-      (setf docstring (format nil "ObjC enum of ~A. " name)))
-    (let ((documentation (with-output-to-string (doc)
-                           ;; [DOCSTRING]
-                           (write-line docstring doc)
-                           (format doc "~&~%")
-                           ;; + KEYWORD (LITERAL-VALUE)
-                           ;;   documentation string
-                           ;; ...
-                           (loop :for binding :in bindings :do
-                             (if (stringp binding)
-                                 (format doc "~%~A~%" binding)
-                                 (destructuring-bind (keyword val . docs) binding
-                                   (format doc "+ ~S (~D)~%" keyword (eval val))
-                                   (format doc "~{  ~A~%~}" docs))))
-                           ;; Use functions ...
-                           (format doc
-                                   "~&Use functions `~S' to convert ~S flags into enum numbers. "
-                                   name name)))
-          ;; BINDINGS:
-          ;; ((KEYWORD LITERAL-VALUE) ...)
-          (bindings      (loop :for binding :in bindings
-                               :if (listp binding)
-                                 :collect (destructuring-bind (keyword val . ignore) binding
-                                            (declare (ignore ignore))
-                                            (list (the keyword       keyword)
-                                                  (the unsigned-byte (eval val)))))))
+    (multiple-value-bind (documentation bindings)
+        (extract-bindings name bindings)
       `(progn
          (deftype ,name ()
            ,documentation
-           '(member ,@(mapcar #'car bindings)))
+           '(satisfies ,(intern (str:concat (symbol-name name) "-P"))))
          (defun ,(intern (str:concat (symbol-name name) "-P")) (flag)
            ,(format nil "Test if FLAG is of ~S flag. " name)
-           (flet ((flagp (flag) (and (keywordp flag) (typep flag ',name))))
+           (flet ((flagp (flag)
+                    (and (keywordp flag)
+                         (member flag ',(apply #'append (mapcar #'car bindings))))))
              (or (flagp flag)
                  (and (listp flag) (every #'flagp flag)))))
          (defun ,(intern (str:concat "AS-" (symbol-name name))) (flag &rest flags)
@@ -201,12 +220,85 @@ See type documentation `~S'. "
                      (keyword       (decode  flag))
                      (list          (decode* flag)))
                    (decode* (cons flag flags))))))
+         (define-compiler-macro ,(intern (str:concat "AS-" (symbol-name name)))
+             (&whole expr flag &rest flags)
+           (if (tree-find-if
+                (cons flag flags)
+                (lambda (e) (typep e '(or unsigned-byte keyword))))
+               (eval expr)
+               expr))
          (defun ,(intern (str:concat "DECODE-" (symbol-name name))) (flag)
            ,(format nil "Decode FLAG as `~S', a list of `~S' or unsigned-integer if fails. "
                     name name)
            (declare (type unsigned-byte flag))
            (with-objc-enum-flags flag
-             ,@bindings))))))
+             ,@(loop :for (key val) :in bindings
+                     :collect (list (atomize key) val)))))))
+
+  (defmacro define-objc-enum (name &body bindings)
+    "Define ObjC enum of NAME with BINDINGS.
+
+Example:
+
+Syntax:
+
+    (define-objc-enum NAME
+      [docstring]
+      (KEYWORD* VAL [docstring]))
+
+    KEYWORD* := KEYWORD
+              | (KEYWORD ...MORE-KEYWORDS)
+
+Parameters:
++ NAME: the name of enum values as lisp type
++ KEYWORD*: when decoding the enum value,
+  the first KEYWORD would be returned as decoded value
+  the rest could be used when generating the enum value
+
+Dev Note:
+this will define:
++ lisp type of NAME
++ a lisp function <NAME>-p to test if is valid flag
++ an encoder function of as-<NAME> to convert enum keywords to unsigned-byte
++ a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
++ different to `define-objc-mask' the enum should only be single keyword"
+    (multiple-value-bind (documentation bindings)
+        (extract-bindings name bindings)
+      `(progn
+         (deftype ,name ()
+           ,documentation
+           '(member ,@(apply #'append (mapcar #'first bindings))))
+         (defun ,(intern (str:concat (symbol-name name) "-P")) (flag)
+           ,(format nil "Test if FLAG is of ~S flag. " name)
+           (and (keywordp flag) (typep flag ',name)))
+         (defun ,(intern (str:concat "AS-" (symbol-name name))) (flag)
+           ,(format nil "Convert FLAG into ObjC enum numbers.
+Return `unsigned-byte' as enum numbers.
+see type documentation `~S'. "
+                    name)
+           (declaim (type (or unsigned-byte ,name) flag))
+           (the unsigned-byte
+             (etypecase flag
+               (unsigned-byte flag)
+               (keyword
+                (ecase flag
+                  ,@(loop :for (keyword val) :in bindings
+                          :collect `(,keyword ,val)))))))
+         (define-compiler-macro ,(intern (str:concat "AS-" (symbol-name name)))
+             (&whole expr flag)
+           (typecase flag
+             (unsigned-byte flag)
+             (keyword
+              (ecase flag
+                ,@(loop :for (keyword val) :in bindings
+                        :collect `(,keyword ,val))))
+             (t expr)))
+         (defun ,(intern (str:concat "DECODE-" (symbol-name name))) (flag)
+           ,(format nil "Decode FLAG as `~S' or unsigned-integer if fails. " name)
+           (declare (type unsigned-byte flag))
+           (case flag
+             ,@(loop :for (flag val) :in bindings
+                     :collect (list val (atomize flag)))))))))
 
 ;; TODO: bettter and efficient decoding methods
 (defmacro with-objc-enum-flags (val &body body)
@@ -220,20 +312,28 @@ Syntax:
       (FLAG    VAL)
       ...)
 "
-  (let ((value (gensym "VAL"))
-        (flags (gensym "FLAGS"))
-        (cnts  (gensym "CNTS")))
-    `(let ((,value ,val)
-           (,flags ())
-           (,cnts  0))
-       ,@(loop :for (flag v) :in body
-               :for mask := (eval v)
-               :collect `(when (= ,mask (logand ,value ,mask))
-                           (push ,flag ,flags)
-                           (incf ,cnts)))
-       (cond ((zerop ,cnts) ,value)
-             ((= ,cnts 1)   (car ,flags))
-             (t             ,flags)))))
+  (let* ((value (gensym "VAL"))
+         (flags (gensym "FLAGS"))
+         (cnts  (gensym "CNTS"))
+         (zero  nil)
+         rule)
+    (setf rule
+          `(let ((,flags ())
+                 (,cnts  0))
+             ,@(loop :for (flag v) :in body
+                     :for mask := (eval v)
+                     :if (zerop v)
+                       :do (setf zero flag)
+                     :else
+                       :collect `(when (= ,mask (logand ,value ,mask))
+                                   (push ,flag ,flags)
+                                   (incf ,cnts)))
+             (cond ((zerop ,cnts) ,value)
+                   ((= ,cnts 1)   (car ,flags))
+                   (t             ,flags))))
+    (if zero
+        `(let ((,value ,val)) (if (zerop ,value) ,zero ,rule))
+        `(let ((,value ,val)) ,rule))))
 
 (trivial-indent:define-indentation define-objc-const (4 &lambda &body))
 (defmacro define-objc-const (name (objc-name objc-encoding &optional (library :default))

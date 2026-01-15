@@ -214,7 +214,16 @@ LispWorks' API.
 
       (define-objc-enum NAME
         [docstring]
-        (KEYWORD VAL [docstring]))
+        (KEYWORD* VAL [docstring]))
+
+      KEYWORD* := KEYWORD
+                | (KEYWORD ...MORE-KEYWORDS)
+
+  Parameters:
+  + NAME: the name of enum values as lisp type
+  + KEYWORD*: when decoding the enum value,
+    the first KEYWORD would be returned as decoded value
+    the rest could be used when generating the enum value
 
   Dev Note:
   this will define:
@@ -222,7 +231,44 @@ LispWorks' API.
   + a lisp function <NAME>-p to test if is valid flag
   + an encoder function of as-<NAME> to convert enum keywords to unsigned-byte
   + a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
+  + different to `define-objc-mask' the enum should only be single keyword
   #+end_example
++ =define-objc-mask=
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-mask) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC enum as mask of NAME with BINDINGS.
+
+  Example:
+
+  Syntax:
+
+      (define-objc-mask NAME
+        [docstring]
+        (KEYWORD VAL [docstring]))
+
+      KEYWORD* := KEYWORD
+                | (KEYWORD ...MORE-KEYWORDS)
+
+  Parameters:
+  + NAME: the name of enum values as lisp type
+  + KEYWORD*: when decoding the enum value,
+    the first KEYWORD would be returned as decoded value
+    the rest could be used when generating the enum value
+
+  Dev Note:
+  this will define:
+  + lisp type of NAME
+  + a lisp function <NAME>-p to test if is valid flag
+  + an encoder function of as-<NAME> to convert enum keywords to unsigned-byte
+  + a decoder function of NAME DECODE-<NAME> to convert unsigned-byte to keywords
+  + different to `define-objc-enum' the mask could also be a list of keyword
+  #+end_example
+
 + =define-objc-const=
 
   #+begin_src lisp :exports results
