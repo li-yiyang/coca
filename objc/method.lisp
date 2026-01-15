@@ -547,6 +547,7 @@ use only in `reinitialize-instance', `initialize-instance' and
                      (slot-value gf 'objc-class))))
     (call-next-method)
     (%update-objc-generic-function-objc-class gf old-class)
+    (setf (gethash (c2mop:generic-function-name gf) *objc-methods*) gf)
     gf))
 
 ;; TODO: maybe i should modify the `%update-objc-generic-function-objc-class'

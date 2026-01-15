@@ -29,6 +29,8 @@ So not recommanded to use `make-instance' to alloc `sel' instance."))
               name
               (pointer-address (objc-object-pointer sel))))))
 
+(defvar *objc-methods* (make-hash-table))
+
 (defclass objc-generic-function (c2mop:standard-generic-function objc-pointer)
   ((objc-class
     :type    objc-class
