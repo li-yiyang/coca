@@ -31,9 +31,16 @@ see https://developer.apple.com/documentation/appkit?language=objc")
   (:export
    ;; App and Environment
    #:ns-application
+   #:current-event
    #:running-p
    #:activep
-   #:current-event
+   #:dock-tile
+   #:application-icon-image
+   #:ns-application-acitivation-policy
+   #:as-ns-application-acitivation-policy
+   #:decode-ns-application-acitivation-policy
+   #:ns-application-acitivation-policy-p
+   #:activation-policy
    #:ns-app
    #:+ns-event-tracking-run-loop-mode+
    #:+ns-modal-panel-run-loop-mode+
@@ -82,7 +89,17 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    ;; App Extensions
 
    ;; Views and Controls
+   #:ns-autoresizing-mask-options
+   #:ns-autoresizing-mask-options-p
+   #:as-ns-autoresizing-mask-options
+   #:decode-ns-autoresizing-mask-options
    #:ns-view
+   #:superview
+   #:subviews
+   #:window
+   #:needs-display-p
+   #:frame
+   #:autoresizing-mask
    #:ns-text-alignment
    #:as-ns-text-alignment
    #:ns-text-alignment-p
@@ -109,13 +126,40 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:alignment
    #:font
    #:line-break-mode
+   #:action
+   #:target
+   #:continuousp
    #:ns-cell
    #:ns-action-cell
    #:ns-split-view
    #:ns-stack-view
    #:ns-tab-view
    #:ns-text-view
+   #:ns-button-type
+   #:ns-button-type-p
+   #:as-ns-button-type
+   #:decode-ns-button-type
+   #:*ns-button-type*
+   #:ns-cell-image-position
+   #:ns-cell-image-position-p
+   #:as-ns-cell-image-position
+   #:decode-ns-cell-image-position
+   #:ns-bezel-style
+   #:ns-bezel-style-p
+   #:as-ns-bezel-style
+   #:decode-ns-bezel-style
    #:ns-button
+   #:button-type
+   #:title
+   #:alternate-title
+   #:image
+   #:alternate-image
+   #:image-position
+   #:borderedp
+   #:transparentp
+   #:bezel-style
+   #:bezel-color
+   #:shows-border-only-while-mouse-inside-p
    #:ns-color-well
    #:ns-combo-button
    #:ns-image-view
@@ -693,8 +737,21 @@ see https://developer.apple.com/documentation/appkit/nsniboutletconnector?langua
 
 ;;; View fundamentals
 
+(define-objc-mask ns-autoresizing-mask-options
+  "Constants that specify the autoresizing behaviors for views.
+see https://developer.apple.com/documentation/appkit/nsview/autoresizingmask-swift.struct?language=objc"
+  "Getting the Autoresizing mask"
+  (:not-sizable    0  "The view cannot be resized.")
+  (:min-x-margin   1  "The left margin between the view and its superview is flexible.")
+  (:width-sizable  2  "The view’s width is flexible.")
+  (:max-x-margin   4  "The right margin between the view and its superview is flexible.")
+  (:min-y-margin   8  "The bottom margin between the view and its superview is flexible.")
+  (:height-sizable 16 "The view’s height is flexible.")
+  (:max-y-margin   32 "The top margin between the view and its superview is flexible."))
+
 (define-objc-class "NSView" ()
-  (;; View Hierarchy
+  (;;; Configuring the view
+   ;; View Hierarchy
    ("superview"
     :reader superview
     :documentation
@@ -710,7 +767,67 @@ see https://developer.apple.com/documentation/appkit/nsview/subviews?language=ob
     :reader window
     :documentation
     "The view’s window object, if it is installed in a window.
-see https://developer.apple.com/documentation/appkit/nsview/window?language=objc"))
+
+The value of this property is nil if the view is not currently
+installed in a window.
+
+see https://developer.apple.com/documentation/appkit/nsview/window?language=objc")
+   ("needsDisplay"
+    :accessor needs-display-p
+    :documentation
+    "A Boolean value that determines whether the view needs to be
+redrawn before being displayed.
+
+The displayIfNeeded methods check the value of this property to avoid
+unnecessary drawing, and all display methods set the value back to
+`nil' when the view is up to date.
+
+Whenever the data or state affecting the view’s appearance changes,
+set this property to `t'. This marks the view as needing to update
+its display. On the next pass through the app’s event loop, the view
+is automatically redisplayed.
+
+see https://developer.apple.com/documentation/appkit/nsview/needsdisplay?language=objc")
+   ("frame"
+    :accessor frame
+    :documentation
+    "The view’s frame rectangle, which defines its position and size
+in its superview’s coordinate system.
+
+Changing the value of this property repositions and resizes the view
+within the coordinate system of its superview. Changing the frame does
+not mark the view as needing to be displayed. Set the needsDisplay
+property to true when you want the view to be redisplayed.
+
+If your view does not use a custom bounds rectangle, this method also
+sets the view’s bounds to match the size of the new frame. You can
+specify a custom bounds rectangle by changing the bounds property or
+by calling the setBoundsOrigin: or setBoundsSize: method
+explicitly. Once set, the view creates an internal transform to
+convert from frame coordinates to bounds coordinates. As long as the
+width-to-height ratio of the two coordinate systems remains the same,
+your content appears normal. If the ratios differ, your content may
+appear skewed.
+
+The frame rectangle may be rotated relative to its superview’s
+coordinate system. For more information, see the frameRotation
+property.
+
+Changing the value of this property results in the posting of an
+NSViewFrameDidChangeNotification to the default notification center if
+the view is configured to do so.
+
+see https://developer.apple.com/documentation/appkit/nsview/frame?language=objc")
+   ;;; Managing the view's content
+   ;; Layout
+   ("autoresizingMask"
+    :accessor autoresizing-mask
+    :before   as-ns-autoresizing-mask-options
+    :after    decode-ns-autoresizing-mask-options
+    :documentation
+    "The options that determine how the view is resized relative to
+its superview.
+see https://developer.apple.com/documentation/appkit/nsview/autoresizingmask-swift.property?language=objc"))
   (:documentation
    "The infrastructure for drawing, printing, and handling events in an app.
 
@@ -843,9 +960,14 @@ Parameters:
   the other `ns-view' SUBVIEW should be positioned relative to.
   if `nil' or isn't a subview of the VIEW, SUBVIEW will be added
   above or below all of its neww siblings
++ FRAME: (`ns-rect')
+  setting the location and size of SUBVIEW within VIEW
+  see `frame' property
 "
     (declare (type (member :above :below) positioned)
-             (type (or null ns-view) relative-to))
+             (type (or null ns-view) relative-to)
+             (type (or null ns-rect) frame))
+    (when frame? (setf (frame subview) frame))
     (if (or positioned? relative-to?)
         (invoke view "addSubview:positioned:relativeTo:"
                 subview
@@ -995,7 +1117,25 @@ see https://developer.apple.com/documentation/appkit/nscontrol/font?language=obj
 
 see `ns-line-break-mode'
 
-see https://developer.apple.com/documentation/appkit/nscontrol/linebreakmode?language=objc"))
+see https://developer.apple.com/documentation/appkit/nscontrol/linebreakmode?language=objc")
+   ;; Implementing the Target-Action Mechanism
+   ("action"
+    :accessor action
+    :before   coerce-to-selector
+    :documentation
+    "The default action-message selector associated with the control.
+see https://developer.apple.com/documentation/appkit/nscontrol/action?language=objc")
+   ("target"
+    :accessor target
+    :documentation
+    "The target object that receives action messages from the cell.
+see https://developer.apple.com/documentation/appkit/nscontrol/target?language=objc")
+   ("continuous"
+    :accessor continuousp
+    :documentation
+    "A Boolean value indicating whether the receiver’s cell sends its
+action message continuously to its target during mouse tracking.
+see https://developer.apple.com/documentation/appkit/nscontrol/iscontinuous?language=objc"))
   (:documentation
    "A specialized view, such as a button or text field, that notifies
 your app of relevant events using the target-action design pattern.
@@ -1051,11 +1191,275 @@ see https://developer.apple.com/documentation/appkit/nstextview?language=objc"))
 
 ;;; Controls
 
+(define-objc-enum ns-button-type
+  "Button types that you can specify using setButtonType:.
+
+For examples of how these types behave, see Button Programming Topics.
+
+see https://developer.apple.com/documentation/appkit/nsbutton/buttontype?language=objc"
+  "Configuring Button Behavior"
+  (:momentary-push-in       7 "A button that illuminates when the user clicks it. ")
+  (:momentary-light         0
+                            "A button that displays a highlight when the user"
+                            "clicks it and returns to its normal state when"
+                            "the user releases it.")
+  (:momentary-change        5
+                            "A button that displays its alternate content"
+                            "when clicked and returns to its normal content"
+                            "when the user releases it.")
+  (:push-on-push-off        1
+                            "A button that switches between on and off states "
+                            "with each click.")
+  (:on-off                  6
+                            "A button that switches between a normal and "
+                            "emphasized bezel on each click.")
+  (:toggle                  2
+                            "A button that switches between its normal "
+                            "and alternate content on each click.")
+  (:switch                  3 "A standard checkbox button.")
+  (:radio                   4
+                            "A button that displays a single selected "
+                            "value from group of possible choices.")
+  (:accelerator             8
+                            "A button that sends repeating actions as pressure "
+                            "changes occur.")
+  (:multi-level-accelerator 9
+                            "A button that allows for a configurable number of "
+                            "stepped pressure levels and provides tactile feedback "
+                            "as the user reaches each step."))
+
+(declaim (type (satisfies ns-button-type-p) *ns-button-type*))
+(defparameter *ns-button-type* :momentary-light
+  "Default `ns-button-type'. ")
+
+(define-objc-enum ns-cell-image-position
+  "A constant for specifying the position of a button’s image relative
+to its title.
+
+Use these constants with the imagePosition property of NSButton and
+NSButtonCell.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/imageposition?language=objc"
+  "Positioning a Control's Image"
+  (:no-image       0 "The cell doesn’t display an image.")
+  (:image-only     1 "The cell displays an image but not a title.")
+  (:image-leading  7 "The image is on the title’s leading edge.")
+  (:image-trailing 8 "The image is on the title’s trailing edge.")
+  (:left           2 "The image is to the left of the title.")
+  (:right          3 "The image is to the right of the title.")
+  (:below          4 "The image is below the title.")
+  (:above          5 "The image is above the title.")
+  (:overlaps       6 "The image overlaps the title."))
+
+(define-objc-enum ns-bezel-style
+  "The set of bezel styles to style buttons in your app.
+
+For design guidance on buttons, see Human Interface Guidelines > Buttons.
+
+see https://developer.apple.com/documentation/appkit/nsbutton/bezelstyle-swift.enum?language=objc"
+  "Default"
+  (:automatic            0
+                         "The default button style based on the"
+                         "button’s contents and position within the window.")
+  "Push"
+  (:push                 1  "A standard push style button.")
+  (:flexible-push        2
+                         "A push button with a flexible height to accommodate "
+                         "longer text labels or an image.")
+  "Disclosure"
+  (:disclosure           5  "A bezel style button for use with a disclosure triangle.")
+  (:push-disclosure      14 "A bezel style push button with a disclosure triangle.")
+  "Toolbar"
+  (:toolbar              11 "A button style that’s appropriate for a toolbar item.")
+  (:accessory-bar        13
+                         "A button style that’s typically used in the context of "
+                         "an accessory toolbar for buttons that narrow the focus of "
+                         "a search or other operation.")
+  (:accessory-bar-action 12
+                         "A button style that you use for extra actions in an "
+                         "accessory toolbar.")
+  "Informational"
+  (:help-button          9
+                         "A round button with a question mark, providing the "
+                         "standard help button look.")
+  (:badge                15
+                         "A button style suitable for displaying additional "
+                         "information.")
+  (:circular             7
+                         "A round button that can contain either a single character "
+                         "or an icon.")
+  "Other"
+  (:small-square         10 "A simple square bezel style that can scale to any size."))
+
 (define-objc-class "NSButton" ()
-  ()
+  (;; Configuring buttons
+   (%button-type :reader button-type) ; (setf button-type)
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :documentation
+    "The title displayed on the button when it’s in an off state.
+see https://developer.apple.com/documentation/appkit/nsbutton/title?language=objc")
+   ("alternateTitle"
+    :accessor alternate-title
+    :before   as-ns-string
+    :documentation
+    "The title that the button displays when the button is in an on state.
+see https://developer.apple.com/documentation/appkit/nsbutton/alternatetitle?language=objc")
+   ;; Configuring button images
+   ("image"
+    :accessor image
+    ;; :before   as-ns-image
+    :documentation
+    "The image that appears on the button when it’s in an off state,
+or nil if there is no such image.
+see https://developer.apple.com/documentation/appkit/nsbutton/image?language=objc")
+   ("alternateImage"
+    :accessor alternate-image
+    ;; :before as-ns-image
+    :documentation
+    "An alternate image that appears on the button when the button is
+in an on state.
+see https://developer.apple.com/documentation/appkit/nsbutton/alternateimage?language=objc")
+   ("imagePosition"
+    :accessor image-position
+    :before   as-ns-cell-image-position
+    :after    decode-ns-cell-image-position
+    :documentation
+    "The position of the button’s image relative to its title.
+see https://developer.apple.com/documentation/appkit/nsbutton/imageposition?language=objc")
+   ("bordered"
+    :accessor borderedp
+    :documentation
+    "A Boolean value that determines whether the button has a border.
+see https://developer.apple.com/documentation/appkit/nsbutton/isbordered?language=objc")
+   ("transparent"
+    :accessor transparentp
+    :documentation
+    "A Boolean value that indicates whether the button is transparent.
+see https://developer.apple.com/documentation/appkit/nsbutton/istransparent?language=objc")
+   ("bezelStyle"
+    :accessor bezel-style
+    :before   as-ns-bezel-style
+    :after    decode-ns-bezel-style
+    :documentation
+    "The appearance of the button’s border.
+see https://developer.apple.com/documentation/appkit/nsbutton/bezelstyle-swift.property?language=objc")
+   ("bezelColor"
+    :accessor bezel-color
+    :before   as-ns-color
+    :documentation
+    "The color of the button’s bezel, in appearances that support it.
+see https://developer.apple.com/documentation/appkit/nsbutton/bezelcolor?language=objc")
+   ("showsBorderOnlyWhileMouseInside"
+    :accessor shows-border-only-while-mouse-inside-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that determines whether the button displays its
+border only when the pointer is over it.
+see https://developer.apple.com/documentation/appkit/nsbutton/showsborderonlywhilemouseinside?language=objc"))
   (:documentation
-   "A control that defines an area on the screen that a user clicks to trigger an action.
+   "A control that defines an area on the screen that a user clicks to
+trigger an action.
+
+Buttons are a standard control for initiating actions within your
+app. You can configure buttons with many different visual styles, but
+the behavior is the same. When a user clicks it, a button calls the
+action method of its associated target object. (If you configure a
+button as continuous, it calls its action method at timed intervals
+until the user releases the mouse button or the cursor leaves the
+button boundaries). You use the action method to perform your
+app-specific tasks.
+
+There are multiple types of buttons, each with a different user
+interface and behavior. The NSButtonCell class defines the button
+types, and calling the setButtonType: method configures them.
+
+If you configure it as an accelerator button (type NSAcceleratorButton
+or NSMultiLevelAcceleratorButton), you can set a button to send action
+messages when changes in pressure occur when the user clicks the
+button.
+
+Buttons can either have two states (on and off) or three states (on,
+off, and mixed). You enable a three-state button by calling the
+allowsMixedState method. On and off (also referred to as alternate and
+normal) states indicate that the user clicked or didn’t click the
+button. Mixed is typically used for checkboxes or radio buttons, which
+allow for an additional intermediate state. For example, suppose the
+state of a checkbox denotes whether a text field contains bold
+text. If all text in the text field is bold, then the checkbox is
+on. If none of the text is bold, then the checkbox is off. If some of
+the text is bold, then the checkbox is mixed.
+
+For most types of buttons, the value of the button matches its
+state—the value is 1 for on, 0 for off, or -1 for mixed. For
+pressure-sensitive buttons, the value of the button indicates pressure
+level instead.
+
+NSButton and NSMatrix both provide a control view, which displays an
+NSButtonCell object. However, while a matrix requires you to access
+the button cell objects directly, most button class methods act as
+“covers” for identically declared button cell methods. In other words,
+the implementation of the button method invokes the corresponding
+button cell method for you, allowing you to be unconcerned with the
+existence of the button cell. The only button cell methods that don’t
+have covers relate to the font you use to display the key equivalent
+and to specific methods for highlighting or showing the state of the
+button.
+
 see https://developer.apple.com/documentation/appkit/nsbutton?language=objc"))
+
+(defmethod (setf button-type) (button-type (button ns-button))
+  (declare (type ns-button-type button-type))
+  (invoke button "setButtonType:" (as-ns-button-type button-type))
+  (setf (slot-value button '%button-type) button-type))
+
+(defmethod init ((button ns-button)
+                 &key frame
+                   (button-type *ns-button-type*)
+                   (title       nil title?)
+                   (image       nil image?)
+                   (borderedp   nil bordered?)
+                   (bezel-style nil bezel-style?)
+                   (bezel-color nil bezel-color?)
+                   (target      nil target?)
+                   (action      nil action?))
+  "Creates a standard push button with the title you specify.
+
+Parameters:
++ TARGET: The target object that receives action messages from the control.
++ ACTION: The action the button sends to the target.
+  see `coerce-to-selector'
++ TITLE:  The localized title string to display on the button.
++ IMAGE:  The image to display in the body of the button.
++ BORDEREDP: if BUTTON has border
+  see `borderedp'
++ BEZEL-STYLE: appearance of button border (`ns-bezel-style')
+  see `bezel-style'
++ BEZEL-COLOR: color of the button’s bezel (`as-ns-color')
+  see `bezel-color'
++ BUTTON-TYPE: button type (`*ns-button-type*')
+  see `ns-button-type'
+
+Dev Note:
+at least one of TITLE and IMAGE should be given.
+"
+  (declare (type ns-rect frame)
+           (type (or null standard-objc-object) target))
+  (unless (or title? image?)
+    (error "At least one of `:title' and `:image' should be given. "))
+  (let ((button (invoke button "initWithFrame:" frame)))
+    (when title?  (setf (title  button) title))
+    (when image?
+      (setf (image  button) image)
+      ;; Configuring button image
+      (when bordered?    (setf (borderedp   button) borderedp))
+      (when bezel-style? (setf (bezel-style button) bezel-style))
+      (when bezel-color? (setf (bezel-color button) bezel-color)))
+    (when target? (setf (target button) target))
+    (when action? (setf (action button) action))
+    (setf (button-type button) button-type)
+    button))
 
 (define-objc-class "NSColorWell" ()
   ()
@@ -1558,6 +1962,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.pr
 see https://developer.apple.com/documentation/appkit/nswindow/alphavalue?language=objc")
    ("backgroundColor"
     :accessor background-color
+    :before   as-ns-color
     :documentation
     "The color of window's background.
 see https://developer.apple.com/documentation/appkit/nswindow/backgroundcolor?language=objc")
@@ -3728,7 +4133,7 @@ see
            (map 'list (lambda (val) (coerce val 'double-float)) args)))
   (:method ((white real) &key)
     "ns-color-white"
-    (ns-color-white white))
+    (ns-color-white (coerce white 'double-float)))
   (:method ((image ns-image) &key)
     "ns-color-pattern-image"
     (ns-color-pattern-image image)))
@@ -4841,21 +5246,34 @@ see https://developer.apple.com/documentation/appkit/nstextpreview?language=objc
 ;;; Life Cycle
 
 (define-objc-class "NSApplication" ()
-  (("currentEvent"
+  (;; Managing the event loop
+   ("currentEvent"
     :reader current-event
     :documentation
     "The last event object that the app retrieved from the event queue.
-See https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
+see https://developer.apple.com/documentation/appkit/nsapplication/currentevent?language=objc")
    ("running"
     :reader running-p
     :documentation
     "Test if the main event loop is running.
-See https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
+see https://developer.apple.com/documentation/appkit/nsapplication/isrunning?language=objc")
+   ;; Activating and deactivating the app
    ("active"
     :reader activep
     :documentation
     "Test if this is the active app.
-See https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc"))
+see https://developer.apple.com/documentation/appkit/nsapplication/isactive?language=objc")
+   ;; Accessing the dock tile
+   ("dockTile"
+    :reader dock-tile
+    :documentation
+    "The app’s Dock tile.
+see https://developer.apple.com/documentation/appkit/nsapplication/docktile?language=objc")
+   ("applicationIconImage"
+    :reader application-icon-image
+    :documentation
+    "The image used for the app’s icon.
+see https://developer.apple.com/documentation/appkit/nsapplication/applicationiconimage?language=objc"))
   (:documentation
    "An object that manages an app’s main event loop and resources used by all of that app's objects.
 Every app uses a single instance of `ns-application' to control the main
@@ -5224,6 +5642,42 @@ further dispatching."
 ;; Logging exceptions
 
 ;; Configuring the activation policy
+
+(define-objc-enum ns-application-activation-policy
+  "Activation policies (used by activationPolicy) that control whether
+and how an app may be activated.
+see https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy-swift.enum?language=objc"
+  "Activation Policies"
+  (:regular    0
+              "The application is an ordinary app that appears in the"
+              "Dock and may have a user interface.")
+  (:accessory  1
+              "The application doesn’t appear in the Dock and doesn’t "
+              "have a menu bar, but it may be activated programmatically"
+              "or by clicking on one of its windows.")
+  (:prohibited 2
+               "The application doesn’t appear in the Dock and may not "
+               "create windows or be activated."))
+
+(defmethod activation-policy ((app ns-application))
+  "Returns the app’s activation policy.
+see https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy()?language=objc"
+  (decode-ns-application-activation-policy
+   (invoke app "activationPolicy")))
+
+(defmethod (setf activation-policy) (policy (app ns-application))
+  "Attempts to modify the app’s activation policy.
+
+You can set any activation policy in macOS 10.9 and later; in macOS
+10.8 and earlier, you can only set the activation policy to
+`:prohibited' or `:regular'.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/setactivationpolicy(_:)?language=objc"
+  (let ((res (invoke app
+                     "setActivationPolicy:"
+                     (as-ns-application-activation-policy policy))))
+    (unless res (error "Failed to switch ~S policy with ~S. " app policy))
+    policy))
 
 ;; Scripting your app
 
