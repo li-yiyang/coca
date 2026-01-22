@@ -480,12 +480,13 @@ Use with caution. "
 
 ;; `objc-generic-function' is defined in coca/objc;sel.lisp
 
-(defun %update-objc-generic-function-objc-class (gf old-class)
+(defun %update-objc-generic-function-objc-class (gf old-class &optional force)
   "Update GF's `objc-class' if new class is superclass of OLD-CLASS.
 
 Parameters:
 + GF: updated or initialized `coca.objc::objc-generic-function'
 + OLD-CLASS: previous objc-class of the GF or nil
++ FORCE: non-nil to force update
 
 Dev Note:
 use only in `reinitialize-instance', `initialize-instance' and
@@ -495,7 +496,7 @@ use only in `reinitialize-instance', `initialize-instance' and
   ;; Make sure that GF is properly initialized
   (when (slot-boundp gf 'objc-class)
     (with-slots (objc-class sel objc-type objc-object-pointer) gf
-      (if (and old-class (c2mop:subclassp objc-class old-class))
+      (if (and old-class (c2mop:subclassp objc-class old-class) (not force))
           ;; if new OBJC-CLASS is just subclass of OLD-CLASS,
           ;; reset the `objc-clas' of GF by OLD-CLASS
           (setf objc-class old-class)
@@ -589,7 +590,6 @@ Example:
 
     (define-objc-method (ns-window \"foo\") :bool ()
       (:documentation \"...\")
-      (:default (invoke self balabala))
       (:wrapper as-boolean)
       (:method ((self ns-window))
         (call-next-method) ;; like [super ...] in ObjC
