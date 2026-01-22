@@ -276,7 +276,7 @@ this will define:
 Return `unsigned-byte' as enum numbers.
 see type documentation `~S'. "
                     name)
-           (declaim (type (or unsigned-byte ,name) flag))
+           (declare (type (or unsigned-byte ,name) flag))
            (the unsigned-byte
              (etypecase flag
                (unsigned-byte flag)

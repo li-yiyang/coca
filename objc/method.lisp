@@ -554,12 +554,14 @@ use only in `reinitialize-instance', `initialize-instance' and
 ;; TODO: maybe i should modify the `%update-objc-generic-function-objc-class'
 ;; function to make sure that it's more efficient.
 (defmethod add-method :around ((gf objc-generic-function) (method method))
-  (let ((new-class (car (c2mop:method-specializers method)))
-        (old-class (slot-value gf 'objc-class)))
-    (setf (slot-value gf 'objc-class) new-class)
-    (call-next-method)
-    (%update-objc-generic-function-objc-class gf old-class)
-    method))
+  (let ((new-class (car (c2mop:method-specializers method))))
+    (if (typep new-class 'objc-class)
+        (let ((old-class (slot-value gf 'objc-class)))
+          (setf (slot-value gf 'objc-class) new-class)
+          (call-next-method)
+          (%update-objc-generic-function-objc-class gf old-class)
+          method)
+        (call-next-method))))
 
 (trivial-indent:define-indentation define-objc-method (4 4 &lambda &body))
 (defmacro define-objc-method ((class method &optional name) ret lambda-list &body options)
