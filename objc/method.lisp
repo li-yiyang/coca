@@ -575,7 +575,8 @@ Syntax:
       (:method ((self class) (arg ...))
         body)
       (:wrapper wrapper-function)
-      (:default default-return-value))
+      (:default default-return-value)
+      (:redefine REDEFINE))
 
 + CLASS: symbol or string of ObjC class
   this should be the root of ObjC class where the lisp generic function
@@ -593,7 +594,9 @@ Syntax:
 + DEFAULT: by default, raise warning with no method message.
   Use DEFAULT will provide default return value of objc method.
 
-  Note: within DEFAULT, the VAR and SELF can be referred. 
+  Note: within DEFAULT, the VAR and SELF can be referred.
++ REDEFINE: redefine the CFFI callback and the default method
+  (by default is `nil')
 
 Example:
 
@@ -627,24 +630,8 @@ Example:
          (encodings   (encode-objc-type-encoding
                        `(,ret :object :sel ,@(mapcar #'second lambda-list))))
          (sel         (gensym "SEL"))
-         (options     (remove-alist options :wrapper :default)))
+         (options     (remove-alist options :wrapper :default :redefine)))
     `(progn
-       (defcallback ,name ,(objc-encoding-cffi-type ret)
-           ((self :pointer)
-            (,sel :pointer)
-            ,@(loop :for (var enc) :in lambda-list
-                    :collect (list var (objc-encoding-cffi-type enc))))
-         (declare (ignore ,sel))
-         (let ((self (coerce-to-objc-object self))
-               ,@(loop :for (var enc) :in lambda-list
-                       :for type := (atomize enc)
-                       :if (eql type :object)
-                         :collect `(,var (coerce-to-objc-object          ,var))
-                       :if (eql type :class)
-                         :collect `(,var (pointer-to-objc-class-nullable ,var))
-                       :if (eql type :sel)
-                         :collect `(,var (coerce-to-selector             ,var))))
-           (,name self ,@rest-args)))
        ;; ensure `objc-class' and `sel' is correctly setted
        (c2mop:ensure-generic-function
         ',name
@@ -659,7 +646,28 @@ Example:
        ,@(when wrapper
            `((defmethod ,name :around ((self ,class-name) ,@rest-args)
                (,wrapper (call-next-method)))))
-       (defmethod ,name (self ,@rest-args) ,default)
+       ;; FIXME: should callback be defined with different CFFI types?
+       ;; should this be possible in ObjC? just ignore for now.
+       ,@(when (or (not (and (symbol-function name)
+                             (objc-generic-function-p (symbol-function name))))
+                   (second (assoc :redefine options)))
+           `((defcallback ,name ,(objc-encoding-cffi-type ret)
+                 ((self :pointer)
+                  (,sel :pointer)
+                  ,@(loop :for (var enc) :in lambda-list
+                          :collect (list var (objc-encoding-cffi-type enc))))
+               (declare (ignore ,sel))
+               (let ((self (coerce-to-objc-object self))
+                     ,@(loop :for (var enc) :in lambda-list
+                             :for type := (atomize enc)
+                             :if (eql type :object)
+                               :collect `(,var (coerce-to-objc-object          ,var))
+                             :if (eql type :class)
+                               :collect `(,var (pointer-to-objc-class-nullable ,var))
+                             :if (eql type :sel)
+                               :collect `(,var (coerce-to-selector             ,var))))
+                 (,name self ,@rest-args)))
+             (defmethod ,name (self ,@rest-args) ,default)))
        ,@(loop :for (car . cdr) :in options
                :if (eql car :method)
                  :collect `(defmethod ,name ,@cdr))
