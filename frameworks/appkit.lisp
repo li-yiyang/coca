@@ -254,12 +254,15 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:as-ns-color-panel-mode
    #:decode-ns-color-panel-mode
    #:ns-color-panel-mode-p
+   #:change-color
    #:ns-color-panel
    #:mode
    #:continuousp
    #:color
    #:ns-color-picker
    #:ns-font-panel
+   #:change-font
+   #:selected-font
 
    ;; Sound, Speech, and Haptics
    #:ns-sound
@@ -493,6 +496,8 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:as-ns-font
    #:ns-font-descriptor
    #:ns-font-manager
+   #:convert-font
+   #:selected-font
    #:available-fonts
    #:available-font-families
    #:ns-font-trait-mask
@@ -2409,7 +2414,8 @@ application.
 
 Dev Note:
 Return `t' to allow sender to be closed; otherwise `nil'.
-By default this function returns `t'. "))
+By default this function returns `t'. ")
+  (:default t))
 
 (define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
     ((notification :object))
@@ -2670,7 +2676,18 @@ see https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc"
 (defmethod (setf action) (action (panel ns-color-panel))
   (invoke panel "setAction:" (coerce-to-selector action)))
 
-(defun ns-color-panel (&key target action
+(define-objc-method ("NSObject" "changeColor:" change-color) :void
+    ((sender :object))
+  (:documentation
+   "Called to respond to color changing events.
+
+Parameters:
++ SELF:   responder to the message
++ SENDER: the control that send the message
+"))
+
+(defun ns-color-panel (&key target
+                         (action #'change-color)
                          (color nil color?)
                          (continuousp nil continuous?)
                          (mode nil mode?)
@@ -2679,9 +2696,7 @@ see https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc"
 
 Parameters:
 + TARGET: sets the target of the receiver
-+ ACTION: sets the color panel's action message
-
-  TARGET and ACTION should be setted at the same time
++ ACTION: sets the color panel's action message (default `change-color')
 + COLOR:  sets the color panel initial color
 + CONTINUOUSP: whether the receiver continuously sends
   the action message to the target
@@ -2690,16 +2705,13 @@ Parameters:
 see https://developer.apple.com/documentation/appkit/nscolorpanel/shared?language=objc"
   (declare (type (or null ns-object) target))
   (let ((panel (invoke 'ns-color-panel "sharedColorPanel")))
-    (cond ((and target action)
-           (setf (target panel) target
-                 (action panel) action))
-          ((and (null target) (null action)) nil)
-          (t (error "TARGET and ACTION should be setted at the same time. ")))
+    (when target
+      (setf (target panel) target
+            (action panel) action))
     (when color?      (setf (color       panel) color))
     (when continuous? (setf (continuousp panel) continuousp))
     (when mode?       (setf (mode        panel) mode))
     panel))
-
 
 ;;; Protocol
 ;; NSColorPickingCustom
@@ -2742,9 +2754,53 @@ see https://developer.apple.com/documentation/appkit/nscolorpicker?language=objc
 (define-objc-class "NSFontPanel" ()
   ()
   (:documentation
-   "The Font panel a user interface object that displays a list of available fonts,
-letting the user preview them and change the font used to display text.
+   "The Font panel a user interface object that displays a list of
+available fonts, letting the user preview them and change the font
+used to display text.
+
+Actual changes to the font panel are made through conversion messages
+sent to the shared NSFontManager instance.
+
+There’s only one Font panel for each app.
+
 see https://developer.apple.com/documentation/appkit/nsfontpanel?language=objc"))
+
+(define-objc-method ("NSObject" "changeFont:" change-font) :void
+    ((sender :object))
+  (:documentation
+   "Called to respond to font changing events.
+
+Parameters:
++ SELF:   responder to the message
++ SENDER: the control that send the message
+"))
+
+(defun ns-font-panel (&key
+                        font
+                        target
+                        (action #'change-font)
+                        (multiple nil)
+                        (sender   nil)
+                      &allow-other-keys)
+  "Returns the single NSFontPanel instance for the application,
+creating it if necessary.
+
+Parameters:
++ FONT:     `ns-font' object to be show in font panel
++ MULTIPLE: If true, the Font panel indicates that more than one font
+  is contained in the selection; if false, it does not.
++ TARGET:   target to send ACTION when changing font
++ ACTION:   action to be sent (default `change-font')
+"
+  (let ((manager (ns-font-manager)))
+    (when font
+      (invoke manager "setSelectedFont:isMultiple:"
+              font
+              (as-boolean multiple)))
+    (when target
+      (invoke manager "setTarget:" target)
+      (invoke manager "setAction:" (coerce-to-selector action)))
+    (invoke manager "orderFrontFontPanel:" sender)))
 
 ;;; User Interface
 
@@ -5169,7 +5225,21 @@ see https://developer.apple.com/documentation/appkit/nsfontdescriptor?language=o
 ;;; Management
 
 (define-objc-class "NSFontManager" ()
-  ()
+  (("selectedFont"
+    :reader selected-font
+    :documentation
+    "The currently selected font object.
+
+The value of this property is the last font recorded with a
+setSelectedFont:isMultiple: message.
+
+While fonts are being converted in response to a convertFont: message,
+you can determine the font selected in the Font panel like this:
+
+    (let ((manager (ns-font-manager)))
+      (convert-font manager (selected-font manager)))
+
+"))
   (:documentation
    "The center of activity for the font-conversion system.
 
@@ -5237,6 +5307,20 @@ see https://developer.apple.com/documentation/appkit/nsfontmanager/availablefont
 ;; Sending Action Methods
 
 ;; Converting Fonts Automatically
+
+(defmethod convert-font ((manager ns-font-manager) font)
+  "Converts the given font according to the object that initiated a
+font change, typically the Font panel or Font menu.
+Return converted font, or aFont itself if the conversion isn’t possible.
+
+Parameters:
++ FONT: the font to convert
+
+This method is invoked in response to an action message such as
+addFontTrait: or modifyFontViaPanel:. These initiating methods cause
+the font manager to query the sender for the action to take and the
+traits to change. See Converting Fonts Manually for more information."
+  (invoke manager "convertFont:" (as-ns-font font)))
 
 ;; Converting Fonts Manually
 

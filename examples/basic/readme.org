@@ -391,6 +391,17 @@ different logic for the ObjC class.
 #+begin_src lisp
 (define-objc-class ("ColorWindow" color-window) (ns-window) ())
 
+(define-objc-method ("ColorWindow" "onButtonClick:" on-button-click) :void
+    ((sender :object))
+  (:method ((self ns-window) (sender t))
+    (let ((panel (ns-color-panel :target self
+                                 :action #'change-color
+                                 :color  (background-color self))))
+      (setf (visiblep panel) t))))
+
+(defmethod change-color ((self ns-window) (sender t))
+  (setf (background-color self) (color sender)))
+
 (defmethod init ((self color-window) &key)
   (let ((button (alloc-init 'ns-button
                             :frame (make-ns-rect :x 10 :y 265 :w 100 :h 32)
@@ -406,22 +417,9 @@ different logic for the ObjC class.
     (add-subview self button)
     self))
 
-(define-objc-method ("ColorWindow" "changeColor:" change-color) :void
-    ((sender :object))
-  (:method ((self ns-window) (sender t))
-    (setf (background-color self) (color sender))))
-
-(define-objc-method ("ColorWindow" "onButtonClick:" on-button-click) :void
-    ((sender :object))
-  (:method ((self ns-window) (sender t))
-    (let ((panel (ns-color-panel :target self
-                                 :action #'change-color
-                                 :color  (background-color self))))
-      (setf (visiblep panel) t))))
-
 <<window-should-close>>
 
-(tmt:with-body-in-main-thread (:blocking t)
+(tmt:with-body-in-main-thread ()
   (sb-int:set-floating-point-modes :traps ())
   (let ((app (ns-app)))
     (setf (activation-policy app) :regular)
@@ -436,15 +434,12 @@ different logic for the ObjC class.
 
 #+html: <details><summary>window-should-close</summary>
 #+begin_src lisp
-(define-objc-method ("NSObject" "windowShouldClose:" window-should-close) :bool
-    ((sender :object))
-  (:method (self sender) t)
-  (:method :after (self sender)
-    (when (endp (remove-if (lambda (w)
-                             (or (typep w 'ns-panel)
-                                 (eq w self)))
-                           (windows (ns-app))))
-      (terminate (ns-app) sender))))
+(defmethod window-should-close :after (self sender)
+  (when (endp (remove-if (lambda (w)
+                           (or (typep w 'ns-panel)
+                               (eq w self)))
+                         (windows (ns-app))))
+    (terminate (ns-app) sender)))
 #+end_src
 
 *Reference*:
@@ -458,6 +453,36 @@ different logic for the ObjC class.
   + Holds a button with title =Color...=
   + if button clicked, send =on-button-click= (ObjC method =onButtonClick:=)
     action to target aka =ColorWindow= itself
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (find-method #'init () (list (find-class 'ns-button))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Creates a standard push button with the title you specify.
+
+  Parameters:
+  + TARGET: The target object that receives action messages from the control.
+  + ACTION: The action the button sends to the target.
+    see `coerce-to-selector'
+  + TITLE:  The localized title string to display on the button.
+  + IMAGE:  The image to display in the body of the button.
+  + BORDEREDP: if BUTTON has border
+    see `borderedp'
+  + BEZEL-STYLE: appearance of button border (`ns-bezel-style')
+    see `bezel-style'
+  + BEZEL-COLOR: color of the button’s bezel (`as-ns-color')
+    see `bezel-color'
+  + BUTTON-TYPE: button type (`*ns-button-type*')
+    see `ns-button-type'
+
+  Dev Note:
+  at least one of TITLE and IMAGE should be given.
+  #+end_example
+
+  #+html: </details>
 + =ns-color-panel=: when ObjC environment invokes =on-button-click=
   method, a [[https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc][NSColorPanel]] ([[https://developer.apple.com/documentation/appkit/nscolorpanel/shared?language=objc][sharedColorPanel]]) panel window will:
   + popup =(setf (visiblep panel) t)=
@@ -465,6 +490,140 @@ different logic for the ObjC class.
   + when changing the color of color panel,
     will send a =action= (ObjC SEL as message) to =target=
     (current window) with (the color panel) itself.
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'ns-color-panel t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns the shared NSColorPanel instance, creating it if necessary.
+
+  Parameters:
+  + TARGET: sets the target of the receiver
+  + ACTION: sets the color panel's action message (default `change-color')
+  + COLOR:  sets the color panel initial color
+  + CONTINUOUSP: whether the receiver continuously sends
+    the action message to the target
+  + MODE: sets the mode of the receiver (`ns-color-panel-mode')
+
+  see https://developer.apple.com/documentation/appkit/nscolorpanel/shared?language=objc
+  #+end_example
+
+  #+html: </details>
+
+** FontDialog
+#+begin_src lisp
+(define-objc-class ("FontWindow" font-window) (ns-window)
+  ((label :accessor my-label)))
+
+(define-objc-method ("FontWindow" "onButtonClick:" on-button-click) :void
+    ((sender :object))
+  (:method ((self font-window) sender)
+    (ns-font-panel :font   (font (my-label self))
+                   :target self
+                   :action #'change-font
+                   :sender self)))
+
+(defmethod change-font ((self font-window) sender)
+  (setf (font (my-label self)) (selected-font (ns-font-manager))))
+
+(defmethod init ((self font-window) &key)
+  (let ((button (alloc-init 'ns-button
+                            :frame (make-ns-rect :x 10 :y 365 :w 100 :h 32)
+                            :title "Font..."
+                            :bezel-style :rounded
+                            :target self
+                            :action #'on-button-click
+                            :autoresizing '(:max-x-margin :min-y-margin)))
+        (label  (alloc-init 'coca:ns-text-field
+                            :frame (make-ns-rect :x 10 :y 10 :w 380 :h 345)
+                            :text  "Coca is Cocoa in Common Lisp.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+1234567890!@#$%^&*()-+_=
+滚滚长江东逝水
+凉凉")))
+    (call-next-method self
+                      :frame (make-ns-rect :x 100 :y 100 :w 400 :h 400)
+                      :title "FontDialog example"
+                      :visiblep t)
+    (add-subview self button)
+    (add-subview self (setf (my-label self) label))
+    self))
+
+<<window-should-close>>
+
+(tmt:with-body-in-main-thread ()
+  (sb-int:set-floating-point-modes :traps ())
+  (let ((app (ns-app)))
+    (setf (activation-policy app) :regular)
+    (make-main-window (autorelease (alloc-init 'font-window)))
+    (run app)))
+#+end_src
+
+#+caption: FontDialog example
+[[file:./font-dialog.gif]]
+
+*Reference*:
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Dialogs/FontDialog/FontDialog.m][FontDialog.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*:
++ =ns-font-panel= creates a [[https://developer.apple.com/documentation/appkit/nsfontpanel?language=objc][NSFontPanel]] to select fonts
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'ns-font-panel t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the single NSFontPanel instance for the application,
+  : creating it if necessary.
+  :
+  : Parameters:
+  : + FONT:     `ns-font' object to be show in font panel
+  : + MULTIPLE: If true, the Font panel indicates that more than one font
+  :   is contained in the selection; if false, it does not.
+  : + TARGET:   target to send ACTION when changing font
+  : + ACTION:   action to be sent (default `change-font')
+
+  #+html: </details>
++ =change-font= is the default ObjC callback function
+  responding to the =NSFontPanel= font changing events
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'change-font t)
+  #+end_src
+
+  #+RESULTS:
+  : Called to respond to font changing events.
+  :
+  : Parameters:
+  : + SELF:   responder to the message
+  : + SENDER: the control that send the message
+
+  #+html: </details>
+
+* Literal Programming                                              :noexport:
+** GenDoc
+*NOTE*: this is only needed if publishing =readme.org= for Github
+org-mode rendering.
+
+#+begin_src elisp :results silent
+(save-excursion
+  (beginning-of-buffer)
+  (while (search-forward-regexp
+          "^\s*#\\+begin_src lisp :exports results"
+          nil t)
+    (org-ctrl-c-ctrl-c)
+    (next-line)))
+#+end_src
+
+Use =:exports results= for Github org-mode to recongize.
+Evaluating this would update all the =:exports results= code block
+within current file.
 
 * Footnotes
 
