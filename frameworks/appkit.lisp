@@ -236,9 +236,14 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-backing-store-type
    #:*ns-window-style*
    #:*ns-backing-store*
+   #:make-main-window
+   #:window-did-resize
+   #:window-did-miniaturize
+   #:window-did-deminiaturize
+   #:window-did-move
+   #:window-did-change-screen
    #:window-should-close
    #:window-will-close
-   #:make-main-window
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -2386,7 +2391,25 @@ see https://developer.apple.com/documentation/appkit/nswindow/makemain()?languag
 
 ;; Sizing Windows
 
+(define-objc-method ("NSObject" "windowDidResize:" window-did-resize) :void
+    ((sender :object))
+  (:documentation
+   "Tells the delegate that the window has been resized.
+see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidresize(_:)?language=objc"))
+
 ;; Minmizing Windows
+
+(define-objc-method ("NSObject" "windowDidMiniaturize:" window-did-miniaturize) :void
+    ((sender :object))
+  (:documentation
+   "Tells the delegate that the window has been minimized.
+see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidminiaturize(_:)?language=objc"))
+
+(define-objc-method ("NSObject" "windowDidDeminiaturize:" window-did-deminiaturize) :void
+    ((sender :object))
+  (:documentation
+   "Tells the delegate that the window has been deminimized.
+see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdiddeminiaturize(_:)?language=objc"))
 
 ;; Zooming Window
 
@@ -2396,9 +2419,21 @@ see https://developer.apple.com/documentation/appkit/nswindow/makemain()?languag
 
 ;; Moving Windows
 
+(define-objc-method ("NSObject" "windowDidMove:" window-did-move) :void
+    ((sender :object))
+  (:documentation
+   "Tells the delegate that the window has moved.
+see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidmove(_:)?language=objc"))
+
+(define-objc-method ("NSObject" "windowDidChangeScreen:" window-did-change-screen) :void
+    ((sender :object))
+  (:documentation
+   "Tells the delegate that the window has changed screens.
+see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidchangescreen(_:)?language=objc"))
+
 ;; Closing Windows
 
-(define-objc-method ("NSWindow" "windowShouldClose:" window-should-close) :bool
+(define-objc-method ("NSObject" "windowShouldClose:" window-should-close) :bool
     ((sender :object))
   (:documentation
    "Tells the delegate that the user has attempted to close a window or
@@ -2417,7 +2452,7 @@ Return `t' to allow sender to be closed; otherwise `nil'.
 By default this function returns `t'. ")
   (:default t))
 
-(define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
+(define-objc-method ("NSObject" "windowWillClose:" window-will-close) :void
     ((notification :object))
   (:documentation
    "Tells the delegate that the window is about to close.
@@ -2505,6 +2540,7 @@ see https://developer.apple.com/documentation/appkit/nswindowtabgroup?language=o
   ()
   (:documentation
    "An object that describes the attributes of a computer’s monitor or screen.
+
 An app may use an NSScreen object to retrieve information about a
 screen and use this information to decide what to display on that
 screen. For example, an app may use the deepestScreen method to find
@@ -2517,10 +2553,12 @@ object exists by invoking the sharedApplication method of
 NSApplication. If you created your app with Xcode, the application
 object is automatically created for you during initialization.
 Note
+
 The NSScreen class is only for getting information about the available
 displays. If you need additional information or want to change the
 attributes relating to a display, you must use Quartz Services. For
 more information, see Quartz Display Services.
+
 see https://developer.apple.com/documentation/appkit/nsscreen?language=objc"))
 
 ;; Getting Screen Objects

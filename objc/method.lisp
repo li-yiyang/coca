@@ -630,8 +630,27 @@ Example:
          (encodings   (encode-objc-type-encoding
                        `(,ret :object :sel ,@(mapcar #'second lambda-list))))
          (sel         (gensym "SEL"))
+         (defined-p   (ignore-errors
+                       (objc-generic-function-p (symbol-function name))))
          (options     (remove-alist options :wrapper :default :redefine)))
     `(progn
+       ,@(unless defined-p
+           `((defcallback ,name ,(objc-encoding-cffi-type ret)
+                 ((self :pointer)
+                  (,sel :pointer)
+                  ,@(loop :for (var enc) :in lambda-list
+                          :collect (list var (objc-encoding-cffi-type enc))))
+               (declare (ignore ,sel))
+               (let ((self (coerce-to-objc-object self))
+                     ,@(loop :for (var enc) :in lambda-list
+                             :for type := (atomize enc)
+                             :if (eql type :object)
+                               :collect `(,var (coerce-to-objc-object          ,var))
+                             :if (eql type :class)
+                               :collect `(,var (pointer-to-objc-class-nullable ,var))
+                             :if (eql type :sel)
+                               :collect `(,var (coerce-to-selector             ,var))))
+                 (,name self ,@rest-args)))))
        ;; ensure `objc-class' and `sel' is correctly setted
        (c2mop:ensure-generic-function
         ',name
@@ -648,26 +667,8 @@ Example:
                (,wrapper (call-next-method)))))
        ;; FIXME: should callback be defined with different CFFI types?
        ;; should this be possible in ObjC? just ignore for now.
-       ,@(when (or (not (and (symbol-function name)
-                             (objc-generic-function-p (symbol-function name))))
-                   (second (assoc :redefine options)))
-           `((defcallback ,name ,(objc-encoding-cffi-type ret)
-                 ((self :pointer)
-                  (,sel :pointer)
-                  ,@(loop :for (var enc) :in lambda-list
-                          :collect (list var (objc-encoding-cffi-type enc))))
-               (declare (ignore ,sel))
-               (let ((self (coerce-to-objc-object self))
-                     ,@(loop :for (var enc) :in lambda-list
-                             :for type := (atomize enc)
-                             :if (eql type :object)
-                               :collect `(,var (coerce-to-objc-object          ,var))
-                             :if (eql type :class)
-                               :collect `(,var (pointer-to-objc-class-nullable ,var))
-                             :if (eql type :sel)
-                               :collect `(,var (coerce-to-selector             ,var))))
-                 (,name self ,@rest-args)))
-             (defmethod ,name (self ,@rest-args) ,default)))
+       ,@(unless defined-p
+           `((defmethod ,name (self ,@rest-args) ,default)))
        ,@(loop :for (car . cdr) :in options
                :if (eql car :method)
                  :collect `(defmethod ,name ,@cdr))

@@ -563,6 +563,8 @@ abcdefghijklmnopqrstuvwxyz
     (run app)))
 #+end_src
 
+#+attr_html: :width 80%
+#+attr_org: :width 300px
 #+caption: FontDialog example
 [[file:./font-dialog.gif]]
 
@@ -605,6 +607,110 @@ abcdefghijklmnopqrstuvwxyz
   : + SENDER: the control that send the message
 
   #+html: </details>
+
+* Events
+Use =define-objc-method= to define event handler methods in lisp side.
+For example, a =window-will-close:= method should be defined like below:
+
+#+begin_src lisp
+(define-objc-method ("NSObject" "windowWillClose:" window-will-close) :void
+    ((notification :object)))
+#+end_src
+
+then user should only care about how to implement =window-will-close=
+method in lisp using only =defmethod=.
+
+Currently interned ObjC methods:
+
+** [[https://developer.apple.com/documentation/appkit/nswindowdelegate?language=objc][NSWindowDelegate]]
++ =window-did-resize=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-did-resize t)
+  #+end_src
+
+  #+RESULTS:
+  : Tells the delegate that the window has been resized.
+  : see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidresize(_:)?language=objc
++ =window-did-miniaturize=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-did-miniaturize t)
+  #+end_src
+
+  #+RESULTS:
+  : Tells the delegate that the window has been minimized.
+  : see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidminiaturize(_:)?language=objc
++ =window-did-deminiaturize=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-did-deminiaturize t)
+  #+end_src
+
+  #+RESULTS:
+  : Tells the delegate that the window has been deminimized.
+  : see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdiddeminiaturize(_:)?language=objc
++ =window-did-move=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-did-move t)
+  #+end_src
+
+  #+RESULTS:
+  : Tells the delegate that the window has moved.
+  : see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidmove(_:)?language=objc
++ =window-did-change-screen=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-did-change-screen t)
+  #+end_src
+
+  #+RESULTS:
+  : Tells the delegate that the window has changed screens.
+  : see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidchangescreen(_:)?language=objc
++ =window-should-close=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-should-close t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Tells the delegate that the user has attempted to close a window or
+  the window has received a performClose: message.
+
+  Parameters:
+  + WINDOW:
+  + SENDER: the window being closed
+
+  This method may not always be called during window closing.
+  Specifically, this method is not called when a user quits an
+  application.
+
+  Dev Note:
+  Return `t' to allow sender to be closed; otherwise `nil'.
+  By default this function returns `t'.
+  #+end_example
++ =window-will-close=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'window-will-close t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Tells the delegate that the window is about to close.
+
+  Parameters:
+  + WINDOW: WINDOW to be closed
+  + NOTIFICATION: A notification named NSWindowWillCloseNotification.
+
+  You can retrieve the NSWindow object in question by sending object to
+  notification.
+
+  Dev Note:
+  this is called when window will close, do nothing by default
+  #+end_example
 
 * Literal Programming                                              :noexport:
 ** GenDoc
