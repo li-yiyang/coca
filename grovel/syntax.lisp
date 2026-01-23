@@ -17,7 +17,7 @@ Could be used as:
 
 to support features switches. "
   (dolist (form forms)
-    (process-wrapper-form out form)))
+    (process-objc-form out form)))
 
 (define-objc-syntax in-package (name)
   "Declare the ObjC File should be interned to lisp package of NAME.

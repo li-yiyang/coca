@@ -1555,25 +1555,25 @@ see https://developer.apple.com/documentation/appkit/nsmatrix?language=objc"))
 
 ;;; Liquid Glass effects
 
-(define-objc-class "NSGlassEffectView" ()
-  ()
-  (:documentation
-   "A view that embeds its content view in a dynamic glass effect.
-see https://developer.apple.com/documentation/appkit/nsglasseffectview?language=objc"))
+;; (define-objc-class "NSGlassEffectView" ()
+;;   ()
+;;   (:documentation
+;;    "A view that embeds its content view in a dynamic glass effect.
+;; see https://developer.apple.com/documentation/appkit/nsglasseffectview?language=objc"))
 
-(define-objc-class "NSGlassEffectContainerView" ()
-  ()
-  (:documentation
-   "A view that efficiently merges descendant glass effect views together when they are within a specified proximity to each other.
-see https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview?language=objc"))
+;; (define-objc-class "NSGlassEffectContainerView" ()
+;;   ()
+;;   (:documentation
+;;    "A view that efficiently merges descendant glass effect views together when they are within a specified proximity to each other.
+;; see https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview?language=objc"))
 
 ;;; Interacting with adjacent views
 
-(define-objc-class "NSBackgroundExtensionView" ()
-  ()
-  (:documentation
-   "A view that extends content to fill its own bounds.
-see https://developer.apple.com/documentation/appkit/nsbackgroundextensionview?language=objc"))
+;; (define-objc-class "NSBackgroundExtensionView" ()
+;;   ()
+;;   (:documentation
+;;    "A view that extends content to fill its own bounds.
+;; see https://developer.apple.com/documentation/appkit/nsbackgroundextensionview?language=objc"))
 
 ;;; Visual adornments
 

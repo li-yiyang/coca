@@ -187,7 +187,12 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-invocation-operation
    #:ns-timer
    #:coca
+   #:ns-operating-system-version
+   #:ns-operating-system-version-major
+   #:ns-operating-system-version-minor
+   #:ns-operating-system-version-patch
    #:ns-process-info
+   #:operating-system-version
    #:ns-background-activity-scheduler
    #:ns-user-notification
    #:ns-user-notification-action
@@ -1670,8 +1675,20 @@ see https://developer.apple.com/documentation/foundation/nsuseractivity?language
 
 ;;; System Interaction
 
+;; A structure that contains version information about the currently
+;; executing operating system, including major, minor, and patch
+;; version numbers.
+(define-objc-struct (ns-operating-system-version "NSOperatingSystemVersion")
+  (major :long)
+  (minor :long)
+  (patch :long))
+
 (define-objc-class "NSProcessInfo" ()
-  ()
+  (("operatingSystemVersion"
+    :reader operating-system-version
+    :documentation "The version of the operating system on which the
+process is executing.
+see https://developer.apple.com/documentation/foundation/processinfo/operatingsystemversion?language=objc"))
   (:documentation
    "A collection of information about the current process.
 see https://developer.apple.com/documentation/foundation/processinfo?language=objc"))
