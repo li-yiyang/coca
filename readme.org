@@ -14,7 +14,8 @@
 Cocoa in Common Lisp
 #+end_example
 
-*NOTE*: currently, only tested on SBCL (2.5.10) on macOS.
+*NOTE*: currently, only tested on SBCL (2.5.10) on macOS
+(m1 air Sequoia 15.5 and m2 air Tahoe 26.2).
 cannot ensure and won't provide support for other implementation
 or other platform (right now). But contributions are welcomed.
 
