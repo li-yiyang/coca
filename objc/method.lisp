@@ -574,7 +574,8 @@ Syntax:
       (:documentation \"docstring\")
       (:method ((self class) (arg ...))
         body)
-      (:wrapper wrapper-function))
+      (:wrapper wrapper-function)
+      (:default default-return-value))
 
 + CLASS: symbol or string of ObjC class
   this should be the root of ObjC class where the lisp generic function
@@ -587,6 +588,12 @@ Syntax:
 + LAMBDA-LIST:
   VAR: symbol of argument
   OBJC-ENCODING: ObjC type encoding for argument
++ WRAPPER: wrapper function to ensure the ObjC method return value
+  is currectly parsed as ObjC acceptable value
++ DEFAULT: by default, raise warning with no method message.
+  Use DEFAULT will provide default return value of objc method.
+
+  Note: within DEFAULT, the VAR and SELF can be referred. 
 
 Example:
 
@@ -610,9 +617,17 @@ Example:
          (rest-args   (mapcar #'first lambda-list))
          (wrapper     (or (second (assoc :wrapper options))
                           (when (eql ret :bool) 'as-boolean)))
+         (default     (or (second (assoc :default options))
+                          `(warn ,(with-output-to-string (fmt)
+                                    (format fmt "No ObjC method ~S for " name)
+                                    (write-string "~S" fmt)
+                                    (dolist (args rest-args)
+                                      (write-string ", ~S" fmt)))
+                                 self ,@rest-args)))
          (encodings   (encode-objc-type-encoding
                        `(,ret :object :sel ,@(mapcar #'second lambda-list))))
-         (sel         (gensym "SEL")))
+         (sel         (gensym "SEL"))
+         (options     (remove-alist options :wrapper :default)))
     `(progn
        (defcallback ,name ,(objc-encoding-cffi-type ret)
            ((self :pointer)
@@ -644,6 +659,7 @@ Example:
        ,@(when wrapper
            `((defmethod ,name :around ((self ,class-name) ,@rest-args)
                (,wrapper (call-next-method)))))
+       (defmethod ,name (self ,@rest-args) ,default)
        ,@(loop :for (car . cdr) :in options
                :if (eql car :method)
                  :collect `(defmethod ,name ,@cdr))

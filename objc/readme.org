@@ -378,14 +378,10 @@ LispWorks' API.
       ;; `define-objc-class' defines a new ObjC class
       (define-objc-class "MyWindow" (ns-window) ())
 
-      ;; if just want to define all the logic in Lisp,
-      ;; omit ObjC class name
-      (define-objc-class my-window (ns-window) ())
-
   Syntax:
 
       (define-objc-class
-          { LISP-NAME | "OBJC-NAME" | ("OBJC-NAME" &optional LISP-NAME) }
+          { "OBJC-NAME" | ("OBJC-NAME" &optional LISP-NAME) }
           DIRECT-SUPERCLASS
           ({
                (OBJC-PROPERTY &key before after reader accessor documentation)
@@ -394,31 +390,11 @@ LispWorks' API.
         CLASS-OPTIONS)
 
   + OBJC-NAME: string of ObjC class name
-  + LISP-NAME: lisp name of ObjC class
-
-    if only given LISP-NAME, the class will only be defined as lisp class,
-    it would share ObjC class pointer and ObjC class name with it's
-    ObjC superclass. This is helpful if you only want to overwrite some
-    lisp methods but no intent to overwrite ObjC methods.
-
+  + LISP-NAME: lisp name of ObjC class (optional)
   + DIRECT-SUPERCLASS:
-    + if not empty:
-      + ObjC class is defined before, define a new ObjC class
-      + ObjC class is already defined, only modify class slot infomations
-    + if empty, only modify the class infomations
-
-    it is adviced to use lisp slots rather than ObjC ivar to store
-    infomations, for example:
-
-       (define-objc-class "my-window" (coca:ns-window)
-         ("label" :accessor my-window-label))
-
-       (define-objc-class my-window (coca:ns-window)
-         (label :accessor my-window-label))
-
-    generally do the same things, but using lisp class and lisp slot
-    will be more flexible for your code. You can make use of lisp CLOS
-    method combinations.
+    if not empty, will be used to declare new ObjC class
+    if the ObjC class is not defined before;
+    if empty, it's equal to modify the class infomations
   + CLASS-OPTIONS:
     + :documentation: set the documentation of the class
   #+end_example
@@ -518,7 +494,8 @@ LispWorks' API.
         (:documentation "docstring")
         (:method ((self class) (arg ...))
           body)
-        (:wrapper wrapper-function))
+        (:wrapper wrapper-function)
+        (:default default-return-value))
 
   + CLASS: symbol or string of ObjC class
     this should be the root of ObjC class where the lisp generic function
@@ -536,7 +513,6 @@ LispWorks' API.
 
       (define-objc-method (ns-window "foo") :bool ()
         (:documentation "...")
-        (:default (invoke self balabala))
         (:wrapper as-boolean)
         (:method ((self ns-window))
           (call-next-method) ;; like [super ...] in ObjC
@@ -570,3 +546,22 @@ LispWorks' API.
   This will ensure that the foreign ObjC pointer is correctly
   reinitialized after you close the ObjC environment.
   #+end_example
+
+* Literal Programming                                              :noexport:
+** GenDoc
+*NOTE*: this is only needed if publishing =readme.org= for Github
+org-mode rendering.
+
+#+begin_src elisp :results silent
+(save-excursion
+  (beginning-of-buffer)
+  (while (search-forward-regexp
+          "^\s*#\\+begin_src lisp :exports results"
+          nil t)
+    (org-ctrl-c-ctrl-c)
+    (next-line)))
+#+end_src
+
+Use =:exports results= for Github org-mode to recongize.
+Evaluating this would update all the =:exports results= code block
+within current file.
