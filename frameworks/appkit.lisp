@@ -35,11 +35,12 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:running-p
    #:activep
    #:dock-tile
+   #:windows
    #:application-icon-image
-   #:ns-application-acitivation-policy
-   #:as-ns-application-acitivation-policy
-   #:decode-ns-application-acitivation-policy
-   #:ns-application-acitivation-policy-p
+   #:ns-application-activation-policy
+   #:as-ns-application-activation-policy
+   #:decode-ns-application-activation-policy
+   #:ns-application-activation-policy-p
    #:activation-policy
    #:ns-app
    #:+ns-event-tracking-run-loop-mode+
@@ -231,11 +232,13 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:has-shadow-p
    #:visiblep
    #:title
+   #:windows
    #:ns-backing-store-type
    #:*ns-window-style*
    #:*ns-backing-store*
    #:window-should-close
    #:window-will-close
+   #:make-main-window
    #:ns-panel
    #:ns-window-tab
    #:ns-window-tab-group
@@ -247,7 +250,14 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-sharing-service-picker
    #:ns-preview-representing-activity-item
    #:ns-pdf-panel
+   #:ns-color-panel-mode
+   #:as-ns-color-panel-mode
+   #:decode-ns-color-panel-mode
+   #:ns-color-panel-mode-p
    #:ns-color-panel
+   #:mode
+   #:continuousp
+   #:color
    #:ns-color-picker
    #:ns-font-panel
 
@@ -2107,16 +2117,21 @@ see https://developer.apple.com/documentation/appkit/nswindow/title?language=obj
    )
   (:documentation
    "A window that an app displays on the screen.
-A single `ns-window' object corresponds to, at most, one on-screen window.
-Windows perform two principal functions:
+
+A single `ns-window' object corresponds to, at most, one on-screen
+window.  Windows perform two principal functions:
+
 + To place views in a provided area
-+ To accept and distribute mouse and keyboard events the user generates to the appropriate views
++ To accept and distribute mouse and keyboard events the user
+  generates to the appropriate views
+
 Notes:
-Although the `ns-window' class inherits the `ns-coding' protocol from `ns-responder',
-the class doesn't support coding. Legacy support for archivers exists, but its use is
-deprecated and may not work. Any attempt to archive or unarchive a window object using a
-keyed coding object raises an `ns-invalid-argument-exception' exception.
-For details about window restoration, see restorationClass.
+Although the `ns-window' class inherits the `ns-coding' protocol from
+`ns-responder', the class doesn't support coding. Legacy support for
+archivers exists, but its use is deprecated and may not work. Any
+attempt to archive or unarchive a window object using a keyed coding
+object raises an `ns-invalid-argument-exception' exception.  For
+details about window restoration, see restorationClass.
 see https://developer.apple.com/documentation/appkit/nswindow?language=objc"))
 
 ;; Creating a window
@@ -2275,6 +2290,11 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
 
 ;; Managing Main Status
 
+(defmethod make-main-window ((window ns-window))
+  "Makes the window the main window.
+see https://developer.apple.com/documentation/appkit/nswindow/makemain()?language=objc"
+  (invoke window "makeMainWindow"))
+
 ;; Managing Toolbars
 
 ;; Managing Attached Windows
@@ -2389,8 +2409,7 @@ application.
 
 Dev Note:
 Return `t' to allow sender to be closed; otherwise `nil'.
-By default this function returns `t'. ")
-  (:default t))
+By default this function returns `t'. "))
 
 (define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
     ((notification :object))
@@ -2608,11 +2627,109 @@ see https://developer.apple.com/documentation/appkit/nspdfpanel?language=objc"))
 
 ;;; Color Panels
 
+(define-objc-enum ns-color-panel-mode
+  "A type defined for the enum constants specifying color panel modes.
+see https://developer.apple.com/documentation/appkit/nscolorpanel/mode-swift.enum?language=objc"
+  "Color Panel Modes"
+  (:none           18446744073709551615 "No color panel mode.")
+  (:gray           0                    "The grayscale-alpha color mode.")
+  (:rgb            1                    "The red-green-blue color mode.")
+  (:cmyk           2                    "The cyan-magenta-yellow-black color mode.")
+  (:hsb            3                    "The hue-saturation-brightness color mode.")
+  (:custom-palette 4                    "The custom palette color mode.")
+  (:color-list     5                    "The custom color list mode.")
+  (:wheel          6                    "The color wheel mode.")
+  (:crayon         7                    "The crayon picker mode."))
+
 (define-objc-class "NSColorPanel" ()
-  ()
+  (("mode"
+    :accessor mode
+    :before   as-ns-color-panel-mode
+    :after    decode-ns-color-panel-mode
+    :documentation
+    "The mode of the receiver the mode is one of the modes allowed by the color mask.
+see https://developer.apple.com/documentation/appkit/nscolorpanel/mode-swift.property?language=objc")
+   ("continuous"
+    :accessor continuousp
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the receiver continuously
+sends the action message to the target.
+see https://developer.apple.com/documentation/appkit/nscolorpanel/iscontinuous?language=objc")
+   ("color"
+    :accessor color
+    :before   as-ns-color
+    :documentation "The color of the receiver. "))
   (:documentation
    "A standard user interface for selecting color in an app.
 see https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc"))
+
+(defmethod (setf target) ((target ns-object) (panel ns-color-panel))
+  (invoke panel "setTarget:" target))
+
+(defmethod (setf action) (action (panel ns-color-panel))
+  (invoke panel "setAction:" (coerce-to-selector action)))
+
+(defun ns-color-panel (&key target action
+                         (color nil color?)
+                         (continuousp nil continuous?)
+                         (mode nil mode?)
+                       &allow-other-keys)
+  "Returns the shared NSColorPanel instance, creating it if necessary.
+
+Parameters:
++ TARGET: sets the target of the receiver
++ ACTION: sets the color panel's action message
+
+  TARGET and ACTION should be setted at the same time
++ COLOR:  sets the color panel initial color
++ CONTINUOUSP: whether the receiver continuously sends
+  the action message to the target
++ MODE: sets the mode of the receiver (`ns-color-panel-mode')
+
+see https://developer.apple.com/documentation/appkit/nscolorpanel/shared?language=objc"
+  (declare (type (or null ns-object) target))
+  (let ((panel (invoke 'ns-color-panel "sharedColorPanel")))
+    (cond ((and target action)
+           (setf (target panel) target
+                 (action panel) action))
+          ((and (null target) (null action)) nil)
+          (t (error "TARGET and ACTION should be setted at the same time. ")))
+    (when color?      (setf (color       panel) color))
+    (when continuous? (setf (continuousp panel) continuousp))
+    (when mode?       (setf (mode        panel) mode))
+    panel))
+
+
+;;; Protocol
+;; NSColorPickingCustom
+;; A set of methods that provides a way to add color pickers—custom
+;; user interfaces for color selection—to an app’s color panel.
+;;
+;; NSColorPickingCustom works with the NSColorPickingDefault
+;; protocol—which provides basic behavior for a color picker—to enable
+;; custom color pickers.
+;;
+;; Note:
+;; This protocol must be implemented by a custom picker, or an error
+;; will occur.
+
+(defmethod set-color ((object ns-object) color)
+  "Adjusts the receiver to make the specified color the currently
+selected color.
+
+Parameters:
++ COLOR: The color to set as the currently selected color.
+
+This method is invoked on the current color picker each time
+NSColorPanel‘s color method is invoked. If color is actually different
+from the color picker’s color (as it would be if, for example, the
+user dragged a color into NSColorPanel‘s color well), this method
+could be used to update the color picker’s color to reflect the
+change.
+
+see https://developer.apple.com/documentation/appkit/nscolorpickingcustom/setcolor(_:)?language=objc"
+  (invoke object "setColor:" (as-ns-color color)))
 
 (define-objc-class "NSColorPicker" ()
   ()
@@ -5269,6 +5386,17 @@ see https://developer.apple.com/documentation/appkit/nsapplication/isactive?lang
     :documentation
     "The app’s Dock tile.
 see https://developer.apple.com/documentation/appkit/nsapplication/docktile?language=objc")
+   ("windows"
+    :reader windows
+    :after  ns-array-to-list
+    :documentation
+    "A list of the app’s window objects.
+
+This property contains an array of NSWindow objects corresponding to
+all currently existing windows for the app. The array includes all
+onscreen and offscreen windows, whether or not they are visible on any
+space. There is no guarantee of the order of the windows in the array.
+see https://developer.apple.com/documentation/appkit/nsapplication/windows?language=objc")
    ("applicationIconImage"
     :reader application-icon-image
     :documentation
@@ -5676,7 +5804,8 @@ see https://developer.apple.com/documentation/appkit/nsapplication/setactivation
   (let ((res (invoke app
                      "setActivationPolicy:"
                      (as-ns-application-activation-policy policy))))
-    (unless res (error "Failed to switch ~S policy with ~S. " app policy))
+    (unless res
+      (warn "Failed to switch ~S policy with ~S. " app policy))
     policy))
 
 ;; Scripting your app

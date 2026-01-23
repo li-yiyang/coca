@@ -1,11 +1,11 @@
+:PROPERTIES:
+:header-args:lisp: :package coca :results silent :eval no-export
+:END:
 #+title: Basic
 #+subtitle: Examples about how to use Coca
 #+author: 凉凉
 #+OPTIONS: ^:{}
 * A Very basic window
-:PROPERTIES:
-:header-args:lisp: :package coca :results silent :eval no-export
-:END:
 ** Plain =ns-window=
 First, load =coca= package:
 
@@ -385,6 +385,86 @@ different logic for the ObjC class.
           (foo self)))
   #+end_example
   #+html: </details>
+
+* Dialog
+** ColorDialog
+#+begin_src lisp
+(define-objc-class ("ColorWindow" color-window) (ns-window) ())
+
+(defmethod init ((self color-window) &key)
+  (let ((button (alloc-init 'ns-button
+                            :frame (make-ns-rect :x 10 :y 265 :w 100 :h 32)
+                            :title "Color..."
+                            :bezel-style :rounded
+                            :target self
+                            :action #'on-button-click
+                            :autoresizing '(:max-x-margin :min-y-margin))))
+    (call-next-method self
+                      :frame (make-ns-rect :x 100 :y 100 :w 300 :h 300)
+                      :title "ColorDialog example"
+                      :visiblep t)
+    (add-subview self button)
+    self))
+
+(define-objc-method ("ColorWindow" "changeColor:" change-color) :void
+    ((sender :object))
+  (:method ((self ns-window) (sender t))
+    (setf (background-color self) (color sender))))
+
+(define-objc-method ("ColorWindow" "onButtonClick:" on-button-click) :void
+    ((sender :object))
+  (:method ((self ns-window) (sender t))
+    (let ((panel (ns-color-panel :target self
+                                 :action #'change-color
+                                 :color  (background-color self))))
+      (setf (visiblep panel) t))))
+
+<<window-should-close>>
+
+(tmt:with-body-in-main-thread (:blocking t)
+  (sb-int:set-floating-point-modes :traps ())
+  (let ((app (ns-app)))
+    (setf (activation-policy app) :regular)
+    (make-main-window (autorelease (alloc-init 'color-window)))
+    (run app)))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: ColorDialog example
+[[file:./color-dialog.gif]]
+
+#+html: <details><summary>window-should-close</summary>
+#+begin_src lisp
+(define-objc-method ("NSObject" "windowShouldClose:" window-should-close) :bool
+    ((sender :object))
+  (:method (self sender) t)
+  (:method :after (self sender)
+    (when (endp (remove-if (lambda (w)
+                             (or (typep w 'ns-panel)
+                                 (eq w self)))
+                           (windows (ns-app))))
+      (terminate (ns-app) sender))))
+#+end_src
+
+*Reference*:
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Dialogs/ColorDialog/ColorDialog.m][ColorDialog.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Note*: this might be rewritten in the future for clean code.
+#+html: </details>
+
+*Explain*:
++ =ColorWindow=: we define a new =ns-window= class which:
+  + Holds a button with title =Color...=
+  + if button clicked, send =on-button-click= (ObjC method =onButtonClick:=)
+    action to target aka =ColorWindow= itself
++ =ns-color-panel=: when ObjC environment invokes =on-button-click=
+  method, a [[https://developer.apple.com/documentation/appkit/nscolorpanel?language=objc][NSColorPanel]] ([[https://developer.apple.com/documentation/appkit/nscolorpanel/shared?language=objc][sharedColorPanel]]) panel window will:
+  + popup =(setf (visiblep panel) t)=
+  + start with initial color (background color of current window)
+  + when changing the color of color panel,
+    will send a =action= (ObjC SEL as message) to =target=
+    (current window) with (the color panel) itself.
 
 * Footnotes
 
