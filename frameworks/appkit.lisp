@@ -252,6 +252,19 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-alert
    #:ns-open-panel
    #:ns-save-panel
+   #:can-choose-files-p
+   #:can-choose-directories-p
+   #:resolves-aliases-p
+   #:allows-multiple-selection-p
+   #:accessory-view-disclosed-p
+   #:can-download-ubiquitous-contents-p
+   #:can-resolve-ubiquitous-conflicts-p
+   #:title
+   #:prompt
+   #:message
+   #:name-field-label
+   #:name-field-string-value
+   #:directory-pathname
    #:ns-sharing-service-picker
    #:ns-preview-representing-activity-item
    #:ns-pdf-panel
@@ -966,6 +979,10 @@ see https://developer.apple.com/documentation/appkit/nswindow/orderingmode?langu
 
 (defgeneric add-subview (view subview &key &allow-other-keys)
   (:documentation "Add SUBVIEW to VIEW. ")
+  (:method :around (view subview &key)
+    "Return SUBVIEW. "
+    (call-next-method)
+    subview)
   (:method ((view ns-view) (subview ns-view)
             &key
               (frame       nil    frame?)

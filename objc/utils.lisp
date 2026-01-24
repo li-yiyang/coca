@@ -74,20 +74,22 @@ Rules:
   (str:match name
     ;; Black list: not conflicts with CL symbols
     ;; should add more later
-    (("count")   (intern "COUNTS" package))
-    (("length")  (intern "LEN"    package))
+    (("count")    (intern "COUNTS" package))
+    (("length")   (intern "LEN"    package))
 
     ;; Prefix escape
-    (("NS" name) (intern (str:concat "NS-" (str:upcase (str:param-case name))) package))
-    (("CG" name) (intern (str:concat "CG-" (str:upcase (str:param-case name))) package))
-    ;; FIX: frameworks/webkit.lisp
-    (("WK" name) (intern (str:concat "WK-" (str:upcase (str:param-case name))) package))
+    (("NS" name)  (intern (str:concat "NS-" (str:upcase (str:param-case name))) package))
+    (("CG" name)  (intern (str:concat "CG-" (str:upcase (str:param-case name))) package))
+    ;; FIX: frameworks;webkit.lisp
+    (("WK" name)  (intern (str:concat "WK-" (str:upcase (str:param-case name))) package))
+    ;; FIX: frameworks;appkit.lisp
+    (("URL" name) (intern (str:concat "URL-" (str:upcase (str:param-case name))) package))
 
     ;; internal/private
-    (("__" name) (intern (str:concat "%%"  (str:upcase (str:param-case name))) package))
-    (("_"  name) (intern (str:concat "%"   (str:upcase (str:param-case name))) package))
+    (("__" name)  (intern (str:concat "%%"  (str:upcase (str:param-case name))) package))
+    (("_"  name)  (intern (str:concat "%"   (str:upcase (str:param-case name))) package))
 
-    (t           (intern (str:upcase (str:param-case name))                    package))))
+    (t            (intern (str:upcase (str:param-case name))                    package))))
 
 (defun tree-find-if (tree pred)
   "Search by PRED in TREE.

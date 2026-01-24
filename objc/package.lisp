@@ -41,6 +41,7 @@
    #:define-objc-method
    #:send
    #:invoke
+   #:invoke-super
    #:can-invoke-p
    #:coca-init
    #:define-coca-init))

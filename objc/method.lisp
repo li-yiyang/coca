@@ -674,5 +674,48 @@ Example:
                  :collect `(defmethod ,name ,@cdr))
        ',name)))
 
+(defmacro invoke-super ((self &rest lambda-list) &body plist)
+  "Syntax sugar for `call-next-method' in defmethod for ObjC methods.
+
+Syntax:
+
+    (invoke-super (SELF ARGS... KEYS)
+      (:KEY VAL &key OVERWRITE)
+      ...)
+
++ SELF: variable name to call as self
++ ARGS: additional args to apply on `call-next-method'
++ KEYS: last one of ARGS should be KEYS as keys
++ KEY, VAL: key and val
++ OVERWRITE: Non-nil to overwrite the given
+
+Example:
+
+    (invoke-super (self arg keys)
+      (:frame (make-ns-rect ...) nil)
+      (:title \"title\"))
+
+will be expanded into
+
+    (let ((#:self self)
+          (#:keys keys))
+      (setf (getf #:keys :frame)  (make-ns-rect ...))
+      (setf (getf #:keys :title)  (or (getf #:keys :title) \"title\"))
+      (apply #'call-next-method self arg keys))
+"
+  (let ((args  (butlast   lambda-list))
+        (keys  (car (last lambda-list)))
+        (self* (gensym "SELF"))
+        (keys* (gensym "KEYS")))
+    `(let ((,self* ,self)
+           (,keys* ,keys))
+       ,@(loop :for (key val . optional) :in plist
+               :for overwrite := (car optional)
+               :if overwrite
+                 :collect `(setf (getf ,keys* ,key) ,val)
+               :else
+                 :collect `(setf (getf ,keys* ,key)
+                                 (or (getf ,keys* ,key) ,val)))
+       (apply #'call-next-method ,self* ,@args ,keys*))))
 
 ;;;; method.lisp ends here

@@ -5,6 +5,35 @@
 #+subtitle: Examples about how to use Coca
 #+author: 凉凉
 #+OPTIONS: ^:{}
+* Status
+- [X] Hello Worlds
+- [X] Applications
+- [-] Dialogs
+  - [X] ColorDialog
+  - [X] FontDialog
+  - [ ] FileOpen/SaveDialog
+  - [ ] MessageBox
+- [ ] Menus and toolbars
+- [ ] Containers
+  - [ ] NSBox
+  - [ ] NSScrollView
+  - [ ] NSTabView
+  - [ ] NSWindow
+- [ ] Controls
+  - [ ] Button
+  - [ ] CheckBox
+  - [ ] ComboBox
+  - [ ] Label
+  - [ ] LevelIndicator
+  - [ ] ListBox
+- [ ] Components
+  - [ ] Timer
+- [ ] Events
+  - [ ] ApplicationIdle
+  - [ ] WindowAndMessages
+- [ ] Others
+  - [ ] ColoredTabPages
+
 * A Very basic window
 ** Plain =ns-window=
 First, load =coca= package:
@@ -248,8 +277,8 @@ different logic for the ObjC class.
                  &key
                    (label "Hello ObjC Class")
                    (title "Hello World"))
-  (setf (getf plist :title) title)
-  (apply #'call-next-method self plist)
+  (invoke-super (self plist)
+    (:title title))
   (setf (my-label self)
         (alloc-init 'ns-text-field
                     :frame       (make-ns-rect :x 5 :y 100 :w 290 :h 100)
@@ -357,7 +386,8 @@ different logic for the ObjC class.
         (:method ((self class) (arg ...))
           body)
         (:wrapper wrapper-function)
-        (:default . BODY))
+        (:default default-return-value)
+        (:redefine REDEFINE))
 
   + CLASS: symbol or string of ObjC class
     this should be the root of ObjC class where the lisp generic function
@@ -370,15 +400,19 @@ different logic for the ObjC class.
   + LAMBDA-LIST:
     VAR: symbol of argument
     OBJC-ENCODING: ObjC type encoding for argument
-  + BODY: method body,
-    use `self' when referring current ObjC object (adviced, not force)
-    use `super' when referring current ObjC object super class
+  + WRAPPER: wrapper function to ensure the ObjC method return value
+    is currectly parsed as ObjC acceptable value
+  + DEFAULT: by default, raise warning with no method message.
+    Use DEFAULT will provide default return value of objc method.
+
+    Note: within DEFAULT, the VAR and SELF can be referred.
+  + REDEFINE: redefine the CFFI callback and the default method
+    (by default is `nil')
 
   Example:
 
       (define-objc-method (ns-window \"foo\") :bool ()
         (:documentation \"...\")
-        (:default (invoke self balabala))
         (:wrapper as-boolean)
         (:method ((self ns-window))
           (call-next-method) ;; like [super ...] in ObjC
@@ -402,7 +436,7 @@ different logic for the ObjC class.
 (defmethod change-color ((self ns-window) (sender t))
   (setf (background-color self) (color sender)))
 
-(defmethod init ((self color-window) &key)
+(defmethod init ((self color-window) &rest keys &key)
   (let ((button (alloc-init 'ns-button
                             :frame (make-ns-rect :x 10 :y 265 :w 100 :h 32)
                             :title "Color..."
@@ -410,10 +444,10 @@ different logic for the ObjC class.
                             :target self
                             :action #'on-button-click
                             :autoresizing '(:max-x-margin :min-y-margin))))
-    (call-next-method self
-                      :frame (make-ns-rect :x 100 :y 100 :w 300 :h 300)
-                      :title "ColorDialog example"
-                      :visiblep t)
+    (invoke-super (self keys)
+      (:frame (make-ns-rect :x 100 :y 100 :w 300 :h 300))
+      (:title "ColorDialog example")
+      (:visiblep t))
     (add-subview self button)
     self))
 
@@ -529,7 +563,7 @@ different logic for the ObjC class.
 (defmethod change-font ((self font-window) sender)
   (setf (font (my-label self)) (selected-font (ns-font-manager))))
 
-(defmethod init ((self font-window) &key)
+(defmethod init ((self font-window) &rest keys &key)
   (let ((button (alloc-init 'ns-button
                             :frame (make-ns-rect :x 10 :y 365 :w 100 :h 32)
                             :title "Font..."
@@ -545,10 +579,10 @@ abcdefghijklmnopqrstuvwxyz
 1234567890!@#$%^&*()-+_=
 滚滚长江东逝水
 凉凉")))
-    (call-next-method self
-                      :frame (make-ns-rect :x 100 :y 100 :w 400 :h 400)
-                      :title "FontDialog example"
-                      :visiblep t)
+    (invoke-super (self keys)
+      (:frame   (make-ns-rect :x 100 :y 100 :w 400 :h 400))
+      (:title   "FontDialog example")
+      (:visiblep t))
     (add-subview self button)
     (add-subview self (setf (my-label self) label))
     self))
@@ -607,6 +641,95 @@ abcdefghijklmnopqrstuvwxyz
   : + SENDER: the control that send the message
 
   #+html: </details>
+
+** NSOpen/SavePanel
+
+* Controls
+** Button
+#+begin_src lisp
+(define-objc-class ("ButtonWindow" button-window) (ns-window)
+  ((label1  :reader label1)
+   (label2  :reader label2)
+   (buttons :initform (make-hash-table :test #'eq) :reader buttons)))
+
+(define-objc-method ("ButtonWindow" "onButtonClick:" on-button-click) :void
+    ((sender :object))
+  (:method ((window button-window) sender)
+    (let ((action (gethash sender (buttons window))))
+      (when action (funcall action)))))
+
+(defmethod init ((self button-window) &rest keys &key)
+  (let ((label1  (autorelease
+                  (alloc-init 'ns-text-field
+                              :frame    (make-ns-rect :x 50 :y 50 :w 200 :h 20)
+                              :text     "Button1 clicked 0 times"
+                              :bezeledp  nil
+                              :editablep nil)))
+        (label2  (autorelease
+                  (alloc-init 'ns-text-field
+                              :frame    (make-ns-rect :x 50 :y 80 :w 200 :h 20)
+                              :text     "Button2 clicked 0 times"
+                              :bezeledp  nil
+                              :editablep nil)))
+        (button1 (autorelease
+                  (alloc-init 'ns-button
+                              :frame    (make-ns-rect :x 50 :y 225 :w 200 :h 25)
+                              :target   self
+                              :action   #'on-button-click
+                              :title    "Button1")))
+        (button2 (autorelease
+                  (alloc-init 'ns-button
+                              :frame   (make-ns-rect :x 50 :y 125 :w 200 :h 75)
+                              :target   self
+                              :action #'on-button-click
+                              :title   "Button2"))))
+    (invoke-super (self keys)
+      (:frame (make-ns-rect :x 100 :y 100 :w 300 :h 300))
+      (:title "Button example"))
+    (add-subview self label1)
+    (add-subview self label2)
+    (add-subview self button1)
+    (add-subview self button2)
+    (let ((clicked1 0)
+          (clicked2 0))
+      (setf (gethash button1 (buttons self))
+            (lambda ()
+              (setf (string-value label1)
+                    (format nil "Button1 clicked ~D times" (incf clicked1)))))
+      (setf (gethash button2 (buttons self))
+            (lambda ()
+              (setf (string-value label2)
+                    (format nil "Button2 clicked ~D times" (incf clicked2))))))))
+
+(tmt:with-body-in-main-thread ()
+  (sb-int:set-floating-point-modes :traps ())
+  (let ((app (ns-app)))
+    (autorelease (alloc-init 'button-window))
+    (setf (activation-policy app) :regular)
+    (run app)))
+#+end_src
+
+[[file:./button.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/Button/Button.m][Button.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ we use =buttons= (a =hash-table=) to store the action of each button
+  clicked on =button-window=
+
+  Of course, you can write your own logic to implement the button
+  actions. For example, you could use =define-objc-method= like:
+
+  #+begin_src lisp
+  (define-objc-method ("ButtonWindow" "onButton1Click:" on-button1-click) :void
+      ((sender :object))
+    (setf (string-value (label2 self))
+          (format nil "Button2 clicked ~D times" (incf (button2-counter self)))))
+  #+end_src
+
+  But I think my way is more flexiable. Anyway, there's more than one way
+  to make things done in Lisp World.
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.

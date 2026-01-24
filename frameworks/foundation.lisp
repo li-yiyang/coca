@@ -47,6 +47,15 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-data
    #:ns-mutable-data
    #:ns-url
+   #:scheme
+   #:user
+   #:password
+   #:host
+   #:port
+   #:path
+   #:path-extension
+   #:query
+   #:fragment
    #:ns-url-components
    #:ns-url-query-item
    #:ns-uuid
@@ -765,10 +774,335 @@ see https://developer.apple.com/documentation/foundation/nsmutabledata?language=
 ;;; URLs
 
 (define-objc-class "NSURL" ()
-  ()
+  (;;; Accessing the Parts of the URL
+   ("scheme"
+    :reader scheme
+    :after  ns-string-to-string
+    :documentation
+    "The scheme. (read-only)
+
+This property contains the scheme.
+Any percent-encoded characters are not unescaped.
+For example, in the URL http://www.example.com/index.html,
+the scheme is http.
+
+The full URL is the concatenation of the scheme, a colon (:), and the
+value of resourceSpecifier.
+
+Note
+
+The term “protocol” is also sometimes used when talking about
+network-based URL schemes. However, not all URL schemes are networking
+protocols—data:// URLs, for example.
+
+see https://developer.apple.com/documentation/foundation/nsurl/scheme?language=objc")
+   ("user"
+    :reader user
+    :after  ns-string-to-string
+    :documentation
+    "The user name, conforming to RFC 1808.
+
+This property contains the user name, unescaped using the
+stringByReplacingPercentEscapesUsingEncoding: method. If the
+receiver’s URL does not conform to RFC 1808, this property returns
+nil. For example, in the URL ftp://username@www.example.com/, the user
+name is username.
+
+see https://developer.apple.com/documentation/foundation/nsurl/user?language=objc")
+   ("password"
+    :reader password
+    :after  ns-string-to-string
+    :documentation
+    "The password conforming to RFC 1808. (read-only)
+
+This property contains the password. Any percent-encoded characters
+are not unescaped. If the receiver does not conform to RFC 1808, it
+contains nil. For example, in the URL
+http://username:password@www.example.com/index.html, the password is
+password.
+
+see https://developer.apple.com/documentation/foundation/nsurl/password?language=objc")
+   ("host"
+    :reader host
+    :after  ns-string-to-string
+    :documentation
+    "The host, conforming to RFC 1808. (read-only)
+
+This property contains the host, unescaped using the
+stringByReplacingPercentEscapesUsingEncoding: method. If the receiver
+does not conform to RFC 1808, this property contains nil. For example,
+in the URL http://www.example.com/index.html, the host is
+www.example.com.
+
+see https://developer.apple.com/documentation/foundation/nsurl/host?language=objc")
+   ("port"
+    :reader port
+    :documentation
+    "The port, conforming to RFC 1808.
+
+This property contains the port number. If the receiver does not
+conform to RFC 1808, this property contains nil. For example, in the
+URL http://www.example.com:8080/index.php, the port number is 8080.
+
+see https://developer.apple.com/documentation/foundation/nsurl/port?language=objc")
+   ("path"
+    :reader path
+    :after  ns-string-to-string
+    :documentation
+    "The path, conforming to RFC 1808. (read-only)
+
+This property contains the path, unescaped using the
+stringByReplacingPercentEscapesUsingEncoding: method. If the receiver
+does not conform to RFC 1808, this property contains nil.
+
+If the receiver contains a file or file reference URL (as determined
+with fileURL), this property’s value is suitable for input into
+methods of NSFileManager or NSPathUtilities. If the path has a
+trailing slash, it is stripped.
+
+If the receiver contains a file reference URL, this property’s value
+provides the current path for the referenced resource, which may be
+nil if the resource no longer exists.
+
+If the parameterString property contains a non-nil value, the path may
+be incomplete. If the receiver contains an unencoded semicolon, the
+path property ends at the character before the semicolon. The
+remainder of the URL is provided in the parameterString property.
+
+To obtain the complete path, if parameterString contains a non-nil
+value, append a semicolon, followed by the parameter string.
+
+Per RFC 3986, the leading slash after the authority (host name and
+port) portion is treated as part of the path. For example, in the URL
+http://www.example.com/index.html, the path is /index.html.
+
+see https://developer.apple.com/documentation/foundation/nsurl/path?language=objc")
+   ("pathExtension"
+    :reader path-extension
+    :documentation
+    "The path extension. (read-only)
+Return the path extension of the receiver, or nil if path is nil.
+
+This property contains the path extension, unescaped using the
+stringByReplacingPercentEscapesUsingEncoding: method. For example, in
+the URL file:///path/to/file.txt, the path extension is txt.
+
+see https://developer.apple.com/documentation/foundation/nsurl/pathextension?language=objc")
+   ("query"
+    :reader query
+    :after  ns-string-to-string
+    :documentation
+    "The query string, conforming to RFC 1808.
+
+This property contains the query string. Any percent-encoded
+characters are not unescaped. If the receiver does not conform to RFC
+1808, this property contains nil. For example, in the URL
+http://www.example.com/index.php?key1=value1&key2=value2, the query
+string is key1=value1&key2=value2.
+
+see https://developer.apple.com/documentation/foundation/nsurl/query?language=objc")
+   ("fragment"
+    :reader fragment
+    :after  ns-string-to-string
+    :documentation
+    "The fragment identifier, conforming to RFC 1808. (read-only)
+
+This property contains the URL’s fragment. Any percent-encoded
+characters are not unescaped. If the receiver does not conform to RFC
+1808, this property contains nil. For example, in the URL
+http://www.example.com/index.html#jumpLocation, the fragment
+identifier is jumpLocation.
+
+see https://developer.apple.com/documentation/foundation/nsurl/fragment?language=objc"))
   (:documentation
    "An object that represents the location of a resource, such as an item on a
 remote server or the path to a local file.
+
+In Swift, this object bridges to URL; use NSURL when you need
+reference semantics or other Foundation-specific behavior.
+
+You can use URL objects to construct URLs and access their parts. For
+URLs that represent local files, you can also manipulate properties of
+those files directly, such as changing the file’s last modification
+date. Finally, you can pass URL objects to other APIs to retrieve the
+contents of those URLs. For example, you can use the NSURLSession,
+NSURLConnection, and NSURLDownload classes to access the contents of
+remote resources, as described in URL Loading System.
+
+URL objects are the preferred way to refer to local files. Most
+objects that read data from or write data to a file have methods that
+accept an NSURL object instead of a pathname as the file
+reference. For example, you can get the contents of a local file URL
+as an NSString object using the initWithContentsOfURL:encoding:error:
+initializer, or as an NSData object using the
+initWithContentsOfURL:options:error: initializer.
+
+You can also use URLs for interapplication communication. In macOS,
+the NSWorkspace class provides the openURL: method to open a location
+specified by a URL. Similarly, in iOS, the UIApplication class
+provides the openURL:options:completionHandler: method.
+
+Additionally, you can use URLs when working with pasteboards, as
+described in NSURL Additions Reference (part of the AppKit framework).
+
+The NSURL class is “toll-free bridged” with its Core Foundation
+counterpart, CFURLRef. See Toll-Free Bridging for more information on
+toll-free bridging.
+
+Structure of a URL
+An NSURL object is composed of two parts—a potentially nil base URL
+and a string that is resolved relative to the base URL. An NSURL
+object is considered absolute if its string part is fully resolved
+without a base; all other URLs are considered relative.
+
+For example, when constructing an NSURL object, you might specify
+file:///path/to/user/ as the base URL and folder/file.html as the
+string part, as follows:
+
+NSURL *baseURL = [NSURL fileURLWithPath:@\"file:///path/to/user/\"];
+NSURL *URL = [NSURL URLWithString:@\"folder/file.html\"
+                    relativeToURL:baseURL];
+NSLog(@\"absoluteURL = %@\", [URL absoluteURL]);
+
+When fully resolved, the absolute URL is file:///path/to/user/folder/file.html.
+
+A URL can be also be divided into pieces based on its structure.
+For example, the URL
+https://johnny:p4ssw0rd@www.example.com:443/script.ext;param=value?query=value#ref
+contains the following URL components:
+
+    Component        Value
+    scheme           https
+    user             johnny
+    password         p4ssw0rd
+    host             www.example.com
+    port             443
+    path             /script.ext
+    pathExtension    ext
+    pathComponents   [\"/\", \"script.ext\"]
+    parameterString  param=value
+    query            query=value
+    fragment         ref
+
+The NSURL class provides properties that let you examine each of these
+components.
+
+Important
+For apps linked on or after iOS 17 and aligned OS versions, NSURL
+parsing has updated from the obsolete RFC 1738/1808 parsing to the
+same RFC 3986 parsing as NSURLComponents. This unifies the parsing
+behaviors of the NSURL and NSURLComponents APIs. Now, NSURL
+automatically percent- and IDNA-encodes invalid characters to help
+create a valid URL.
+
+To check if a URLString is strictly valid according to the RFC, use
+the new [NSURL URLWithString:URLString encodingInvalidCharacters:NO]
+method. This method leaves all characters as they are and returns nil
+if URLString is explicitly invalid.
+
+For apps linked before iOS 17, the NSURL class parses URLs according
+to RFC 1808, RFC 1738, and RFC 2732.  Bookmarks and Security Scope
+
+Starting with OS X v10.6 and iOS 4.0, the NSURL class provides a
+facility for creating and using bookmark objects. A bookmark provides
+a persistent reference to a file-system resource. When you resolve a
+bookmark, you obtain a URL to the resource’s current location. A
+bookmark’s association with a file-system resource (typically a file
+or folder) usually continues to work if the user moves or renames the
+resource, or if the user relaunches your app or restarts the system.
+
+For a general introduction to using bookmarks, read Locating Files
+Using Bookmarks in File System Programming Guide.
+
+In a macOS app that adopts App Sandbox, you can use security-scoped
+bookmarks to gain access to file-system resources outside your app’s
+sandbox. These bookmarks preserve the user’s intent to give your app
+access to a resource across app launches. For details on how this
+works, including information on the entitlements you need in your
+Xcode project, read Security-Scoped Bookmarks and Persistent Resource
+Access in App Sandbox Design Guide. The methods for using
+security-scoped bookmarks are described in this document in Working
+with Bookmark Data.
+
+When you resolve a security-scoped bookmark, you get a security-scoped
+URL.
+
+Security-Scoped URLs
+Security-scoped URLs provide access to resources outside an app’s
+sandbox. In macOS, you get access to security-scoped URLs when you
+resolve a security-scoped bookmark. In iOS, apps that open or move
+documents using a UIDocumentPickerViewController also receive
+security-scoped URLs.
+
+To gain access to a security-scoped URL, you must call the
+startAccessingSecurityScopedResource method (or its Core Foundation
+equivalent, the CFURLStartAccessingSecurityScopedResource
+function). For iOS apps, if you use a UIDocument to access the URL, it
+automatically manages the security-scoped URL for you.
+
+If startAccessingSecurityScopedResource (or
+CFUrLStartAccessingSecurityScopedResource) returns true, you must
+relinquish your access by calling the
+stopAccessingSecurityScopedResource method (or its Core Foundation
+equivalent, the CFURLStopAccessingSecurityScopedResource
+function). You should relinquish your access as soon as you have
+finished using the file. After you call these methods, you immediately
+lose access to the resource in question.
+
+Warning
+If you fail to relinquish your access when you no longer need a
+file-system resource, your app leaks kernel resources. If sufficient
+kernel resources are leaked, your app loses its ability to add
+file-system locations to its sandbox, using Powerbox, security-scoped
+bookmarks, or similar APIs, until relaunched.  Security-Scoped URLs
+and String Paths
+
+In a macOS app, when you copy a security-scoped URL, the copy has the
+security scope of the original. You gain access to the file-system
+resource (that the URL points to) just as you would with the original
+URL: by calling the startAccessingSecurityScopedResource method (or
+its Core Foundation equivalent).
+
+If you need a security-scoped URL’s path as a string value (as
+provided by the path method), such as to provide to an API that
+requires a string value, obtain the path from the URL as needed. Note,
+however, that a string-based path obtained from a security-scoped URL
+does not have security scope and you cannot use that string to obtain
+access to a security-scoped resource.  iCloud Document Thumbnails
+
+With OS X v10.10 and iOS 8.0, the NSURL class includes the ability to
+get and set document thumbnails as a resource property for iCloud
+documents. You can get a dictionary of NSImage objects in macOS or
+UIImage objects in iOS using the getResourceValue:forKey:error: or
+getPromisedItemResourceValue:forKey:error: methods.
+
+    ...
+
+In macOS, you can set a dictionary of thumbnails using the
+setResourceValue:forKey:error: method. You can also get or set all the
+thumbnails as an NSImage object with multiple representations by using
+the NSURLThumbnailKey.
+
+    ...
+
+Note
+Do not set the NSURLThumbnailDictionaryKey key directly. Modifying
+this key interferes with document tracking and can create duplicates
+of your document, as well as other possible problems.
+
+In iOS, use a UIDocument subclass to manage your file. Set the
+thumbnail by overriding the document’s
+fileAttributesToWriteToURL:forSaveOperation:error: method and
+returning a dictionary that contains the proper thumbnail keys (along
+with any other file attributes).
+
+In macOS, follow the instructions for creating thumbnails given in
+Quick Look Programming Guide.
+
+Note
+Although the thumbnail API is designed to support multiple image
+resolutions, currently it only supports 1024 x 1024 pixel thumbnails.
+
 see https://developer.apple.com/documentation/foundation/nsurl?language=objc"))
 
 (define-objc-class "NSURLComponents" ()
