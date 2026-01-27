@@ -369,7 +369,8 @@ Parameters:
                 (setf ,name ,(objc-method-foreign-aref-form
                               `(foreign-symbol-pointer ,objc-name :library ',library)
                               encoding)))
-              (pushnew ',fn *coca-post-init-hooks*)
+              (pushnew (cons ',fn ',fn) *coca-post-init-hooks*
+                       :test #'equal :key #'car)
               (,fn)
               ',name)))
         (otherwise
@@ -401,7 +402,7 @@ this method before all the method calling of ObjC methods or objects.
 
 Use `define-coca-init' to clean up and setup how to reload
 ObjC environment."
-  (map nil #'funcall *coca-pre-init-hooks*)
+  (dolist (hook *coca-pre-init-hooks*) (funcall (cdr hook)))
   ;; Clear ffi_type, re-register it
   (setf +ffi_type_sint8+   (foreign-symbol-pointer "ffi_type_sint8")
         +ffi_type_uint8+   (foreign-symbol-pointer "ffi_type_uint8")
@@ -453,7 +454,7 @@ ObjC environment."
                 (slot-value fn 'objc-class))
               t))
            *objc-methods*)
-  (map nil #'funcall *coca-post-init-hooks*))
+  (dolist (hook *coca-post-init-hooks*) (funcall (cdr hook))))
 
 (defmacro define-coca-init (hook &body body)
   "Define HOOK to be triggered when init Coca.
@@ -476,7 +477,13 @@ For example, if you defines an ObjC object as global parameter:
 This will ensure that the foreign ObjC pointer is correctly
 reinitialized after you close the ObjC environment. "
   (ecase hook
-    (:pre  `(pushnew (lambda () ,@body) *coca-pre-init-hooks*  :test #'equal))
-    (:post `(pushnew (lambda () ,@body) *coca-post-init-hooks* :test #'equal))))
+    (:pre  `(pushnew (cons ',body (lambda () ,@body))
+                     *coca-pre-init-hooks*
+                     :test #'equal
+                     :key  #'car))
+    (:post `(pushnew (cons ',body (lambda () ,@body))
+                     *coca-post-init-hooks*
+                     :test #'equal
+                     :key  #'car))))
 
 ;;;; sugar.lisp ends here

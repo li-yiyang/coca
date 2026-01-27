@@ -458,20 +458,20 @@ Parameter:
         :writers    ,(c2mop:slot-definition-writers    slotd)
         :allocation ,(c2mop:slot-definition-allocation slotd))))
 
-(defun objc-class-modify-objc-properties (class objc-properties)
+(defun objc-class-modify-objc-properties (class objc-properties &optional (name (class-name class)))
   "Modify ObjC OBJC-PROPERTIES of OBJC-CLASS.
 
 Parameters:
 + OBJC-CLASS: should be coerce to objc class
 + OBJC-PROPERTIES: a list like:
++ NAME: Optional ObjC Class name
 
      (OBJC-NAME &KEY BEFORE AFTER READER ACCESSOR DOCUMENTAION)
      (LISP-NAME &KEY LISP-SLOT-PLIST...)
 
 "
   (declare (type objc-class class))
-  (let* ((name   (class-name class))
-         (super  (c2mop:class-direct-superclasses class))
+  (let* ((super  (c2mop:class-direct-superclasses class))
          (slotd  (loop :for (name . lisp-slots) :in objc-properties
                        :if (symbolp name)
                          :collect `(,@(loop :for (key val) :on lisp-slots :by #'cddr
@@ -480,10 +480,10 @@ Parameters:
                                             :if (eql key :reader)
                                               :collect val :into readers
                                             :if (eql key :writer)
-                                              :collect val :into writers
+                                              :collect `(setf ,val) :into writers
                                             :if (eql key :accessor)
                                               :collect val :into readers
-                                              :and :collect val :into writers
+                                              :and :collect `(setf ,val) :into writers
                                             :finally (return (list :readers  readers
                                                                    :writers  writers
                                                                    :initargs initargs)))
@@ -519,15 +519,16 @@ Parameters:
                              :writers                    ,(when writer `((setf ,writer)))
                              :allocation                 :objc
                              :documentation              ,documentation))
-                       :else
-                         :collect (%normalize-objc-class-properties slotd))))
-    (c2mop:ensure-finalized
-     (c2mop:ensure-class
-      name
-      :metaclass           (find-class 'objc-class)
-      :name                name
-      :direct-superclasses super
-      :direct-slots        (union direct slotd :key (lambda (plist) (getf plist :name)))))))
+                       :else :if (objc-property-slot-p slotd)
+                               :collect (%normalize-objc-class-properties slotd))))
+    (setf (find-class name)
+          (c2mop:ensure-finalized
+           (c2mop:ensure-class-using-class
+            class (class-name class)
+            :metaclass           (find-class 'objc-class)
+            :name                name
+            :direct-superclasses super
+            :direct-slots        (append direct slotd))))))
 
 (defmacro doc-objc-class (name &body documentations)
   "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
@@ -549,10 +550,13 @@ Parameters:
                         (setf p nil))
                       p))
         (docstring  (format nil "~{~A~^~%~%~}" documentations)))
-    `(let ((,class (coerce-to-objc-class ,name)))
-       (setf (documentation ,class t) ,docstring)
-       ,@(when properties `((objc-class-modify-objc-properties ,class ',properties)))
-       (class-name ,class))))
+    (destructuring-bind (name &optional lisp-name) (listfy name)
+      `(let ((,class (coerce-to-objc-class ,name)))
+         (setf (documentation ,class t) ,docstring)
+         ,@(when properties
+             `((objc-class-modify-objc-properties
+                ,class ',properties ,@(when lisp-name `(',lisp-name)))))
+         (class-name ,class)))))
 
 
 ;;;; Define new ObjC class
@@ -719,7 +723,7 @@ Syntax:
            (:objc-class-name . ,objc-name)
            (:documentation ,(or (second (assoc :documentation class-options))
                                 (format nil "ObjC Class of ~A" objc-name))))
-        `(doc-objc-class ,objc-name
+        `(doc-objc-class (,objc-name ,lisp-name)
            ,direct-ivars
            ,@(cdr (assoc :documentation class-options))))))
 

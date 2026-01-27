@@ -84,6 +84,7 @@ Rules:
     (("WK" name)  (intern (str:concat "WK-" (str:upcase (str:param-case name))) package))
     ;; FIX: frameworks;appkit.lisp
     (("URL" name) (intern (str:concat "URL-" (str:upcase (str:param-case name))) package))
+    (("UT"  name) (intern (str:concat "UT-" (str:upcase (str:param-case name))) package))
 
     ;; internal/private
     (("__" name)  (intern (str:concat "%%"  (str:upcase (str:param-case name))) package))
