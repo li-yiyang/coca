@@ -556,6 +556,9 @@ Parameters:
          ,@(when properties
              `((objc-class-modify-objc-properties
                 ,class ',properties ,@(when lisp-name `(',lisp-name)))))
+         #+sbcl
+         (setf (slot-value ,class 'sb-pcl::source)
+               ,(sb-c::make-definition-source-location))
          (class-name ,class)))))
 
 
