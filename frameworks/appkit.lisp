@@ -256,6 +256,17 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-screens
    #:ns-popover
    #:ns-alert
+   #:ns-alert-style
+   #:as-ns-alert-style
+   #:decode-ns-alert-style
+   #:ns-alert-style-p
+   #:alert-style
+   #:shows-help-p
+   #:help-anchor
+   #:delegate
+   #:message
+   #:informative-text
+   #:icon
    #:ns-open-panel
    #:ns-save-panel
    #:can-choose-files-p
@@ -372,6 +383,8 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 
    ;; Images and PDF
    #:ns-image
+   #:size
+   #:as-ns-image
    #:ns-image-rep
    #:ns-bitmap-image-rep
    #:ns-ci-image-rep
@@ -2703,11 +2716,226 @@ see https://developer.apple.com/documentation/appkit/nspopover?language=objc"))
 
 ;;; Alerts
 
+(define-objc-enum ns-alert-style
+  "The set of alert styles to style alerts in your app.
+
+Currently, there’s no visual difference between informational and
+warning alerts. You should only use the critical (or “caution”) alert
+style if warranted. For design guidance on alert styles, see Human
+Interface Guidelines > Alerts. The default alert style is
+NSAlertStyleWarning.
+
+see https://developer.apple.com/documentation/appkit/nsalert/style?language=objc"
+  (:critical      2 "An alert style to inform someone about a critical event.")
+  (:warning       0 "An alert style to warn someone about a current or impending event.")
+  (:informational 1 "An alert style to inform someone about a current or impending event."))
+
 (define-objc-class "NSAlert" ()
-  ()
+  (;; Configuring Alerts
+   ("alertStyle"
+    :accessor alert-style
+    :before   as-ns-alert-style
+    :after    decode-ns-alert-style
+    :documentation
+    "See `ns-alert-style' for alert style constants.
+see https://developer.apple.com/documentation/appkit/nsalert/alertstyle?language=objc")
+   ("showsHelp"
+    :accessor shows-help-p
+    :before   as-boolean
+    :documentation
+    "Specifies whether the alert has a help button.
+see https://developer.apple.com/documentation/appkit/nsalert/showshelp?language=objc")
+   ("helpAnchor"
+    :accessor help-anchor
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The alert’s HTML help anchor.
+
+To provide a help anchor for the alert, set this property to the
+appropriate string value. To remove the help anchor, set this
+property’s value to nil.
+
+see https://developer.apple.com/documentation/appkit/nsalert/helpanchor?language=objc")
+   ("delegate"
+    :accessor delegate
+    :documentation
+    "The alert’s delegate.")
+   ("messageText"
+    :accessor message
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The alert’s message text or title.
+see https://developer.apple.com/documentation/appkit/nsalert/messagetext?language=objc")
+   ("informativeText"
+    :accessor informative-text
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The alert’s informative text.
+see https://developer.apple.com/documentation/appkit/nsalert/informativetext?language=objc")
+   ("icon"
+    :accessor icon
+    :before   as-ns-image
+    :documentation
+    "The custom icon displayed in the alert.
+
+By default, the image used in an alert is the app icon. If you set
+this property’s value, your specified custom image is used in place of
+the app icon.
+
+If you’ve set a custom alert icon, you can clear it by setting this
+property’s value to nil, which restores use of the app icon for the
+alert.
+
+Note
+AppKit may omit the icon from the alert if it’s the app icon and the
+alert’s context is clear, such as being presented as a sheet on an app
+window.
+
+see https://developer.apple.com/documentation/appkit/nsalert/icon?language=objc"))
   (:documentation
    "A modal dialog or sheet attached to a document window.
+
+The methods of the NSAlert class allow you to specify alert level,
+alert text, button titles, and a custom icon should you require
+it. The class also lets your alerts display a help button and provides
+ways for apps to offer help specific to an alert.
+
+To display an alert as a sheet, call the
+beginSheetModalForWindow:completionHandler: method; to display one as
+an app-modal dialog, use the runModal method.
+
+By design, an NSAlert object is intended for a single alert—that is,
+an alert with a unique combination of title, buttons, and so on—that
+is displayed upon a particular condition. You should create an NSAlert
+object for each alert dialog, creating it only when you need to
+display an alert, and release it when you are done. If you have a
+particular alert dialog that you need to show repeatedly, you can
+retain and reuse an instance of NSAlert for this dialog.
+
+After creating an alert using one of the alert creation methods, you
+can customize it further prior to displaying it by customizing its
+attributes. See Instance Attributes.
+
+Unless you must maintain compatibility with existing alert-processing
+code that uses the function-based API, you should allocate (alloc) and
+initialize (init) the alert object, and then set its attributes using
+the appropriate methods of the NSAlert class.  Instance Attributes
+
+NSAlert objects have the following attributes:
+
++ Type
+  An alert’s type helps convey the importance or gravity of its
+  message to the user. Specified with the alertStyle property.
++ Message text
+  The main message of the alert. Specified with messageText.
++ Informative text
+  Additional information about the alert.
+  Specified with informativeText.
++ Icon
+  An optional, custom icon to display in the alert, which is
+  used instead of the default app icon. Specified with icon.
++ Help
+  Alerts can let the user get help about them.
+  Use helpAnchor and showsHelp.
++ Response buttons
+  By default an alert has one response button: the OK button.
+  You can add more response buttons using the
+  addButtonWithTitle: method.
++ Suppression checkbox
+  A suppression checkbox allows the user to suppress the display
+  of a particular alert in subsequent occurrences of the event
+  that triggers it. Use showsSuppressionButton.
++ Accessory view
+  An accessory view lets you add additional information to an
+  alert; for example, a text field with contact information.
+  Use accessoryView, layout.
+
+Subclassing Notes
+The NSAlert class is not designed for subclassing.
+
 see https://developer.apple.com/documentation/appkit/nsalert?language=objc"))
+
+(defmethod init ((alert ns-alert)
+                 &key
+                   (alert-style     :warning alert-style?)
+                   (message          nil     message?)
+                   (informative-text nil     info?)
+                   (icon             nil     icon?)
+                   help-anchor
+                   (shows-help-p     (and help-anchor t))
+                   buttons
+                 &allow-other-keys)
+  "Initialize ns-alert ALERT.
+
+Parameters:
++ ALERT-STYLE (`ns-alert-style')
++ MESSAGE
+  main message of the alert
++ INFORMATIVE-TEXT
+  Additional information about the alert.
++ ICON
+  An optional, custom icon to display in the alert, which is
+  used instead of the default app icon.
++ SHOWS-HELP-P
+  if or not shows help
++ HELP-ANCHOR
+  help message
++ BUTTONS
+  a list of buttons titles"
+  (declare (type list           buttons)
+           (type ns-alert-style alert-style))
+  (call-next-method)
+  (when alert-style? (setf (alert-style  alert) alert-style))
+  (when message?     (setf (message      alert) (as-ns-string message)))
+  (when icon?        (setf (icon         alert) icon))
+  (when info?  (setf (informative-text   alert) informative-text))
+  (when shows-help-p
+    (setf (shows-help-p alert) shows-help-p
+          (help-anchor  alert) help-anchor))
+  (dolist (button buttons)
+    (invoke alert "addButtonWithTitle:" (as-ns-string button))))
+
+(defun ns-alert (message &rest keys
+                 &key
+                   alert-style
+                   informative-text
+                   icon
+                   help-anchor
+                   shows-help-p
+                   buttons
+                 &allow-other-keys)
+  "Open an alert window with MESSAGE.
+Return `ns-modal-response' code.
+
+Parameters:
++ ALERT-STYLE (`ns-alert-style')
++ MESSAGE
+  main message of the alert
++ INFORMATIVE-TEXT
+  Additional information about the alert.
++ ICON
+  An optional, custom icon to display in the alert, which is
+  used instead of the default app icon.
++ SHOWS-HELP-P
+  if or not shows help
++ HELP-ANCHOR
+  help message
++ BUTTONS
+  a list of buttons titles"
+  (declare (ignore alert-style
+                   informative-text
+                   icon
+                   help-anchor
+                   shows-help-p
+                   buttons))
+  (setf (getf keys :message) message)
+  (with-autorelease-pool ()
+    (decode-ns-modal-response
+     (invoke (autorelease (apply #'alloc-init 'ns-alert keys))
+             "runModal"))))
 
 ;;; Open and Save Panels
 
@@ -3963,10 +4191,157 @@ see https://developer.apple.com/documentation/appkit/nsaccessibilityelement-swif
 ;;; Images
 
 (define-objc-class "NSImage" ()
-  ()
+  (("size"
+    :accessor size
+    :documentation
+    "The size of the image.
+
+Defaults to {0.0, 0.0} if no size has been set and the size cannot be
+determined from any of the receiver’s image representations. If the
+size of the image hasn’t already been set when an image representation
+is added, the size is taken from the image representation’s data. For
+EPS images, the size is taken from the image’s bounding box. For TIFF
+images, the size is taken from the ImageLength and ImageWidth
+attributes.
+
+Changing the size of an NSImage after it has been used effectively
+resizes the image. Changing the size invalidates all its caches and
+frees them. When the image is next composited, the selected
+representation will draw itself in an offscreen window to recreate the
+cache.
+
+see https://developer.apple.com/documentation/appkit/nsimage/size?language=objc"))
   (:documentation
    "A high-level interface for manipulating image data.
+
+You use instances of NSImage to load existing images, create new
+images, and draw the resulting image data into your views. Although
+you use this class predominantly for image-related operations, the
+class itself knows little about the underlying image data. Instead, it
+works in conjunction with one or more image representation objects
+(subclasses of NSImageRep) to manage and render the image data. For
+the most part, these interactions are transparent.
+
+The class serves many purposes, providing support for the following
+tasks:
+
++ Loading images stored on disk or at a specified URL.
++ Drawing images into a view or graphics context.
++ Providing the contents of a CALayer object.
++ Creating new images based on a series of captured drawing commands.
++ Producing versions of the image in a different format.
+
+The NSImage class itself is capable of managing image data in a
+variety of formats. The specific list of formats is dependent on the
+version of the operating system but includes many standard formats
+such as TIFF, JPEG, GIF, PNG, and PDF among others. AppKit manages
+each format using a specific type of image representation object,
+whose job is to manage the actual image data. You can get a list of
+supported formats using the methods described in Determining Supported
+Types of Images.
+
+For more information about how to use image objects in your app, see
+Cocoa Drawing Guide.  Using Images with Core Animation Layers
+
+Although you can assign an NSImage object directly to the contents
+property of a CALayer object, doing so may not always yield the best
+results. Instead of using your image object, you can use the
+layerContentsForContentsScale: method to obtain an object that you can
+use for your layer’s contents. The image created by that method serves
+as the contents of a layer, which also supports all of the layer’s
+gravity modes. By contrast, the NSImage class supports only the
+kCAGravityResize, kCAGravityResizeAspect, and
+kCAGravityResizeAspectFill modes.
+
+Before calling the layerContentsForContentsScale: method, use the
+recommendedLayerContentsScale: method to get the recommended scale
+factor for the resulting image. The code listing below shows a typical
+example that uses the scale factor of a window’s backing store as the
+desired scale factor. From that scale factor, the code gets the scale
+factor for the specified image object and creates an object that you
+assign to the layer. You might use this code for images that fit the
+layer bounds precisely or for which you rely on the contentsGravity
+property of the layer to position or scale the image.
+
 see https://developer.apple.com/documentation/appkit/nsimage?language=objc"))
+
+(defgeneric as-ns-image (object &key &allow-other-keys)
+  (:documentation "Turn OBJECT as `ns-image'. ")
+  (:method ((pathname pathname) &key)
+    "Initializes and returns an image object using the specified file.
+Return an initialized NSImage object or nil if the new object cannot
+be initialized.
+
+Parameter:
++ PATHNAME: pathname specifying the file with the desired image data.
+  Relative paths must be relative to the current working directory.
+
+This method initializes the image object lazily. It does not actually
+open the specified file or create any image representations from its
+data until an app attempts to draw the image or request information
+about it.
+
+The filename parameter should include the file extension that
+identifies the type of the image data. The mechanism that actually
+creates the image representation for filename looks for an NSImageRep
+subclass that handles that data type from among those registered with
+NSImage.
+
+Because this method doesn’t actually create image representations for
+the image data, your app should do error checking before attempting to
+use the image; one way to do so is by accessing the valid property to
+check whether the image can be drawn.
+
+This method invokes setDataRetained: with an argument of true, thus
+enabling it to hold onto its filename. When archiving an image created
+with this method, only the image’s filename is written to the archive.
+
+If the cached version of the image uses less memory than the original
+image data, AppKit deletes the original data and uses the cached
+image. (This can occur for images whose resolution is greater than 72
+dpi.) If you resize the image by less than 50%, AppKit loads the data
+in again from the file. If you expect to delete the file or change its
+contents, use initWithContentsOfFile: instead.
+
+see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencingfile:)?language=objc"
+    (let ((image (invoke (alloc 'ns-image)
+                         "initByReferencingFile:"
+                         (string-to-ns-string
+                          (uiop:native-namestring pathname)))))
+      (if image
+          image
+          (error "~A cannot be initialized as `ns-image'. " pathname))))
+  (:method ((url ns-url) &key)
+    "Initializes and returns an image object using the specified URL.
+Return an initialized NSImage object.
+
+Parameter:
++ URL: the `ns-url' identifying the image
+
+This method initializes the image object lazily. It does not attempt
+to retrieve the data from the specified URL or create any image
+representations from that data until an app attempts to draw the image
+or request information about it.
+
+The url parameter should include a file extension that identifies the
+type of the image data. The mechanism that actually creates the image
+representation looks for an NSImageRep subclass that handles that data
+type from among those registered with NSImage.
+
+Because this method doesn’t actually create image representations for
+the image data, your app should do error checking before attempting to
+use the image; one way to do so is by accessing the valid property to
+check whether the image can be drawn.
+
+This method invokes setDataRetained: with an argument of true, thus
+enabling it to hold onto its URL. When archiving an image created with
+this method, only the image’s URL is written to the archive.
+
+see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencing:)?language=objc"
+    (invoke (alloc 'ns-image) "initByReferencingURL:" url))
+  (:method (default &key)
+    "Treat DEFAULT as `ns-url'. "
+    (as-ns-image (as-ns-url default))))
 
 (define-objc-class "NSImageRep" ()
   ()

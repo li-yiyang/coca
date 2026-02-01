@@ -8,11 +8,11 @@
 * Status
 - [X] Hello Worlds
 - [X] Applications
-- [-] Dialogs
+- [X] Dialogs
   - [X] ColorDialog
   - [X] FontDialog
   - [X] FileOpen/SaveDialog
-  - [ ] MessageBox
+  - [X] MessageBox
 - [ ] Menus and toolbars
 - [ ] Containers
   - [ ] NSBox
@@ -700,6 +700,8 @@ abcdefghijklmnopqrstuvwxyz
     (add-subview self text)))
 #+end_src
 
+#+attr_html: :width 80%
+#+attr_org: :width 300px
 #+caption: Save/Open example
 [[file:./open-save-window.gif]]
 
@@ -800,6 +802,72 @@ abcdefghijklmnopqrstuvwxyz
   + ALLOWED-CONTENT-TYPES (`as-ut-type')
     a list of `ut-types' like specification that specify the
     files types to which you can save
+  #+end_example
+
+  #+html: </details>
+
+** Message Box
+#+begin_src lisp
+(define-objc-class ("MessageWindow" message-window) (ns-window))
+
+(define-objc-method ("NSObject" "onClick:" on-click) :void
+    ((sender :object))
+  (:method ((window message-window) sender)
+    (ns-alert "Message"
+              :informative-text "Hello, World!"
+              :alert-style      :critical
+              :buttons          '("OK"))))
+
+(defmethod init ((window message-window) &rest keys &key)
+  (invoke-super (window keys)
+    (:frame (make-ns-rect :x 100 :y 100 :w 400 :h 400))
+    (:title "Message example"))
+  (add-subview window
+               (alloc-init 'ns-button
+                           :frame (make-ns-rect :x 10 :y 300
+                                                :w 100 :h 30)
+                           :title "Click Me"
+                           :action #'on-click
+                           :target window)))
+
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Message Window
+[[file:./message-window.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Dialogs/MessageBox/MessageBox.m][MessageBox.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ =ns-alert= is used to pop up an alert window
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'ns-alert t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Open an alert window with MESSAGE.
+  Return `ns-modal-response' code.
+
+  Parameters:
+  + ALERT-STYLE (`ns-alert-style')
+  + MESSAGE
+    main message of the alert
+  + INFORMATIVE-TEXT
+    Additional information about the alert.
+  + ICON
+    An optional, custom icon to display in the alert, which is
+    used instead of the default app icon.
+  + SHOWS-HELP-P
+    if or not shows help
+  + HELP-ANCHOR
+    help message
+  + BUTTONS
+    a list of buttons titles
   #+end_example
 
   #+html: </details>
