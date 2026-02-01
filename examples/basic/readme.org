@@ -11,7 +11,7 @@
 - [-] Dialogs
   - [X] ColorDialog
   - [X] FontDialog
-  - [ ] FileOpen/SaveDialog
+  - [X] FileOpen/SaveDialog
   - [ ] MessageBox
 - [ ] Menus and toolbars
 - [ ] Containers
@@ -19,8 +19,8 @@
   - [ ] NSScrollView
   - [ ] NSTabView
   - [ ] NSWindow
-- [ ] Controls
-  - [ ] Button
+- [-] Controls
+  - [X] Button
   - [ ] CheckBox
   - [ ] ComboBox
   - [ ] Label
@@ -642,7 +642,167 @@ abcdefghijklmnopqrstuvwxyz
 
   #+html: </details>
 
-** NSOpen/SavePanel
+** Open/SaveDialog
+#+begin_src lisp
+(define-objc-class ("OpenSaveWindow" open-save-window) (ns-window)
+  ((actions :initform (make-hash-table :test 'eq))))
+
+(defmethod window-will-close :after ((self open-save-window) sender)
+  (terminate (ns-app) sender))
+
+(define-objc-method ("NSObject" "onButtonClick:" on-button-click) :void
+    ((sender :object))
+  (:method ((self open-save-window) sender)
+    (with-slots (actions) self
+      (let ((action (gethash sender actions)))
+        (when action (funcall action))))))
+
+(defmethod init ((self open-save-window) &rest keys &key)
+  (let ((open (alloc-init 'ns-button
+                          :frame  (make-ns-rect :x 10 :y 310 :w 100 :h 30)
+                          :title  "Open..."
+                          :action #'on-button-click
+                          :target self))
+        (save (alloc-init 'ns-button
+                          :frame  (make-ns-rect :x 120 :y 310 :w 100 :h 30)
+                          :title  "Save"
+                          :action #'on-button-click
+                          :target self))
+        (text (alloc-init 'ns-text-field
+                          :frame      (make-ns-rect :x 10 :y 10 :w 380 :h 300)
+                          :editablep   t
+                          :selectablep t)))
+    (invoke-super (self keys)
+      (:frame (make-ns-rect :x 100 :y 100 :w 400 :h 350))
+      (:title "Save/Open example"))
+    (with-slots (actions) self
+      (setf (gethash open actions)
+            (lambda ()
+              (let ((file (ns-open-panel
+                           :title                      "Read File"
+                           :allows-multiple-selection-p nil
+                           :expanded-p                  nil)))
+                (when file
+                  (setf (string-value text)
+                        (uiop:read-file-string (first file)))))))
+      (setf (gethash save actions)
+            (lambda ()
+              (let ((file (ns-save-panel :title     "Save File"
+                                         :expanded-p nil)))
+                (when file
+                  (with-open-file (stream file
+                                          :direction :output
+                                          :if-exists :supersede
+                                          :if-does-not-exist :create)
+                    (write-string (string-value text) stream)))))))
+    (add-subview self open)
+    (add-subview self save)
+    (add-subview self text)))
+#+end_src
+
+#+caption: Save/Open example
+[[file:./open-save-window.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Dialogs/SaveFileDialog/SaveFileDialog.m][SaveFileDialog.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Dialogs/OpenFileDialog/OpenFileDialog.m][OpenFileDialog.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ =ns-open-panel= and =ns-save-panel= is for opening a window
+  requesting for opening and saving file
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'ns-open-panel t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Creates a new Open panel and initializes it.
+  Return a list of pathname for opened files.
+
+  Parameters:
+  + TITLE
+    save/open panel window title
+  + PROMPT
+    text to display in the default button
+  + MESSAGE
+    message text displayed in the panel
+  + NAME-FIELD-LABEL:
+    label text displayed in front of the filename text field
+  + NAME-FIELD:
+    user-editable filename currently shown in the name field
+  + DIRECTORY-URL:
+    current directory shown in the panel
+  + CAN-CREATE-DIRECTORIES-P
+    whether the panel displays UI for creating directories
+  + CAN-SELECT-HIDDEN-EXTENSION-P
+    whether the panel displays UI for hiding or showing
+    filename extensions
+  + SHOWS-HIDDEN-FILES-P
+    whether the panel displays files that are normally
+    hidden from the user
+  + EXTENSION-HIDDEN-P
+    whether to display filename extensions
+  + ALLOWED-CONTENT-TYPES (`as-ut-type')
+    a list of `ut-types' like specification that specify the
+    files types to which you can save
+  + CAN-CHOOSE-FILES-P
+    whether the user can choose files in the panel
+  + CAN-CHOOSE-DIRECTORIES-P
+    whether the user can choose directories in the panel
+  + RESOLVES-ALIASES-P
+    whether the panel resolves aliases
+  + ALLOWS-MULTIPLE-SELECTION-P
+    whether the user may select multiple files and directories
+  + ACCESSORY-VIEW-DISCLOSED-P
+    whether the panel’s accessory view is visible
+  + CAN-DOWNLOAD-UBIQUITOUS-CONTENTS-P
+    whether the panel responds to iCloud documents that aren’t
+    fully downloaded locally.
+  + CAN-RESOLVE-UBIQUITOUS-CONFLICTS-P
+    whether the panel responds to iCloud documents that have
+    conflicting versions
+  #+end_example
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation #'ns-save-panel t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Creates a new Save panel and initializes it with default information.
+  Return pathname of selected save file path or nil if cancelled.
+
+  Parameters:
+  + TITLE
+    save/open panel window title
+  + PROMPT
+    text to display in the default button
+  + MESSAGE
+    message text displayed in the panel
+  + NAME-FIELD-LABEL:
+    label text displayed in front of the filename text field
+  + NAME-FIELD:
+    user-editable filename currently shown in the name field
+  + DIRECTORY-URL:
+    current directory shown in the panel
+  + CAN-CREATE-DIRECTORIES-P
+    whether the panel displays UI for creating directories
+  + CAN-SELECT-HIDDEN-EXTENSION-P
+    whether the panel displays UI for hiding or showing
+    filename extensions
+  + SHOWS-HIDDEN-FILES-P
+    whether the panel displays files that are normally
+    hidden from the user
+  + EXTENSION-HIDDEN-P
+    whether to display filename extensions
+  + ALLOWED-CONTENT-TYPES (`as-ut-type')
+    a list of `ut-types' like specification that specify the
+    files types to which you can save
+  #+end_example
+
+  #+html: </details>
 
 * Controls
 ** Button
@@ -709,6 +869,9 @@ abcdefghijklmnopqrstuvwxyz
     (run app)))
 #+end_src
 
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Button example
 [[file:./button.gif]]
 
 *Reference*
@@ -730,6 +893,9 @@ abcdefghijklmnopqrstuvwxyz
 
   But I think my way is more flexiable. Anyway, there's more than one way
   to make things done in Lisp World.
+
+** CheckBox
+
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.

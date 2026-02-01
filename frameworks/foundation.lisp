@@ -47,6 +47,9 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-data
    #:ns-mutable-data
    #:ns-url
+   #:as-ns-url
+   #:ns-url-to-pathname
+   #:pathname-to-ns-url
    #:scheme
    #:user
    #:password
@@ -74,8 +77,8 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-size
    #:ns-size-p
    #:make-ns-size
-   #:ns-size-x
-   #:ns-size-y
+   #:ns-size-h
+   #:ns-size-w
    #:ns-affine-transform
 
    ;; Strings and Text
@@ -1105,6 +1108,24 @@ resolutions, currently it only supports 1024 x 1024 pixel thumbnails.
 
 see https://developer.apple.com/documentation/foundation/nsurl?language=objc"))
 
+(defun ns-url-to-pathname (ns-url)
+  "Convert NS-URL to lisp `pathname'. "
+  (declare (type ns-url ns-url))
+  (the pathname (pathname (path ns-url))))
+
+(defun pathname-to-ns-url (pathname)
+  "Convert PATHNAME to `ns-url'. "
+  (declare (type (or string pathname) pathname))
+  (invoke 'ns-url "fileURLWithPath:"
+          (string-to-ns-string (uiop:native-namestring pathname))))
+
+(defgeneric as-ns-url (url &key &allow-other-keys)
+  (:documentation "Create `ns-url' from URL. ")
+  (:method ((url pathname) &key)
+    (pathname-to-ns-url url))
+  (:method ((url string) &key)
+    (invoke 'ns-url "URLWithString:"   (string-to-ns-string url))))
+
 (define-objc-class "NSURLComponents" ()
   ()
   (:documentation
@@ -1148,12 +1169,12 @@ see https://developer.apple.com/documentation/foundation/nsuuid?language=objc"))
 ;;; Geometry
 
 (define-objc-struct (ns-size "CGSize")
-  (w :double)
-  (h :double))
+  (w :double :type real)
+  (h :double :type real))
 
 (define-objc-struct (ns-point "CGPoint")
-  (x :double)
-  (y :double))
+  (x :double :type real)
+  (y :double :type real))
 
 (define-objc-struct (ns-rect "CGRect")
   (x :double :type real)
@@ -1229,6 +1250,7 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 
 (defgeneric as-ns-string (string)
   (:documentation "Convert STRING into NSString. ")
+  (:method (default) (string-to-ns-string (format nil "~A" default)))
   (:method ((ns-string ns-string)) ns-string)
   (:method ((string string))       (string-to-ns-string string)))
 

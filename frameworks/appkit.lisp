@@ -1,7 +1,7 @@
 ;;;; appkit.lisp --- ObjC bindings for AppKit Framework
 
 (uiop:define-package #:coca.appkit
-  (:use :cl :coca.objc :coca.foundation)
+  (:use :cl :coca.objc :coca.foundation :coca.uniform-type-identifiers)
   (:documentation
    "Construct and manage a graphical, event-driven user interface for your macOS app.
 
@@ -51,6 +51,10 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:stop
    #:terminate
    #:send-event
+   #:ns-modal-response
+   #:ns-modal-response-p
+   #:as-ns-modal-response
+   #:decode-ns-modal-response
    #:ns-running-application
    #:ns-workspace
    #:ns-workspace-open-configuration
@@ -248,6 +252,8 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-window-tab
    #:ns-window-tab-group
    #:ns-screen
+   #:ns-main-screen
+   #:ns-screens
    #:ns-popover
    #:ns-alert
    #:ns-open-panel
@@ -1103,6 +1109,7 @@ see https://developer.apple.com/documentation/appkit/nscontrol/isenabled?languag
    ;; Accessing the Control's Value
    ("stringValue"
     :reader string-value          ; see (setf string-value) for writer
+    :after  ns-string-to-string
     :documentation
     "The value of the receiver’s cell as an NSString object.
 
@@ -1929,7 +1936,21 @@ most one per window."
                                  "use with the Cycle Through Windows menu item."))
 
 (define-objc-class "NSWindow" ()
-  (;; Configuring the Window's Content
+  (;; Managing the Window's Behavior
+   ("delegate"
+    :accessor delegate
+    :documentation
+    "The window’s delegate. (default as `:self')
+
+The value of this property is nil if the window doesn’t have a
+delegate.
+
+A window object’s delegate is inserted in the responder chain after
+the window itself and is informed of various actions by the window
+through delegation messages.
+
+see https://developer.apple.com/documentation/appkit/nswindow/delegate?language=objc")
+   ;; Configuring the Window's Content
    ("contentViewController"
     :reader content-view-controller
     :documentation
@@ -2161,6 +2182,9 @@ object raises an `ns-invalid-argument-exception' exception.  For
 details about window restoration, see restorationClass.
 see https://developer.apple.com/documentation/appkit/nswindow?language=objc"))
 
+(defmethod (setf delegate) ((value (eql :self)) object)
+  (setf (delegate object) object))
+
 ;; Creating a window
 
 (define-objc-enum ns-backing-store-type
@@ -2210,6 +2234,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/settitlewithrepres
                    (visiblep     t)
                    (has-shadow-p t)
                    (opaquep      nil)
+                   (delegate     :self)
                    title
                    screen
                  &allow-other-keys)
@@ -2282,7 +2307,8 @@ see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:s
               (as-boolean defer)))
   (setf (visiblep     window) visiblep
         (has-shadow-p window) has-shadow-p
-        (opaquep      window) opaquep)
+        (opaquep      window) opaquep
+        (delegate     window) delegate)
   (when title (setf (title window) title)))
 
 ;; Managing the Window's Behavior
@@ -2554,7 +2580,16 @@ see https://developer.apple.com/documentation/appkit/nswindowtabgroup?language=o
 ;;; Screens
 
 (define-objc-class "NSScreen" ()
-  ()
+  (("frame"
+    :reader frame
+    :documentation
+    "The dimensions and location of the screen.
+
+This is the full screen rectangle at the current resolution. This
+rectangle includes any space currently occupied by the menu bar and
+dock.
+
+see https://developer.apple.com/documentation/appkit/nsscreen/frame?language=objc"))
   (:documentation
    "An object that describes the attributes of a computer’s monitor or screen.
 
@@ -2577,6 +2612,30 @@ attributes relating to a display, you must use Quartz Services. For
 more information, see Quartz Display Services.
 
 see https://developer.apple.com/documentation/appkit/nsscreen?language=objc"))
+
+(defun ns-main-screen ()
+  "Returns the screen object containing the window with the keyboard focus. "
+  (invoke 'ns-screen "mainScreen"))
+
+(defun ns-screens ()
+  "Returns a list of screen objects representing all of the screens
+available on the system.
+
+The screen at index 0 in the returned array corresponds to the primary
+screen of the user’s system. This is the screen that contains the menu
+bar and whose origin is at the point (0, 0). In the case of mirroring,
+the first screen is the largest drawable display; if all screens are
+the same size, it is the screen with the highest pixel depth. This
+primary screen may not be the same as the one returned by the
+mainScreen method, which returns the screen with the active window.
+
+The array should not be cached. Screens can be added, removed, or
+dynamically reconfigured at any time. When the display configuration
+is changed, the default notification center sends a
+NSApplicationDidChangeScreenParametersNotification notification.
+
+see https://developer.apple.com/documentation/appkit/nsscreen/screens?language=objc"
+  (ns-array-to-list (invoke 'ns-screen "screens")))
 
 ;; Getting Screen Objects
 
@@ -2653,16 +2712,488 @@ see https://developer.apple.com/documentation/appkit/nsalert?language=objc"))
 ;;; Open and Save Panels
 
 (define-objc-class "NSOpenPanel" ()
-  ()
+  (("canChooseFiles"
+    :accessor can-choose-files-p
+    :before   as-boolean
+    :documentation
+    "A Boolean that indicates whether the user can choose files in the panel.
+
+When the value of this property is true, users can choose files in the panel.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/canchoosefiles?language=objc")
+   ("canChooseDirectories"
+    :accessor can-choose-directories-p
+    :before   as-boolean
+    :documentation
+    "A Boolean that indicates whether the user can choose directories in the panel.
+
+When the value of this property is true, users can choose directories in the panel.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/canchoosedirectories?language=objc")
+   ("resolvesAliases"
+    :accessor resolves-aliases-p
+    :before   as-boolean
+    :documentation
+    "A Boolean that indicates whether the panel resolves aliases.
+
+When the value of this property is true, dropping an alias on the
+panel or asking for filenames or URLs returns the resolved
+aliases. The default value of this property is true. When this value
+is false, selecting an alias returns the alias instead of the file or
+directory it represents.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/resolvesaliases?language=objc")
+   ("allowsMultipleSelection"
+    :accessor allows-multiple-selection-p
+    :before   as-boolean
+    :documentation
+    "A Boolean that indicates whether the user may select multiple
+files and directories.
+
+When the value of this property is true, the user may select multiple
+items from the browser. When the selection contains multiple items,
+use the URLs property to retrieve those items instead of the inherited
+URL property.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/allowsmultipleselection?language=objc")
+   ("accessoryViewDisclosed"
+    :accessor accessory-view-disclosed-p
+    :documentation
+    "A Boolean value that indicates whether the panel’s accessory view is visible.
+
+The value of this property is true when the accessory view is visible,
+and false when it isn’t. Setting the value of this property
+programmatically changes the visibility of the accessory panel. If no
+accessory panel is present, setting this property does nothing.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/isaccessoryviewdisclosed?language=objc")
+   ("canDownloadUbiquitousContents"
+    :accessor can-download-ubiquitous-contents-p
+    :documentation
+    "A Boolean value that indicates how the panel responds to iCloud
+documents that aren’t fully downloaded locally.
+
+When the value of this property is true, the panel disallows opening
+non-local iCloud files. If the user selects a non-local file, the
+panel attempts to download that file. When the value of this property
+is false, the user may select and open non-local files. Your app is
+responsible for downloading the files and reporting progress or any
+issues.
+
+The default value of this property is true, except for applications
+linked against the OS X v10.9 SDK or earlier that have adopted iCloud
+by specifying a ubiquitous container identifier entitlement.
+
+For a better user experience, set this property to false and download
+the file’s contents with an NSFileCoordinator object. Show the
+dlownload progress using a NSProgress or NSMetadataQuery object.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/candownloadubiquitouscontents?language=objc")
+   ("canResolveUbiquitousConflicts"
+    :accessor can-resolve-ubiquitous-conflicts-p
+    :documentation
+    "A Boolean value that indicates how the panel responds to iCloud
+documents that have conflicting versions.
+
+When the value of this property is true, and the user attempts to open
+one or more documents with conflicts, the panel displays the conflict
+resolution UI. The user must resolve any conflicts before opening the
+documents. When the value of this property is false, the your
+application is responsible for handling any conflicts.
+
+The default value of this property is true, except for applications
+linked against the OS X v10.9 SDK or earlier that have adopted iCloud
+by specifying a ubiquitous container identifier entitlement.
+
+For a better user experience, set this property to false and check the
+NSURLUbiquitousItemHasUnresolvedConflictsKey key of each item. When a
+conflict exists, retrieve a NSFileVersion object for each version and
+present your own UI to resolve that conflict.
+
+see https://developer.apple.com/documentation/appkit/nsopenpanel/canresolveubiquitousconflicts?language=objc"))
   (:documentation
    "A panel that prompts the user to select a file to open.
+
+Apps use the Open panel as a convenient way to query the user for the
+name of a file to open. In macOS 10.15 and later, the system always
+draws Open panels in a separate process, regardless of whether the app
+is sandboxed. When the user chooses a file to open, macOS adds that
+file to the app’s sandbox. Prior to macOS 10.15, the system drew the
+panels in a separate process only for sandboxed apps.
+
 see https://developer.apple.com/documentation/appkit/nsopenpanel?language=objc"))
 
 (define-objc-class "NSSavePanel" ()
-  ()
+  (;; Configuring the Panel's Appearance
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The title of the panel.
+see https://developer.apple.com/documentation/appkit/nssavepanel/title?language=objc")
+   ("prompt"
+    :accessor prompt
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The text to display in the default button.
+see https://developer.apple.com/documentation/appkit/nssavepanel/prompt?language=objc")
+   ("message"
+    :accessor message
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The message text displayed in the panel.
+see https://developer.apple.com/documentation/appkit/nssavepanel/message?language=objc")
+   ("nameFieldLabel"
+    :accessor name-field-label
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The label text displayed in front of the filename text field.
+see https://developer.apple.com/documentation/appkit/nssavepanel/namefieldlabel?language=objc")
+   ("nameFieldStringValue"
+    :accessor name-field
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The user-editable filename currently shown in the name field.
+see https://developer.apple.com/documentation/appkit/nssavepanel/namefieldstringvalue?language=objc")
+   ("directoryURL"
+    :accessor directory-url
+    :before   as-ns-url
+    :documentation
+    "The current directory shown in the panel.
+see https://developer.apple.com/documentation/appkit/nssavepanel/directoryurl?language=objc")
+   ("showsTagField"
+    :accessor shows-tag-field-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that indicates whether the panel displays the Tags field.
+see https://developer.apple.com/documentation/appkit/nssavepanel/showstagfield?language=objc")
+   ;;; Configuring the Panel’s Behavior
+   ("canCreateDirectories"
+    :accessor can-create-directories-p
+    :documentation
+    "A Boolean value that indicates whether the panel displays UI for
+creating directories.
+see https://developer.apple.com/documentation/appkit/nssavepanel/cancreatedirectories?language=objc")
+   ("canSelectHiddenExtension"
+    :accessor can-select-hidden-extension-p
+    :documentation
+    "A Boolean value that indicates whether the panel displays UI for
+hiding or showing filename extensions.
+see https://developer.apple.com/documentation/appkit/nssavepanel/canselecthiddenextension?language=objc")
+   ("showsHiddenFiles"
+    :accessor shows-hidden-files-p
+    :documentation
+    "A Boolean value that indicates whether the panel displays files
+that are normally hidden from the user.
+see https://developer.apple.com/documentation/appkit/nssavepanel/showshiddenfiles?language=objc")
+   ("extensionHidden"
+    :accessor extension-hidden-p
+    :documentation
+    "A Boolean value that indicates whether to display filename extensions.
+see https://developer.apple.com/documentation/appkit/nssavepanel/isextensionhidden?language=objc")
+   ("expanded"
+    :reader expanded-p
+    :documentation
+    "A Boolean value that indicates whether whether the panel is expanded.
+see https://developer.apple.com/documentation/appkit/nssavepanel/isexpanded?language=objc"))
   (:documentation
    "A panel that prompts the user for information about where to save a file.
+
+The Save panel provides an interface for specifying the location to
+save a file and the name of that file. You present this panel when the
+user attempts to save a new document, or when the user saves a copy of
+an existing document to a new location. The panel includes UI for
+browsing the file system, selecting a directory, and specifying the
+new name for the file. You can also add custom UI for your app using
+an accessory view.
+
+An NSSavePanel object reports user interactions to its associated
+delegate object, which must adopt the NSOpenSavePanelDelegate
+protocol. Use your delegate object to validate the user’s selection
+and respond to user interactions with the panel.
+
+In macOS 10.15, the system always displays the Save dialog in a
+separate process, regardless of whether the app is sandboxed. When the
+user saves the document, macOS adds the saved file to the app’s
+sandbox (if necessary) so that the app can write to the file. Prior to
+macOS 10.15, the system used a separate process only for sandboxed
+apps.
+
 see https://developer.apple.com/documentation/appkit/nssavepanel?language=objc"))
+
+(defmethod run-modal ((panel ns-save-panel) &key )
+  "Displays the panel and begins its event loop with the current
+working (or last-selected) directory as the default starting point.
+
+Return NSFileHandlingPanelOKButton (if the user clicks the OK button)
+or NSFileHandlingPanelCancelButton (if the user clicks the Cancel
+button).
+
+This method invokes NSApplication’s runModalForWindow: method with
+self as the argument.
+
+see https://developer.apple.com/documentation/appkit/nssavepanel/runmodal()?language=objc"
+  (decode-ns-modal-response (invoke panel "runModal")))
+
+(defmethod run-model-for-window ((panel ns-save-panel) (window ns-window))
+  "Starts a modal event loop for the specified window.
+Return
+
+Parameters:
++ PANEL:  `ns-save-panel'
++ WINDOW: The window to be displayed modally. If it is not already
+  visible, the window is centered on the screen using the value in its
+  center method and made visible and key. If it is already visible, it
+  is simply made key.
+
+This method runs a modal event loop for the specified window
+synchronously. It displays the specified window, makes it key, starts
+the run loop, and processes events for that window. (You do not need
+to show the window yourself.) While the app is in that loop, it does
+not respond to any other events (including mouse, keyboard, or
+window-close events) unless they are associated with the window. It
+also does not perform any tasks (such as firing timers) that are not
+associated with the modal run loop. In other words, this method
+consumes only enough CPU time to process events and dispatch them to
+the action methods associated with the modal window.
+
+You can exit the modal loop by calling the stopModal,
+stopModalWithCode:, or abortModal methods from your modal window
+code. If you use the stopModalWithCode: method to stop the modal event
+loop, this method returns the argument passed to
+stopModalWithCode:. If you use stopModal instead, this method returns
+the constant NSModalResponseStop. If you use abortModal, this method
+returns the constant NSModalResponseAbort.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/runmodal(for:)?language=objc"
+  (decode-ns-modal-response (invoke panel "runModelForWindow:" window)))
+
+(defmethod allowed-content-types ((panel ns-save-panel))
+  "Return a list of `ut-types' that specify the files types to which
+you can save. "
+  (ns-array-to-list (invoke panel "allowedContentTypes")))
+
+(defmethod (setf allowed-content-types) ((content sequence) (panel ns-save-panel))
+  (invoke panel "setAllowedContentTypes:"
+          (as-ns-array (map 'list #'as-ut-type content))))
+
+(defmethod (setf allowed-content-types) (content (panel ns-save-panel))
+  (invoke panel "setAllowedContentTypes:"
+          (as-ns-array (list (as-ut-type content)))))
+
+(defun %configure-ns-save-open-panel
+    (panel
+     &key
+       (title                         nil title?)
+       (prompt                        nil prompt?)
+       (message                       nil message?)
+       (name-field-label              nil name?)
+       (name-field                    nil name-field?)
+       (directory-url                 nil directory-url?)
+       (can-create-directories-p      nil directories?)
+       (can-select-hidden-extension-p nil hidden?)
+       (shows-hidden-files-p          nil show-hidden?)
+       (extension-hidden-p            nil ext-hidden?)
+       (allowed-content-types         nil allowed-content-types?)
+     &allow-other-keys)
+  "Configuring the Panel’s Appearance
+
+Parameters:
++ TITLE
+  save/open panel window title
++ PROMPT
+  text to display in the default button
++ MESSAGE
+  message text displayed in the panel
++ NAME-FIELD-LABEL:
+  label text displayed in front of the filename text field
++ NAME-FIELD:
+  user-editable filename currently shown in the name field
++ DIRECTORY-URL:
+  current directory shown in the panel
++ CAN-CREATE-DIRECTORIES-P
+  whether the panel displays UI for creating directories
++ CAN-SELECT-HIDDEN-EXTENSION-P
+  whether the panel displays UI for hiding or showing
+  filename extensions
++ SHOWS-HIDDEN-FILES-P
+  whether the panel displays files that are normally
+  hidden from the user
++ EXTENSION-HIDDEN-P
+  whether to display filename extensions
++ ALLOWED-CONTENT-TYPES (`as-ut-type')
+  a list of `ut-types' like specification that specify the
+  files types to which you can save
+
+Dev Note:
+these are common configurations for NSOpenPanel and NSSavePanel.
+
+see https://developer.apple.com/documentation/appkit/nssavepanel?language=objc#Configuring-the-Panels-Appearance"
+  (declare (type ns-save-panel panel))
+  (when title?                 (setf (title                         panel) title))
+  (when prompt?                (setf (prompt                        panel) prompt))
+  (when message?               (setf (message                       panel) message))
+  (when name?                  (setf (name-field-label              panel) name-field-label))
+  (when name-field?            (setf (name-field                    panel) name-field))
+  (when directory-url?         (setf (directory-url                 panel) directory-url))
+  (when directories?           (setf (can-create-directories-p      panel) can-create-directories-p))
+  (when hidden?                (setf (can-select-hidden-extension-p panel) can-select-hidden-extension-p))
+  (when show-hidden?           (setf (shows-hidden-files-p          panel) shows-hidden-files-p))
+  (when ext-hidden?            (setf (extension-hidden-p            panel) extension-hidden-p))
+  (when allowed-content-types? (setf (allowed-content-types         panel) allowed-content-types)))
+
+(defun ns-save-panel (&rest keys
+                      &key
+                        title
+                        prompt
+                        message
+                        name-field-label
+                        directory-url
+                        can-create-directories-p
+                        can-select-hidden-extension-p
+                        shows-hidden-files-p
+                        extension-hidden-p
+                        allowed-content-types
+                      &allow-other-keys)
+  "Creates a new Save panel and initializes it with default information.
+Return pathname of selected save file path or nil if cancelled.
+
+Parameters:
++ TITLE
+  save/open panel window title
++ PROMPT
+  text to display in the default button
++ MESSAGE
+  message text displayed in the panel
++ NAME-FIELD-LABEL:
+  label text displayed in front of the filename text field
++ NAME-FIELD:
+  user-editable filename currently shown in the name field
++ DIRECTORY-URL:
+  current directory shown in the panel
++ CAN-CREATE-DIRECTORIES-P
+  whether the panel displays UI for creating directories
++ CAN-SELECT-HIDDEN-EXTENSION-P
+  whether the panel displays UI for hiding or showing
+  filename extensions
++ SHOWS-HIDDEN-FILES-P
+  whether the panel displays files that are normally
+  hidden from the user
++ EXTENSION-HIDDEN-P
+  whether to display filename extensions
++ ALLOWED-CONTENT-TYPES (`as-ut-type')
+  a list of `ut-types' like specification that specify the
+  files types to which you can save
+"
+  (declare (ignore title
+                   prompt
+                   message
+                   name-field-label
+                   directory-url
+                   can-create-directories-p
+                   can-select-hidden-extension-p
+                   shows-hidden-files-p
+                   extension-hidden-p
+                   allowed-content-types))
+  (with-autorelease-pool ()
+    (let ((panel (invoke 'ns-save-panel "savePanel")))
+      (apply #'%configure-ns-save-open-panel panel keys)
+      (when (eq (run-modal panel) :ok)
+        (ns-url-to-pathname (invoke panel "URL"))))))
+
+(defun ns-open-panel (&rest keys &key
+                        title
+                        prompt
+                        message
+                        name-field-label
+                        directory-url
+                        can-create-directories-p
+                        can-select-hidden-extension-p
+                        shows-hidden-files-p
+                        extension-hidden-p
+                        allowed-content-types
+                        (can-choose-files-p                 nil files?)
+                        (can-choose-directories-p           nil dir?)
+                        (resolves-aliases-p                 nil aliases?)
+                        (allows-multiple-selection-p        nil multiple?)
+                        (accessory-view-disclosed-p         nil accessory?)
+                        (can-download-ubiquitous-contents-p nil download?)
+                        (can-resolve-ubiquitous-conflicts-p nil conflicts?)
+                      &allow-other-keys)
+  "Creates a new Open panel and initializes it.
+Return a list of pathname for opened files.
+
+Parameters:
++ TITLE
+  save/open panel window title
++ PROMPT
+  text to display in the default button
++ MESSAGE
+  message text displayed in the panel
++ NAME-FIELD-LABEL:
+  label text displayed in front of the filename text field
++ NAME-FIELD:
+  user-editable filename currently shown in the name field
++ DIRECTORY-URL:
+  current directory shown in the panel
++ CAN-CREATE-DIRECTORIES-P
+  whether the panel displays UI for creating directories
++ CAN-SELECT-HIDDEN-EXTENSION-P
+  whether the panel displays UI for hiding or showing
+  filename extensions
++ SHOWS-HIDDEN-FILES-P
+  whether the panel displays files that are normally
+  hidden from the user
++ EXTENSION-HIDDEN-P
+  whether to display filename extensions
++ ALLOWED-CONTENT-TYPES (`as-ut-type')
+  a list of `ut-types' like specification that specify the
+  files types to which you can save
++ CAN-CHOOSE-FILES-P
+  whether the user can choose files in the panel
++ CAN-CHOOSE-DIRECTORIES-P
+  whether the user can choose directories in the panel
++ RESOLVES-ALIASES-P
+  whether the panel resolves aliases
++ ALLOWS-MULTIPLE-SELECTION-P
+  whether the user may select multiple files and directories
++ ACCESSORY-VIEW-DISCLOSED-P
+  whether the panel’s accessory view is visible
++ CAN-DOWNLOAD-UBIQUITOUS-CONTENTS-P
+  whether the panel responds to iCloud documents that aren’t
+  fully downloaded locally.
++ CAN-RESOLVE-UBIQUITOUS-CONFLICTS-P
+  whether the panel responds to iCloud documents that have
+  conflicting versions
+"
+  (declare (ignore title
+                   prompt
+                   message
+                   name-field-label
+                   directory-url
+                   can-create-directories-p
+                   can-select-hidden-extension-p
+                   shows-hidden-files-p
+                   extension-hidden-p
+                   allowed-content-types))
+  (with-autorelease-pool ()
+    (let ((panel (invoke 'ns-open-panel "openPanel")))
+      (apply #'%configure-ns-save-open-panel panel keys)
+      (when files?     (setf (can-choose-files-p                 panel) can-choose-files-p))
+      (when dir?       (setf (can-choose-directories-p           panel) can-choose-directories-p))
+      (when aliases?   (setf (resolves-aliases-p                 panel) resolves-aliases-p))
+      (when multiple?  (setf (allows-multiple-selection-p        panel) allows-multiple-selection-p))
+      (when accessory? (setf (accessory-view-disclosed-p         panel) accessory-view-disclosed-p))
+      (when download?  (setf (can-download-ubiquitous-contents-p panel) can-download-ubiquitous-contents-p))
+      (when conflicts? (setf (can-resolve-ubiquitous-conflicts-p panel) can-resolve-ubiquitous-conflicts-p))
+      (when (eq (run-modal panel) :ok)
+        (mapcar #'ns-url-to-pathname (ns-array-to-list (invoke panel "URLs")))))))
+
 
 ;;; Share Panel
 
@@ -5881,6 +6412,40 @@ further dispatching."
 ;; Managing the app's apperance
 
 ;; Managing windows, panels, and menus
+
+;; Modal Windows and Panels
+
+(define-objc-enum ns-modal-response
+  "A set of button return values for modal dialogs.
+
+The response value that a button returns can depend on which method is
+used to present the dialog. See
+alertWithMessageText:defaultButton:alternateButton:otherButton:informativeTextWithFormat:,
+runModal, and addButtonWithTitle: for examples.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/modalresponse?language=objc"
+  (:ok                   1
+                        "The presentation or dismissal of the sheet"
+                        "has finished.")
+  (:cancel               0
+                        "The presentation or dismissal of the sheet"
+                        "has been canceled.")
+  (:continue             18446744073709550614
+                        "Modal session is continuing (returned by"
+                        "runModalSession: only).")
+  (:stop                 18446744073709550616
+                        "Modal session was broken with stopModal.")
+  (:abort                18446744073709550615
+                        "Modal session was broken with abortModal.")
+  (:first-button-return  1000
+                         "The user clicked the first (rightmost)"
+                         "button on the dialog or sheet.")
+  (:second-button-return 1001
+                         "The user clicked the second button from the"
+                         "right edge of the dialog or sheet.")
+  (:third-button-return  1002
+                         "The user clicked the third button from the"
+                         "right edge of the dialog or sheet."))
 
 ;; - App Windows
 
