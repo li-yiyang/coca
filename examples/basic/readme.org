@@ -21,7 +21,7 @@
   - [ ] NSWindow
 - [-] Controls
   - [X] Button
-  - [ ] CheckBox
+  - [X] CheckBox
   - [ ] ComboBox
   - [ ] Label
   - [ ] LevelIndicator
@@ -961,16 +961,177 @@ abcdefghijklmnopqrstuvwxyz
 
   But I think my way is more flexiable. Anyway, there's more than one way
   to make things done in Lisp World.
++ To manage actions more elegantly, we could create a mixin class
+  (=action-table-mixin=):
+
+  #+name: action-table-mixin
+  #+begin_src lisp
+  (defclass action-table-mixin ()
+    ((actions :initform (make-hash-table :test 'eq))))
+
+  (define-objc-method ("NSObject" "onAction:" on-action) :void
+      ((sender :object))
+    (:method ((self action-table-mixin) sender)
+      (with-slots (actions) self
+        (let ((action (gethash sender actions)))
+          (when action (funcall action))))))
+
+  (defmacro add-subview-with-actions* (view &body subviews)
+    "Add SUBVIEWS to VIEW with actions.
+
+  Syntax:
+
+      (add-subview-with-actions* VIEW
+        ((CLASS . ALLOC-INIT-PLIST) . ACTION-BODY)
+        ((@ NAME CLASS . ALLOC-INIT-PLIST) . ACTION-BODY)
+        ...)
+
+  + VIEW: the super view to add subviews
+  + CLASS: class of object to `alloc-init'
+  + ALLOC-INIT-PLIST: properties used for `alloc-init'
+  + ACTION-BODY: action codes
+
+  Example:
+
+      (add-subview-with-actions* view
+        ((ns-button :frame (make-ns-rect ...) ...)
+         (format t \"Clicked\"))
+        ((@ button1 ns-button :frame (make-ns-rect ..) ...)
+         (format t \"State: ~S\" (state button))))
+  "
+    (let ((actions* (gensym "ACTIONS")))
+      `(with-slots ((,actions* actions)) ,view
+         ,(loop :for (object . body) :in subviews
+                :for (class . plist) := (coca.objc::listfy object)
+                :for name := (if (eq class '@)
+                                 (let ((name (pop plist)))
+                                   (setf class (pop plist))
+                                   name)
+                                 (gensym "OBJECT"))
+                :for fn   := (if (and (= 1 (length body))
+                                      (functionp (first body)))
+                                 (first body)
+                                 `(lambda () ,@body))
+                :do (setf (getf plist :action) '#'on-action
+                          (getf plist :target) view)
+                :collect `(,name (autorelease (alloc-init ',class ,@plist)))
+                  :into bindings
+                :collect `(setf (gethash ,name ,actions*) ,fn)
+                  :into actions
+                :collect `(add-subview ,view ,name)
+                  :into addsubs
+                :finally (return `(let ,bindings ,@actions ,@addsubs))))))
+  #+end_src
 
 ** CheckBox
+#+begin_src lisp :noweb yes :noweb no-export
+<<action-table-mixin>>
 
+(define-objc-class ("CheckBoxWindow" check-box-window)
+    (ns-window action-table-mixin)
+  ())
+
+(defmethod init ((window check-box-window) &rest keys &key)
+  (invoke-super (window keys)
+    (:frame    (make-ns-rect :x 100 :y 100 :w 400 :h 400))
+    (:visiblep  nil t))
+  (add-subview-with-actions* window
+    ((@ button1 ns-button :frame       (make-ns-rect :x 30 :y 250 :w 105 :h 20)
+                          :title       "Unchecked"
+                          :button-type :switch
+                          :state       :off)
+     (setf (title window) (state button1)))
+    ((@ button2 ns-button :frame       (make-ns-rect :x 30 :y 220 :w 105 :h 20)
+                          :title       "Checked"
+                          :button-type :switch
+                          :state       :off)
+     (setf (title window) (state button2)))
+    ((@ button3 ns-button :frame       (make-ns-rect :x 30 :y 190 :w 105 :h 25)
+                          :title       "Mixed"
+                          :button-type :switch
+                          :state       :mixed)
+     (setf (title window) (state button3)))
+    ((@ button4 ns-button :frame       (make-ns-rect :x 30 :y 160 :w 130 :h 25)
+                          :title       "Checked"
+                          :button-type :on-off
+                          :bezel-style :rounded
+                          :state       :off)
+     (setf (title window) (state button4)))
+    ((@ button5 ns-button :frame       (make-ns-rect :x 30 :y 130 :w 130 :h 25)
+                          :title       "Unchecked"
+                          :button-type :on-off
+                          :bezel-style :rounded
+                          :state       :off)
+     (setf (state button5) :off)
+     (setf (title window) (state button5))))
+  (setf (visiblep window) t))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Button example
+[[file:./checkbox.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/CheckBox/CheckBox.m][CheckBox.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ as for =button-type=, you should refer =ns-button-type=
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation 'ns-button-type 'type)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Button types that you can specify using setButtonType:.
+
+  For examples of how these types behave, see Button Programming Topics.
+
+  see https://developer.apple.com/documentation/appkit/nsbutton/buttontype?language=objc
+
+
+  Configuring Button Behavior
+  + :momentary-push-in (7)
+    A button that illuminates when the user clicks it.
+  + :momentary-light (0)
+    A button that displays a highlight when the user
+    clicks it and returns to its normal state when
+    the user releases it.
+  + :momentary-change (5)
+    A button that displays its alternate content
+    when clicked and returns to its normal content
+    when the user releases it.
+  + :push-on-push-off (1)
+    A button that switches between on and off states
+    with each click.
+  + :on-off (6)
+    A button that switches between a normal and
+    emphasized bezel on each click.
+  + :toggle (2)
+    A button that switches between its normal
+    and alternate content on each click.
+  + :switch (3)
+    A standard checkbox button.
+  + :radio (4)
+    A button that displays a single selected
+    value from group of possible choices.
+  + :accelerator (8)
+    A button that sends repeating actions as pressure
+    changes occur.
+  + :multi-level-accelerator (9)
+    A button that allows for a configurable number of
+    stepped pressure levels and provides tactile feedback
+    as the user reaches each step.
+  Use functions `ns-button-type' to convert ns-button-type flags into enum numbers.
+  #+end_example
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.
 For example, a =window-will-close:= method should be defined like below:
 
 #+begin_src lisp
-(define-objc-method ("NSObject" "windowWillClose:" window-will-close) :void
+(define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
     ((notification :object)))
 #+end_src
 
@@ -980,6 +1141,8 @@ method in lisp using only =defmethod=.
 Currently interned ObjC methods:
 
 ** [[https://developer.apple.com/documentation/appkit/nswindowdelegate?language=objc][NSWindowDelegate]]
+These methods are registed for =NSWindow=:
+
 + =window-did-resize=
 
   #+begin_src lisp :exports results :results verbatim replace :eval yes

@@ -264,41 +264,44 @@ this will define:
 + different to `define-objc-mask' the enum should only be single keyword"
     (multiple-value-bind (documentation bindings)
         (extract-bindings name bindings)
-      `(progn
-         (deftype ,name ()
-           ,documentation
-           '(member ,@(apply #'append (mapcar #'first bindings))))
-         (defun ,(intern (str:concat (symbol-name name) "-P")) (flag)
-           ,(format nil "Test if FLAG is of ~S flag. " name)
-           (and (keywordp flag) (typep flag ',name)))
-         (defun ,(intern (str:concat "AS-" (symbol-name name))) (flag)
-           ,(format nil "Convert FLAG into ObjC enum numbers.
+      (let ((type (if (every (lambda (binding) (>= (second binding) 0)) bindings)
+                      'unsigned-byte
+                      'integer)))
+        `(progn
+           (deftype ,name ()
+             ,documentation
+             '(member ,@(apply #'append (mapcar #'first bindings))))
+           (defun ,(intern (str:concat (symbol-name name) "-P")) (flag)
+             ,(format nil "Test if FLAG is of ~S flag. " name)
+             (and (keywordp flag) (typep flag ',name)))
+           (defun ,(intern (str:concat "AS-" (symbol-name name))) (flag)
+             ,(format nil "Convert FLAG into ObjC enum numbers.
 Return `unsigned-byte' as enum numbers.
 see type documentation `~S'. "
-                    name)
-           (declare (type (or unsigned-byte ,name) flag))
-           (the unsigned-byte
-             (etypecase flag
-               (unsigned-byte flag)
+                      name)
+             (declare (type (or ,type ,name) flag))
+             (the ,type
+               (etypecase flag
+                 (,type   flag)
+                 (keyword
+                  (ecase flag
+                    ,@(loop :for (keyword val) :in bindings
+                            :collect `(,keyword ,val)))))))
+           (define-compiler-macro ,(intern (str:concat "AS-" (symbol-name name)))
+               (&whole expr flag)
+             (typecase flag
+               (,type  flag)
                (keyword
                 (ecase flag
                   ,@(loop :for (keyword val) :in bindings
-                          :collect `(,keyword ,val)))))))
-         (define-compiler-macro ,(intern (str:concat "AS-" (symbol-name name)))
-             (&whole expr flag)
-           (typecase flag
-             (unsigned-byte flag)
-             (keyword
-              (ecase flag
-                ,@(loop :for (keyword val) :in bindings
-                        :collect `(,keyword ,val))))
-             (t expr)))
-         (defun ,(intern (str:concat "DECODE-" (symbol-name name))) (flag)
-           ,(format nil "Decode FLAG as `~S' or unsigned-integer if fails. " name)
-           (declare (type unsigned-byte flag))
-           (case flag
-             ,@(loop :for (flag val) :in bindings
-                     :collect (list val (atomize flag)))))))))
+                          :collect `(,keyword ,val))))
+               (t expr)))
+           (defun ,(intern (str:concat "DECODE-" (symbol-name name))) (flag)
+             ,(format nil "Decode FLAG as `~S' or unsigned-integer if fails. " name)
+             (declare (type ,type flag))
+             (case flag
+               ,@(loop :for (flag val) :in bindings
+                       :collect (list val (atomize flag))))))))))
 
 ;; TODO: bettter and efficient decoding methods
 (defmacro with-objc-enum-flags (val &body body)

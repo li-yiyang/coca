@@ -38,6 +38,7 @@
    ;; ObjC method
    ;; #:define-objc-method
    ;; #:define-objc-protocol
+   #:self
    #:define-objc-method
    #:send
    #:invoke

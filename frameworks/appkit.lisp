@@ -153,6 +153,10 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-bezel-style-p
    #:as-ns-bezel-style
    #:decode-ns-bezel-style
+   #:ns-control-state-value
+   #:ns-control-state-value-p
+   #:as-ns-control-state-value
+   #:decode-ns-control-state-value
    #:ns-button
    #:button-type
    #:title
@@ -165,6 +169,8 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:bezel-style
    #:bezel-color
    #:shows-border-only-while-mouse-inside-p
+   #:allows-mixed-state-p
+   #:state
    #:ns-color-well
    #:ns-combo-button
    #:ns-image-view
@@ -1348,9 +1354,20 @@ see https://developer.apple.com/documentation/appkit/nsbutton/bezelstyle-swift.e
   "Other"
   (:small-square         10 "A simple square bezel style that can scale to any size."))
 
+(define-objc-enum ns-control-state-value
+  "A constant that indicates whether a control is on, off, or in a mixed state.
+
+see https://developer.apple.com/documentation/appkit/nscontrol/statevalue?language=objc"
+  (:on    1  "Control is on or selected.")
+  (:off   0  "Control is off or unselected.")
+  (:mixed -1 "Control is in a mixed state, neither on nor off."))
+
 (define-objc-class "NSButton" ()
   (;; Configuring buttons
-   (%button-type :reader button-type) ; (setf button-type)
+   (%button-type                        ; (setf button-type)
+    :reader button-type
+    :documentation
+    "see `ns-button-type'")
    ("title"
     :accessor title
     :before   as-ns-string
@@ -1414,7 +1431,62 @@ see https://developer.apple.com/documentation/appkit/nsbutton/bezelcolor?languag
     :documentation
     "A Boolean value that determines whether the button displays its
 border only when the pointer is over it.
-see https://developer.apple.com/documentation/appkit/nsbutton/showsborderonlywhilemouseinside?language=objc"))
+see https://developer.apple.com/documentation/appkit/nsbutton/showsborderonlywhilemouseinside?language=objc")
+   ;; Managing button state
+   ("allowsMixedState"
+    :accessor allows-mixed-state-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that indicates whether the button allows a mixed state.
+
+The value of this property is true if the button has three states (on,
+off, and mixed), or false if the button has two states (on and
+off). The default value is false. On and off states (also referred to
+as alternate and normal) indicate that the button is either clicked or
+not clicked. Mixed state is typically used for checkboxes or radio
+buttons. For example, suppose the state of a checkbox is used to
+denote whether a text field contains bold text. If all of the text in
+the text field is bold, then the checkbox appears checked (on). If
+none of the text is bold, then the checkbox appears unchecked
+(off). If some of the text is bold, then the checkbox contains a dash
+(mixed).
+
+see https://developer.apple.com/documentation/appkit/nsbutton/allowsmixedstate?language=objc")
+   ("state"
+    :accessor state
+    :before   as-ns-control-state-value
+    :after    decode-ns-control-state-value
+    :documentation
+    "The button’s state.
+
+The value of this property represents the button’s state. A button can
+have two or three states. If it has two, this value is either on
+(NSOnState) or off (NSOffState). If it has three, this value is on,
+off, or mixed (NSMixedState). A three-state button can be enabled by
+calling the allowsMixedState method. On and off states (also referred
+to as alternate and normal) indicate that the button is either clicked
+or not clicked. Mixed state is typically used for checkboxes or radio
+buttons, which allow for an additional intermediate state. For
+example, suppose the state of a checkbox is used to denote whether a
+text field contains bold text. If all of the text in the text field is
+bold, then the checkbox appears checked (on). If none of the text is
+bold, then the checkbox appears unchecked (off). If some of the text
+is bold, then the checkbox contains a dash (mixed).
+
+Note that if the button has only two states and you set the value of
+state to mixed, the button’s state changes to on. Setting this
+property redraws the button, if necessary.
+
+Although using the enumerated constants is preferred, you can also set
+state to an integer value. If the button has two states, 0 is treated
+as NSOffState, and a nonzero value is treated as NSOnState. If the
+button has three states, 0 is treated as NSOffState; a negative value,
+as NSMixedState; and a positive value, as NSOnState.
+
+To check whether the button uses the mixed state, use the
+allowsMixedState property.
+
+see https://developer.apple.com/documentation/appkit/nsbutton/state?language=objc"))
   (:documentation
    "A control that defines an area on the screen that a user clicks to
 trigger an action.
@@ -1474,13 +1546,14 @@ see https://developer.apple.com/documentation/appkit/nsbutton?language=objc"))
 (defmethod init ((button ns-button)
                  &key frame
                    (button-type *ns-button-type*)
-                   (title       nil title?)
-                   (image       nil image?)
-                   (borderedp   nil bordered?)
-                   (bezel-style nil bezel-style?)
-                   (bezel-color nil bezel-color?)
-                   (target      nil target?)
-                   (action      nil action?))
+                   (title       nil  title?)
+                   (image       nil  image?)
+                   (borderedp   nil  bordered?)
+                   (bezel-style nil  bezel-style?)
+                   (bezel-color nil  bezel-color?)
+                   (target      nil  target?)
+                   (action      nil  action?)
+                   (state       :off state?))
   "Creates a standard push button with the title you specify.
 
 Parameters:
@@ -1502,7 +1575,8 @@ Dev Note:
 at least one of TITLE and IMAGE should be given.
 "
   (declare (type ns-rect frame)
-           (type (or null standard-objc-object) target))
+           (type (or null standard-objc-object) target)
+           (type ns-control-state-value         state))
   (unless (or title? image?)
     (error "At least one of `:title' and `:image' should be given. "))
   (let ((button (invoke button "initWithFrame:" frame)))
@@ -1515,6 +1589,7 @@ at least one of TITLE and IMAGE should be given.
       (when bezel-color? (setf (bezel-color button) bezel-color)))
     (when target? (setf (target button) target))
     (when action? (setf (action button) action))
+    (when state?  (setf (state  button) state))
     (setf (button-type button) button-type)
     button))
 
@@ -2151,7 +2226,9 @@ see https://developer.apple.com/documentation/appkit/nswindow/isvisible?language
    ;; Converting Coordinates
    ;; Managing Titles
    ("title"
-    :reader title
+    :accessor title
+    :before   as-ns-string
+    :after    ns-string-to-string
     :documentation
     "The string that appears in the title bar of the window or the
 path to the represented file.
@@ -2220,9 +2297,6 @@ see `ns-window-init'. ")
 (defparameter *ns-backing-store* :buffered
   "Default `ns-backing-store-type'.
 see `ns-window-init'. ")
-
-(defmethod (setf title) ((title string) (window ns-window))
-  (invoke window "setTitle:" (string-to-ns-string title)))
 
 (defmethod (setf title) ((path pathname) (window ns-window))
   "Sets a given path as the window’s title, formatting it as a
@@ -2447,7 +2521,7 @@ see https://developer.apple.com/documentation/appkit/nswindow/makemain()?languag
 
 ;; Sizing Windows
 
-(define-objc-method ("NSObject" "windowDidResize:" window-did-resize) :void
+(define-objc-method ("NSWindow" "windowDidResize:" window-did-resize) :void
     ((sender :object))
   (:documentation
    "Tells the delegate that the window has been resized.
@@ -2455,13 +2529,13 @@ see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidr
 
 ;; Minmizing Windows
 
-(define-objc-method ("NSObject" "windowDidMiniaturize:" window-did-miniaturize) :void
+(define-objc-method ("NSWindow" "windowDidMiniaturize:" window-did-miniaturize) :void
     ((sender :object))
   (:documentation
    "Tells the delegate that the window has been minimized.
 see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidminiaturize(_:)?language=objc"))
 
-(define-objc-method ("NSObject" "windowDidDeminiaturize:" window-did-deminiaturize) :void
+(define-objc-method ("NSWindow" "windowDidDeminiaturize:" window-did-deminiaturize) :void
     ((sender :object))
   (:documentation
    "Tells the delegate that the window has been deminimized.
@@ -2475,13 +2549,13 @@ see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidd
 
 ;; Moving Windows
 
-(define-objc-method ("NSObject" "windowDidMove:" window-did-move) :void
+(define-objc-method ("NSWindow" "windowDidMove:" window-did-move) :void
     ((sender :object))
   (:documentation
    "Tells the delegate that the window has moved.
 see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidmove(_:)?language=objc"))
 
-(define-objc-method ("NSObject" "windowDidChangeScreen:" window-did-change-screen) :void
+(define-objc-method ("NSWindow" "windowDidChangeScreen:" window-did-change-screen) :void
     ((sender :object))
   (:documentation
    "Tells the delegate that the window has changed screens.
@@ -2489,7 +2563,7 @@ see https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidc
 
 ;; Closing Windows
 
-(define-objc-method ("NSObject" "windowShouldClose:" window-should-close) :bool
+(define-objc-method ("NSWindow" "windowShouldClose:" window-should-close) :bool
     ((sender :object))
   (:documentation
    "Tells the delegate that the user has attempted to close a window or
@@ -2508,7 +2582,7 @@ Return `t' to allow sender to be closed; otherwise `nil'.
 By default this function returns `t'. ")
   (:default t))
 
-(define-objc-method ("NSObject" "windowWillClose:" window-will-close) :void
+(define-objc-method ("NSWindow" "windowWillClose:" window-will-close) :void
     ((notification :object))
   (:documentation
    "Tells the delegate that the window is about to close.
