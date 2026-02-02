@@ -702,6 +702,22 @@ see also `alloc'. "
   (declare (type (or symbol string objc-class) class))
   (the ns-object (apply #'init (invoke class "alloc") keys)))
 
+#+slynk
+(defmethod slynk:arglist-dispatch ((operator (eql 'alloc-init)) arguments)
+  (flet ((find-arglist (class)
+           (handler-case
+               (let* ((class  (coerce-to-objc-class class))
+                      (method (find-method #'init () (list class) nil)))
+                 (slynk::decode-arglist (c2mop:method-lambda-list method)))
+             (error () (call-next-method)))))
+    (let ((name (first arguments)))
+      (typecase name
+        ;; 'OBJC-CLASS '"OBJC-CLASS"
+        ((cons (eql quote) (cons (or symbol string) null))
+         (find-arglist (second name)))
+        ;; "OBJC-CLASS"
+        (string (find-arglist name))))))
+
 (defun make-autorelease-pool ()
   "Makes an autorelease pool for the current thread.
 Return `ns-autorelease-pool' instance.
