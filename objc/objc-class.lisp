@@ -458,7 +458,8 @@ Parameter:
         :writers    ,(c2mop:slot-definition-writers    slotd)
         :allocation ,(c2mop:slot-definition-allocation slotd))))
 
-(defun objc-class-modify-objc-properties (class objc-properties &optional (name (class-name class)))
+(defun objc-class-modify-objc-properties
+    (class objc-properties &optional (name (class-name class)) loc)
   "Modify ObjC OBJC-PROPERTIES of OBJC-CLASS.
 
 Parameters:
@@ -468,9 +469,13 @@ Parameters:
 
      (OBJC-NAME &KEY BEFORE AFTER READER ACCESSOR DOCUMENTAION)
      (LISP-NAME &KEY LISP-SLOT-PLIST...)
-
++ LOC: source location
+  (currently only support SBCL)
 "
-  (declare (type objc-class class))
+  (declare (type objc-class class)
+           (type list objc-properties)
+           (type symbol name)
+           #-sbcl (ignore loc))
   (let* ((super  (c2mop:class-direct-superclasses class))
          (slotd  (loop :for (name . lisp-slots) :in objc-properties
                        :if (symbolp name)
@@ -520,15 +525,36 @@ Parameters:
                              :allocation                 :objc
                              :documentation              ,documentation))
                        :else :if (objc-property-slot-p slotd)
-                               :collect (%normalize-objc-class-properties slotd))))
+   :collect (%normalize-objc-class-properties slotd)))
+         (dslots     (append direct slotd)))
     (setf (find-class name)
           (c2mop:ensure-finalized
            (c2mop:ensure-class-using-class
-            class (class-name class)
+            class name
             :metaclass           (find-class 'objc-class)
             :name                name
             :direct-superclasses super
-            :direct-slots        (append direct slotd))))))
+            :direct-slots        dslots)))
+    #+sbcl
+    (loop :with t-class := (find-class t)
+          :for slot :in dslots
+          :for readers := (getf slot :readers)
+          :for writers := (getf slot :writers)
+          :do (loop :for reader :in readers
+                    :for method := (find-method (fdefinition reader)
+                                                ()
+                                                (list class)
+                                                nil)
+                    :if method
+                      :do (setf (slot-value method 'sb-pcl::source) loc))
+              (loop :for writer :in writers
+                    :for method := (find-method (fdefinition writer)
+                                                ()
+                                                (list t-class class)
+                                                nil)
+                    :if method
+                      :do (setf (slot-value method 'sb-pcl::source) loc)))))
+
 
 (defmacro doc-objc-class (name &body documentations)
   "Set documentation for ObjC class of NAME with DOCUMENTATIONS.
@@ -549,16 +575,17 @@ Parameters:
                         (push p documentations)
                         (setf p nil))
                       p))
+        #+sbcl
+        (loc        (sb-c::make-definition-source-location))
         (docstring  (format nil "~{~A~^~%~%~}" documentations)))
     (destructuring-bind (name &optional lisp-name) (listfy name)
       `(let ((,class (coerce-to-objc-class ,name)))
          (setf (documentation ,class t) ,docstring)
          ,@(when properties
              `((objc-class-modify-objc-properties
-                ,class ',properties ,@(when lisp-name `(',lisp-name)))))
+                ,class ',properties ,(if lisp-name `',lisp-name `(class-name ,class)) ,loc)))
          #+sbcl
-         (setf (slot-value ,class 'sb-pcl::source)
-               ,(sb-c::make-definition-source-location))
+         (setf (slot-value ,class 'sb-pcl::source) ,loc)
          (class-name ,class)))))
 
 
