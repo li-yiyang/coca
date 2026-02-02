@@ -717,7 +717,8 @@ see also `alloc'. "
         ((cons (eql quote) (cons (or symbol string) null))
          (find-arglist (second name)))
         ;; "OBJC-CLASS"
-        (string (find-arglist name))))))
+        (string (find-arglist name))
+        (t      (call-next-method))))))
 
 (defun make-autorelease-pool ()
   "Makes an autorelease pool for the current thread.
@@ -1251,8 +1252,8 @@ Return string.
 Dev Note:
 Internally use ObjC method UTF8String.
 See https://developer.apple.com/documentation/foundation/nsstring/utf8string?language=objc"
-  (declare (type ns-string ns-string))
-  (the string (invoke ns-string "UTF8String")))
+  (declare (type (or null ns-string) ns-string))
+  (the string (if ns-string (invoke ns-string "UTF8String") "")))
 
 (defmethod objc-object-pointer ((string string))
   "Convert STRING to `ns-string' first and then pass the pointer. "

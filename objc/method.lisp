@@ -668,9 +668,6 @@ Example:
        ,@(when wrapper
            `((defmethod ,name :around ((self ,class-name) ,@rest-args)
                (,wrapper (call-next-method)))))
-       ,@(when default
-           `((defmethod ,name (self ,@rest-args)
-               ,default)))
        ;; FIXME: should callback be defined with different CFFI types?
        ;; should this be possible in ObjC? just ignore for now.
        ,@(unless defined-p

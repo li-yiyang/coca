@@ -13,7 +13,8 @@
   - [X] FontDialog
   - [X] FileOpen/SaveDialog
   - [X] MessageBox
-- [ ] Menus and toolbars
+- [X] Menus and toolbars
+  - [X] MainMenu
 - [ ] Containers
   - [ ] NSBox
   - [ ] NSScrollView
@@ -872,6 +873,140 @@ abcdefghijklmnopqrstuvwxyz
 
   #+html: </details>
 
+* Menus and toolbars
+** MainMenu
+#+begin_src lisp
+(define-objc-class ("MenuWindow" menu-window) (ns-window)
+  ((actions :initform (make-hash-table :test 'eq))))
+
+(define-objc-method ("NSObject" "onAction:" on-action) :void
+    ((sender :object))
+  (:method ((window menu-window) sender)
+    (with-slots (actions) window
+      (let ((action (gethash sender actions)))
+        (when action (funcall action))))))
+
+(defmethod init :after ((item ns-menu-item) &key callback)
+  (when callback
+    (with-slots (actions) (target item)
+      (setf (gethash item actions) callback))))
+
+(defmethod init ((window menu-window) &rest keys &key)
+  (invoke-super (window keys)
+    (:frame (make-ns-rect :x 100 :y 100 :w 300 :h 300))
+    (:title "Menu example"))
+  (let ((label (alloc-init 'ns-text-field
+                           :frame       (make-ns-rect :x 10 :y 10 :w 280 :h 280)
+                           :editablep   t
+                           :selectablep t)))
+    (add-subview window label)
+    (flet ((logf (msg) (lambda () (write-string msg) (force-output))))
+      (setf (main-menu (ns-app))
+            `((,(process-name (ns-process-info))
+               :items (("About"
+                        :action   "orderFrontStandardAboutPanel:")
+                       :separator ;; ------------------------------------
+                       ("Preferences"
+                        :action   "onAction:"
+                        :target   ,window
+                        :callback ,(logf "MainMenu/Preferences"))
+                       :separator ;; ------------------------------------
+                       ("Services"
+                        :service-menu-p t)
+                       :separator ;; ------------------------------------
+                       ("Hide Other"
+                        :action         "hideOtherApplications:"
+                        :key-equivalent "h"
+                        :key-equivalent-modifier-mask (:option :command))
+                       ("Show All"
+                        :action         "hideOtherApplications:")
+                       :separator ;; ------------------------------------
+                       ("Quit"
+                        :action         "terminate:"
+                        :key-equivalent "q"
+                        :key-equivalent :command)))
+              ("File"
+               :items (("New"
+                        :action   "onAction:"
+                        :target   ,window
+                        :key-equivalent "n"
+                        :key-equivalent-modifier-mask :command
+                        :callback ,(lambda () (setf (string-value label) "")))
+                       ("Open"
+                        :action   "onAction:"
+                        :target   ,window
+                        :callback
+                        ,(lambda ()
+                           (let ((files (ns-open-panel
+                                         :title "Open..."
+                                         :allows-multiple-selection-p nil)))
+                             (when files
+                               (setf (string-value label)
+                                     (uiop:read-file-string (first files)))))))
+                       ("Save"
+                        :action   "onAction:"
+                        :target   ,window
+                        :key-equivalent "s"
+                        :key-equivalent-modifier-mask :command
+                        :callback
+                        ,(lambda ()
+                           (let ((path (ns-save-panel
+                                        :title "Save...")))
+                             (when path
+                               (with-open-file (stream path :direction :output
+                                                            :if-does-not-exist :create
+                                                            :if-exists :supersede)
+                                 (write-string (string-value label) stream))))))))
+               ("Edit"
+                :items ("Undo"
+                        "Redo"
+                        "Cut"
+                        "Copy"
+                        "Paste"
+                        "Delete"))
+               "View"
+               ("Window" :windows-menu-p t)
+               ("Help" :help-menu-p t))))))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Menu example
+[[file:./menu-window.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/MenusAndToolbars/MainMenu/MainMenu.m][MainMenu.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ =(init :after ((item ns-menu-item)))=
+
+  the =callback= flag is used to regist callback functions
+  to =menu-window='s =actions= callback table
++ =main-menu= of =(ns-app)= is shown at top-left of the screen
+  behind the scene it calls =as-ns-menu=.
+
+  #+begin_src lisp :exports results :results replace :eval yes
+  (documentation (find-method #'as-ns-menu () (list (find-class 'list))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Convert ITEMS as `ns-menu'.
+
+  Parameters:
+  + ITEMS:
+    list of `ns-menu-item' like thing
+
+  Example
+
+      (as-ns-menu '(("Submenu 1"
+                     :items (("Submenu 1.1")
+                             ("Submenu 1.2")))
+                    ("Submenu 2"
+                     :items (("Submenu 2.1")
+                             ...))))
+  #+end_example
+
 * Controls
 ** Button
 #+begin_src lisp
@@ -1125,6 +1260,13 @@ abcdefghijklmnopqrstuvwxyz
     as the user reaches each step.
   Use functions `ns-button-type' to convert ns-button-type flags into enum numbers.
   #+end_example
+
+** ComboBox
+#+begin_src lisp
+#+end_src
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/ComboBox/ComboBox.m][ComboBox.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.

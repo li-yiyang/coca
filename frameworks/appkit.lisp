@@ -4372,7 +4372,7 @@ see https://developer.apple.com/documentation/appkit/nsmenu?language=objc"
 
 (defmethod init ((menu ns-menu)
                  &key
-                   (title               "")
+                   (title               ""         title?)
                    (autoenables-items-p nil        auto?)
                    (font                nil        font?)
                    (selection-mode      :automatic selection?)
@@ -4382,7 +4382,11 @@ see https://developer.apple.com/documentation/appkit/nsmenu?language=objc"
                    (user-interface-layout-direction :left-to-right layout?)
                    supermenu
                    items
-                   minimum-width)
+                   minimum-width
+                   service-menu-p
+                   windows-menu-p
+                   help-menu-p
+                   main-menu-p)
   "Initialize `ns-menu' MENU.
 
 Parameters:
@@ -4411,12 +4415,32 @@ Parameters:
   layout direction of menu items in the menu.
 + DELEGATE (default `:self')
   delegate of the MENU
++ SERVICE-MENU-P
+  if non-nil, will set MENU as app's service menu
++ WINDOWS-MENU-P
+  if non-nil, will set MENU as app's windows menu
++ HELP-MENU-P
+  if non-nil, will set MENU as app's help menu
++ MAIN-MENU-P
+  if non-nil, will set MENU as app's main menu
+
+Note: SERVICE-MENU-P, WINDOWS-MENU-P, HELP-MENU-P, MAIN-MENU-P
+cannot be set at same time
 "
   (declare (type list items)
            (type (or null ns-menu) supermenu)
            (type ns-menu-selection-mode selection-mode)
            (type (or (eql :self) ns-object) delegate))
-  (invoke menu "initWithTitle:" (as-ns-string title))
+  (when (> (count-if #'identity (list service-menu-p
+                                      windows-menu-p
+                                      help-menu-p
+                                      main-menu-p))
+           1)
+    (error ":service-menu-p, :windows-menu-p, :help-menu-p, :main-menu-p~
+ cannot be set at same time"))
+  (if title?
+      (invoke menu "initWithTitle:" (as-ns-string title))
+      (invoke menu "init"))
   (when supermenu (add-item supermenu menu))
   (dolist (item items)
     (add-item menu (as-ns-menu-item item)))
@@ -4428,13 +4452,32 @@ Parameters:
   (when column?       (setf (shows-state-column-p menu) shows-state-column-p))
   (when layout?       (setf (user-interface-layout-direction menu)
                             user-interface-layout-direction))
-  (setf (delegate menu) (if (eq delegate :self) menu delegate)))
+  (setf (delegate menu) (if (eq delegate :self) menu delegate))
+  (cond (service-menu-p (invoke (ns-app) "setServicesMenu:" menu))
+        (windows-menu-p (invoke (ns-app) "setWindowsMenu:"  menu))
+        (help-menu-p    (invoke (ns-app) "setHelpMenu:"     menu))
+        (main-menu-p    (invoke (ns-app) "setMainMenu:"     menu))))
 
 (defgeneric as-ns-menu (menu &key &allow-other-keys)
   (:documentation "Convert MENU as `ns-menu'. ")
   (:method ((null null)    &key) nil)
   (:method ((menu ns-menu) &key) menu)
   (:method ((items list) &rest keys &key)
+    "Convert ITEMS as `ns-menu'.
+
+Parameters:
++ ITEMS:
+  list of `ns-menu-item' like thing
+
+Example
+
+    (as-ns-menu '((\"Submenu 1\"
+                   :items ((\"Submenu 1.1\")
+                           (\"Submenu 1.2\")))
+                  (\"Submenu 2\"
+                   :items ((\"Submenu 2.1\")
+                           ...))))
+"
     (setf (getf keys :items) items)
     (apply #'alloc-init 'ns-menu keys)))
 
@@ -4623,6 +4666,17 @@ class, but you can subclass it if necessary.
 
 see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc"))
 
+(declaim (inline %ensure-submenu))
+(defun %ensure-submenu (menu-item alloc-submenu-p submenu-title)
+  (declare (type ns-menu-item menu-item))
+  (or (submenu menu-item)
+      (if alloc-submenu-p
+          (setf (submenu menu-item)
+                (alloc-init 'ns-menu
+                            :title (or submenu-title
+                                       (title menu-item))))
+          (error "~S has no submenu to `add-item'. " menu-item))))
+
 (defmethod init ((item ns-menu-item)
                  &key
                    title
@@ -4639,9 +4693,14 @@ see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc"))
                    badge
                    submenu
                    menu
+                   items
                    tooltip
                    (key-equivalent "")
                    key-equivalent-modifier-mask
+                   (section-header-p nil section-header?)
+                   service-menu-p
+                   windows-menu-p
+                   help-menu-p
                  &allow-other-keys)
   "Initialize `ns-menu-item' ITEM.
 
@@ -4666,6 +4725,8 @@ Parameters:
 + MIXED-STATE-IMAGE
 + BADGE (`as-ns-menu-item-badge')
 + SUBMENU (`as-ns-menu')
++ ITEMS
+  a list of `as-ns-menu-items' like things
 + MENU
   `ns-menu' to add `ns-menu-item' ITEM
 + TOOLTIP (`as-ns-string')
@@ -4674,11 +4735,27 @@ Parameters:
   a string of the menu item's unmodified key equivalent
 + KEY-EQUIVALENT-MODIFIER-MASK: (`ns-event-modifier-flags')
   key modifier mask
-"
++ SERVICE-MENU-P
+  set menu-item as service menu item if non-nil
++ WINDOWS-MENU-P
+  if non-nil, will set MENU as app's windows menu
++ HELP-MENU-P
+  if non-nil, will set MENU as app's help menu
++ MAIN-MENU-P
+  if non-nil, will set MENU as app's main menu
+
+Note: SERVICE-MENU-P, WINDOWS-MENU-P, HELP-MENU-P, MAIN-MENU-P
+cannot be set at same time"
   (declare (type ns-control-state-value state)
            (type (or null ns-menu) menu))
+  (when (> (count-if #'identity (list service-menu-p
+                                      windows-menu-p
+                                      help-menu-p))
+           1)
+    (error ":service-menu-p, :windows-menu-p, :help-menu-p~
+ cannot be set at same time"))
   (let ((item (invoke item "initWithTitle:action:keyEquivalent:"
-                      title
+                      (as-ns-string title)
                       (and action (coerce-to-selector action))
                       (as-ns-string key-equivalent))))
     (when target            (setf (target            item) target))
@@ -4691,12 +4768,22 @@ Parameters:
     (when off-state-image   (setf (off-state-image   item) off-state-image))
     (when mixed-state-image (setf (mixed-state-image item) mixed-state-image))
     (when badge             (setf (badge             item) badge))
-    (when section-header-p  (setf (section-header-p  item) section-header-p))
-    (when submenu           (setf (submenu           item) (as-ns-menu submenu)))
+    (when section-header?   (setf (section-header-p  item) section-header-p))
+
+    ;; Ensure submenu and items added
+    (when submenu (setf (submenu item) (as-ns-menu submenu)))
+    (when items
+      (let ((submenu (%ensure-submenu item t title)))
+        (dolist (item items)
+          (add-item submenu item))))
+
     (when tooltip           (setf (tooltip           item) tooltip))
     (when key-equivalent-modifier-mask
       (setf (key-equivalent-modifier-mask item) key-equivalent-modifier-mask))
-    (when menu (add-item menu item))))
+    (when menu (add-item menu item))
+    (cond (service-menu-p (invoke (ns-app) "setServicesMenu:" (%ensure-submenu item t title)))
+          (windows-menu-p (invoke (ns-app) "setWindowsMenu:"  (%ensure-submenu item t title)))
+          (help-menu-p    (invoke (ns-app) "setHelpMenu:"     (%ensure-submenu item t title))))))
 
 (defgeneric add-item (parent item &key &allow-other-keys))
 
@@ -4705,6 +4792,7 @@ Parameters:
                        (index 0 index?)
                      &allow-other-keys)
   "Adds a menu item to the end of the menu.
+Return ITEM.
 
 Parameters:
 + MENU: `ns-menu'
@@ -4719,18 +4807,60 @@ adding the menu item, the menu updates itself.
 "
   (declare (type unsigned-byte index))
   (cond (index? (invoke menu "insertItem:atIndex:" item index))
-        (t      (invoke menu "addItem:" item))))
+        (t      (invoke menu "addItem:" item)))
+  item)
 
 (defmethod add-item ((menu ns-menu) item &rest keys &key)
   "By default, convert ITEM `as-ns-menu-item'. "
   (add-item menu (apply #'as-ns-menu-item item keys)))
 
+(defmethod add-item ((menu-item ns-menu-item) item &rest keys
+                     &key (alloc-submenu-p t) submenu-title)
+  "Add ITEM to MENU-ITEM.
+
+Parameters:
++ ALLOC-SUBMENU-P: (default `t')
+  If MENU-ITEM has no submenu, alloc submenu if ALLOC-SUBMENU-P
+  is non-nil; otherwise raise error
++ SUBMENU-TITLE:
+  Custom submenu title when alloc submenu
+
+see (add-item ns-menu *) for other possible parameters. "
+  (let ((submenu (restart-case
+                     (%ensure-submenu menu-item alloc-submenu-p submenu-title)
+                   (alloc-submenu ()
+                     :report "Alloc submenu with :alloc-submenu-p as t"
+                     (setf (getf keys :alloc-submenu-p) t)
+                     (apply #'add-item menu-item item keys)))))
+    (coca.objc::remove-plist keys :alloc-submenu-p :submenu-title)
+    (apply #'add-item submenu item keys)))
+
 (defgeneric as-ns-menu-item (item &key &allow-other-keys)
   (:documentation "Convert ITEM as `ns-menu-item'. ")
   (:method ((item ns-menu-item) &key) item)
-  (:method ((item string) &rest keys &key)
-    (setf (getf keys :title) item)
-    (apply #'alloc-init 'ns-menu-item keys)))
+  (:method ((title string) &rest keys &key)
+    "Create `ns-menu-item' with TITLE. "
+    (setf (getf keys :title) title)
+    (apply #'alloc-init 'ns-menu-item keys))
+  (:method ((separator (eql :separator)) &key)
+    (invoke 'ns-menu-item "separatorItem"))
+  (:method ((item list) &rest modify &key)
+    "Convert ITEM to `ns-menu-item'.
+
+Parameters:
++ ITEM:
+
+     (TITLE &key AS-NS-MENU-ITEM-KEYS)
+
+Example:
+
+    (as-ns-menu-item '(\"Item\" :action \"action:\"))
+"
+    (destructuring-bind (title &rest keys &key &allow-other-keys) item
+      (setf (getf keys :title) title)
+      (loop :for (key val) :on modify :by #'cddr
+            :do (setf (getf keys key) val))
+      (apply #'alloc-init 'ns-menu-item keys))))
 
 (define-objc-enum ns-menu-item-badge-type
   "Constants that define types of badges for display.
