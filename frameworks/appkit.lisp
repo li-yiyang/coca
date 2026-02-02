@@ -37,6 +37,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:dock-tile
    #:windows
    #:application-icon-image
+   #:main-menu
    #:ns-application-activation-policy
    #:as-ns-application-activation-policy
    #:decode-ns-application-activation-policy
@@ -173,6 +174,19 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:state
    #:ns-color-well
    #:ns-combo-button
+   #:ns-combo-button-style
+   #:ns-combo-button-style-p
+   #:as-ns-combo-button-style
+   #:decode-ns-combo-button-style
+   #:ns-image-scaling
+   #:ns-image-scaling-p
+   #:as-ns-image-scaling
+   #:decode-ns-image-scaling
+   #:style
+   #:title
+   #:image
+   #:image-scaling
+   #:menu
    #:ns-image-view
    #:ns-level-indicator
    #:ns-pop-up-button
@@ -335,9 +349,63 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:modifier-flags
 
    ;; Menus, Cursors, and the Dock
+   #:ns-menu-selection-mode
+   #:ns-menu-selection-mode-p
+   #:as-ns-menu-selection-mode
+   #:decode-ns-menu-selection-mode
+   #:ns-menu-properties
+   #:ns-menu-properties-p
+   #:as-ns-menu-properties
+   #:decode-ns-menu-properties
+   #:ns-menu-presentation-style
+   #:ns-menu-presentation-style-p
+   #:as-ns-menu-presentation-style
+   #:decode-ns-menu-presentation-style
    #:ns-menu
+   #:items
+   #:supermenu
+   #:autoenables-items-p
+   #:selected-items
+   #:minimum-width
+   #:size
+   #:properties-to-update
+   #:shows-state-column-p
+   #:highlighted-item
+   #:user-interface-layout-direction
+   #:selection-mode
+   #:presentation-style
+   #:as-ns-menu
    #:ns-menu-item
+   #:enabledp
+   #:hiddenp
+   #:hidden-or-has-hidden-ancestor-p
+   #:attributed-title
+   #:tag
+   #:state
+   #:image
+   #:on-state-image
+   #:off-state-image
+   #:mixed-state-image
+   #:badge
+   #:section-header-p
+   #:submenu
+   #:has-submenu-p
+   #:parent-item
+   #:separator-item-p
+   #:menu
+   #:key-equivalent
+   #:key-equivalent-modifier-mask
+   #:tooltip
+   #:add-item
+   #:as-ns-menu-item
+   #:ns-menu-badge-type
+   #:ns-menu-badge-type-p
+   #:as-ns-menu-badge-type
+   #:decode-ns-menu-badge-type
    #:ns-menu-item-badge
+   #:item-count
+   #:string-value
+   #:badge-type
    #:ns-status-bar
    #:ns-status-item
    #:ns-status-bar-button
@@ -1599,11 +1667,124 @@ at least one of TITLE and IMAGE should be given.
    "A control that displays a color value and lets the user change that color value.
 see https://developer.apple.com/documentation/appkit/nscolorwell?language=objc"))
 
+(define-objc-enum ns-combo-button-style
+  "Constants that indicate how a combo button presents its menu.
+see https://developer.apple.com/documentation/appkit/nscombobutton/style-swift.enum?language=objc"
+  (:split   0
+            "A style that separates the button’s title and image"
+            "from the menu" "indicator people use to activate the"
+            "button.")
+  (:unified 1
+            "A style that unifies the button’s title and image with"
+            "the menu indicator."))
+
+(define-objc-enum ns-image-scaling
+  "Constants that specify a cell’s image scaling behavior.
+see https://developer.apple.com/documentation/appkit/nsimagescaling?language=objc"
+  (:proportionally-down
+   0 "If it is too large for the destination, scale"
+   "the image down while preserving the aspect ratio.")
+  (:axes-independently
+   1 "Scale each dimension to exactly fit destination.")
+  (:none
+   2 "Do not scale the image.")
+  (:proportionally-up-or-down
+   3 "Scale the image to its maximum possible"
+   "dimensions while both staying within the destination area and"
+   "preserving its aspect ratio."))
+
 (define-objc-class "NSComboButton" ()
-  ()
+  (;; Configuring the Button Appearance
+   ("style"
+    :accessor style
+    :before   as-ns-combo-button-style
+    :after    decode-ns-combo-button-style
+    :documentation
+    "The appearance setting that determines how the button presents its menu.
+see https://developer.apple.com/documentation/appkit/nscombobutton/style-swift.property?language=objc")
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The localized string that the button displays.
+see https://developer.apple.com/documentation/appkit/nscombobutton/title?language=objc")
+   ("image"
+    :accessor image
+    :before   as-ns-image
+    :documentation
+    "The image that the button displays.
+see https://developer.apple.com/documentation/appkit/nscombobutton/image?language=objc")
+   ("imageScaling"
+    :accessor image-scaling
+    :before   as-ns-image-scaling
+    :after    decode-ns-image-scaling
+    :documentation
+    "The scaling behavior to apply to the button’s image.
+see https://developer.apple.com/documentation/appkit/nscombobutton/imagescaling?language=objc")
+   ;; Specifying the Alternative Actions
+   ("menu" ; ns-menu
+    :accessor menu
+    :before   as-ns-menu
+    :documentation
+    "The menu that contains the button’s alternate actions.
+
+The combo button executes the menu item’s action when someone selects
+that item, so make sure to configure the targets and actions for each
+menu item in your menu.
+
+An NSComboButton doesn’t support the addition of a contextual menu.
+
+see https://developer.apple.com/documentation/appkit/nscombobutton/menu?language=objc")
+   ())
   (:documentation
    "A button with a pull-down menu and a default action.
+
+An NSComboButton object is a button that displays a title string,
+image, and an optional control for displaying a menu. Use this control
+in places where you want to offer a button with a default action and
+one or more alternative actions. Clicking the title or image executes
+the default action you provide, and clicking the menu control displays
+a menu for selecting a different action. If you configure the button
+to hide the menu control, a long-press gesture displays the menu.
+
+After you create a combo button programmatically or in Interface
+Builder, choose the button style you want and add a title or image for
+your content. A combo button has a default action, which you specify
+at creation time. You can also change that action later using the
+inherited target and action properties. To specify one or more
+alternative actions, configure a menu with those actions and assign it
+to the button’s menu property.
+
+This control doesn’t use an NSCell object for its underlying
+implementation. It also doesn’t support the addition of a contextual
+menu.
+
 see https://developer.apple.com/documentation/appkit/nscombobutton?language=objc"))
+
+(defmethod init ((combo ns-combo-button)
+                 &key
+                   (title ""  title?)
+                   (image nil image?)
+                   (image-scaling :proportionally-down)
+                   menu
+                   (style :split style?)
+                   frame
+                   target
+                   action
+                 &allow-other-keys)
+  (declare (type ns-image-scaling image-scaling)
+           (type ns-combo-button-style style)
+           (type ns-rect frame))
+  (let ((combo (invoke combo "initWithFrame:" frame)))
+    (when title? (setf (title combo) title))
+    (when style? (setf (style combo) style))
+    (when image?
+      (setf (image         combo) image
+            (image-scaling combo) image-scaling))
+    (setf (target combo) target
+          (action combo) action
+          (menu   combo) menu)))
 
 (define-objc-class "NSImageView" ()
   ()
@@ -3942,23 +4123,711 @@ see https://developer.apple.com/documentation/appkit/nsevent?language=objc"))
 
 ;;; Menus
 
+(define-objc-enum ns-menu-selection-mode
+  "Describes how the menu manages selection states of the menu items
+that belong to the same selection group.
+
+This doesn’t apply to menu items that have distinct target-action values.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/selectionmode-swift.enum?language=objc"
+  (:automatic  0
+               "A selection mode where the menu determines the"
+               "appropriate selection mode based on the context "
+               "and its constants.")
+  (:select-any 2
+               "A selection mode where someone can select "
+               "multiple items in the menu.")
+  (:select-one 1
+               "A selection mode where someone can select "
+               "at most one menu item in the same selection "
+               "group at the same time."))
+
+(define-objc-mask ns-menu-properties
+  "These constants are used as a bitmask for specifying a set of menu
+or menu item properties, and are contained by the propertiesToUpdate
+property.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/properties?language=objc"
+  (:title                     1  "The menu item’s title.")
+  (:attributed-title          2  "The menu item’s attributed string title.")
+  (:key-equivalent            4  "The menu item’s key equivalent.")
+  (:image                     8  "The menu image.")
+  (:enabled                   16 "Whether the menu item is enabled or disabled.")
+  (:accessibility-description 32 "The menu item’s accessibility description."))
+
+(define-objc-enum ns-menu-presentation-style
+  "Specifies the style of a menu. "
+  (:palette 1 "A menu presentation style where items to"
+            "display align horizontally.")
+  (:regular 0 "The default presentation style for a menu."))
+
+(define-objc-enum ns-user-interface-layout-direction
+  "Specifies the directional flow of the user interface."
+  (:left-to-right 0 "Layout direction is left to right.")
+  (:right-to-left 1 "Layout direction is right to left."))
+
 (define-objc-class "NSMenu" ()
-  ()
+  (;; Finding Menu Items
+   ("itemArray"
+    :reader items
+    :after  ns-array-to-list
+    :documentation
+    "A list containing the menu items in the menu.
+
+This property contains an array of menu items in the menu.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/items?language=objc")
+   ("numberOfItems"
+    :reader len
+    :documentation
+    "The number of menu items in the menu, including separator items.
+see https://developer.apple.com/documentation/appkit/nsmenu/numberofitems?language=objc")
+   ;; Managing Submenus
+   ("supermenu"
+    :reader supermenu
+    :documentation
+    "The parent menu that contains the menu as a submenu.
+
+This property contains a value of type NSMenu representing the the
+parent menu that contains the menu as a submenu. If the menu has no
+parent menu, then the value of this property is nil.
+
+You should never invoke the setter method for this property
+directly. The setter method is called automatically when changes to
+the parent menu occur. You can, however, override the setter method
+for this property in order to take action when changes to the parent
+menu occur.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/supermenu?language=objc")
+   ;; Enabling and Disabling Menu Items
+   ("autoenablesItems"
+    :accessor autoenables-items-p
+    :documentation
+    "Whether automatically enables and disables its menu items.
+
+This property contains a Boolean value, indicating whether the menu
+automatically enables and disables its menu items. If set to true,
+menu items of the menu are automatically enabled and disabled
+according to rules computed by the NSMenuValidation informal
+protocol. By default, NSMenu objects autoenable their menu items.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/autoenablesitems?language=objc")
+   ;; Getting and Setting the Menu Font
+   ("font"
+    :accessor font
+    :before   as-ns-font
+    :documentation
+    "The font of the menu and its submenus.
+see https://developer.apple.com/documentation/appkit/nsmenu/font?language=objc")
+   ;; Managing the Title
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The title of the menu.
+see https://developer.apple.com/documentation/appkit/nsmenu/title?language=objc")
+   ;; Selecting Items
+   ("selectedItems"
+    :reader selected-items
+    :after  ns-array-to-list
+    :documentation
+    "The menu items that are currently selected.
+
+An item selects when its state is NSControlStateValueOn. If the
+tracking mode is NSMenuSelectionModeSelectOne or
+NSMenuSelectionModeSelectAny, the property only selects or returns
+menu items whose show-target action is nil.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/selecteditems?language=objc")
+   ;; Configuring Menu Size
+   ("minimumWidth"
+    :accessor minimum-width
+    :documentation
+    "The minimum width of the menu in screen coordinates.
+
+This property contains a value of type CGFloat, indicating the minimum
+width of the menu in screen coordinates.
+
+The menu will not draw smaller than its minimum width, but may draw
+larger if it needs more space. The default value for this property is
+0.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/minimumwidth?language=objc")
+   ("size"
+    :reader size
+    :documentation
+    "The size of the menu in screen coordinates
+
+This property contains a value of type NSSize, indicating the size of
+the menu in screen coordinates.
+
+The menu may draw at a smaller size when shown, depending on its
+positioning and display configuration.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/size?language=objc")
+   ;; Getting Menu Properties
+   ("propertiesToUpdate"
+    :reader properties-to-update
+    :after  decode-ns-menu-properties
+    :documentation
+    "The available properties for the menu.
+
+This property contains a bitwise-C OR set of NSMenuProperties values
+that are applicable to the menu.
+
+This property may be queried from specific callbacks to determine
+which menu properties are defined, and whether or not they are
+relevant to changes you need to make to the menu. This property is
+intended to allow for more efficient updating of the menu in certain
+circumstances.
+
+For example, if the NSMenuPropertyItemImage property isn’t set, your
+delegate doesn’t need to spend time updating the images of the menu
+items, because the images aren’t needed (for example, during
+key-equivalent matching).
+
+You have to update a menu property only if it has changed since you
+last set it, even if the corresponding bit is 1. For example, if the
+title of a menu item never changes, you have to set it only once.
+
+Accessing this property is optional; it is always acceptable to fully
+update all properties of the menu.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/propertiestoupdate?language=objc")
+   ;; Managing Presentation Styles
+   ;; Working with Palettes
+   ;; Managing Menu Change Notifications
+   ;; Displaying Contextual Menus
+   ;; Managing Display of the State Column
+   ("showsStateColumn"
+    :accessor shows-state-column-p
+    :before   as-boolean
+    :documentation
+    "Indicates whether the menu displays the state column.
+
+This property contains a Boolean value indicating whether the menu
+displays the state column. The default value for this property is
+true.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/showsstatecolumn?language=objc")
+   ;; Controlling Allocation Zones
+   ;; Handling Highlighting
+   ("highlightedItem"
+    :reader highlighted-item
+    :documentation
+    "Indicates the currently highlighted item in the menu.
+
+This property indicates the currently highlighted item in the menu. If
+no menu is highlighted, this property has a value of nil.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/highlighteditem?language=objc")
+   ;; Managing the User Interface
+   ("userInterfaceLayoutDirection"
+    :accessor user-interface-layout-direction
+    :before   as-ns-user-interface-layout-direction
+    :after    decode-ns-user-interface-layout-direction
+    :documentation
+    "Configures the layout direction of menu items in the menu.
+
+This property configures the layout direction (a value of type
+NSUserInterfaceLayoutDirection) of menu items in the menu. If no
+layout direction is explicitly set for a menu, then the menu defaults
+to the layout direction specified for the application object. See
+userInterfaceLayoutDirection in NSApplication.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/userinterfacelayoutdirection?language=objc")
+   ("delegate"
+    :accessor delegate
+    :documentation
+    "The delegate of the menu.
+see https://developer.apple.com/documentation/appkit/nsmenu/delegate?language=objc"))
   (:documentation
    "An object that manages an app’s menus.
 see https://developer.apple.com/documentation/appkit/nsmenu?language=objc"))
 
+(defmethod selection-mode ((menu ns-menu))
+  "The selection mode of the menu.
+
+The selection mode only affects menu items that belong to the same
+selection group. A selection group consists of the items with the same
+target-action.
+
+see https://developer.apple.com/documentation/appkit/nsmenu/selectionmode-swift.property?language=objc"
+  (decode-ns-menu-selection-mode
+   (invoke menu "selectionMode")))
+
+(defmethod (setf selection-mode) (mode (menu ns-menu))
+  (invoke menu "setSelectionMode:"
+          (as-ns-menu-selection-mode mode)))
+
+(defmethod presentation-style ((menu ns-menu))
+  "The presentation style of the menu.
+see https://developer.apple.com/documentation/appkit/nsmenu?language=objc"
+  (decode-ns-menu-presentation-style
+   (invoke menu "presentationStyle")))
+
+(defmethod (setf presentation-style) (style (menu ns-menu))
+  (invoke menu "setPresentationStyle:"
+          (as-ns-menu-presentation-style style)))
+
+(defmethod init ((menu ns-menu)
+                 &key
+                   (title               "")
+                   (autoenables-items-p nil        auto?)
+                   (font                nil        font?)
+                   (selection-mode      :automatic selection?)
+                   (presentation-style  :regular   presentation?)
+                   (shows-state-column-p nil       column?)
+                   (delegate            :self)
+                   (user-interface-layout-direction :left-to-right layout?)
+                   supermenu
+                   items
+                   minimum-width)
+  "Initialize `ns-menu' MENU.
+
+Parameters:
++ TITLE:
+  title of `ns-menu'
++ SUPERMENU:
+  the parent menu that contains the menu as a submenu
++ ITEMS:
+  a list of `ns-menu-item' like things that could be
+  converted by `as-ns-menu-item'.
++ AUTOENABLES-ITEMS-P
+  whether automatically enables and disables its menu items.
++ FONT
+  font like things for the menu and its submenus
+  converted by `as-ns-font'
++ SELECTION-MODE (`ns-menu-selection-mode')
+  selection mode of the menu
++ MINIMUM-WIDTH
+  minimum width of the menu in screen coordinates
++ PRESENTATION-STYLE (`ns-menu-presentation-style')
+  presentation style of the menu
++ SHOWS-STATE-COLUMN-P
+  whether the menu displays the state column.
++ USER-INTERFACE-LAYOUT-DIRECTION
+  (`ns-user-interface-layout-direction')
+  layout direction of menu items in the menu.
++ DELEGATE (default `:self')
+  delegate of the MENU
+"
+  (declare (type list items)
+           (type (or null ns-menu) supermenu)
+           (type ns-menu-selection-mode selection-mode)
+           (type (or (eql :self) ns-object) delegate))
+  (invoke menu "initWithTitle:" (as-ns-string title))
+  (when supermenu (add-item supermenu menu))
+  (dolist (item items)
+    (add-item menu (as-ns-menu-item item)))
+  (when auto?         (setf (autoenables-items-p  menu) autoenables-items-p))
+  (when font?         (setf (font                 menu) font))
+  (when selection?    (setf (selection-mode       menu) selection-mode))
+  (when minimum-width (setf (minimum-width        menu) minimum-width))
+  (when presentation? (setf (presentation-style   menu) presentation-style))
+  (when column?       (setf (shows-state-column-p menu) shows-state-column-p))
+  (when layout?       (setf (user-interface-layout-direction menu)
+                            user-interface-layout-direction))
+  (setf (delegate menu) (if (eq delegate :self) menu delegate)))
+
+(defgeneric as-ns-menu (menu &key &allow-other-keys)
+  (:documentation "Convert MENU as `ns-menu'. ")
+  (:method ((null null)    &key) nil)
+  (:method ((menu ns-menu) &key) menu)
+  (:method ((items list) &rest keys &key)
+    (setf (getf keys :items) items)
+    (apply #'alloc-init 'ns-menu keys)))
+
 (define-objc-class "NSMenuItem" ()
-  ()
+  (;; Enabling a menu item
+   ("enabled"
+    :accessor enabledp
+    :before   as-boolean
+    :documentation
+    "A Boolean value that indicates whether the menu item is enabled.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/isenabled?language=objc")
+   ;; Managing hidden status
+   ("hidden"
+    :accessor hiddenp
+    :before   as-boolean
+    :documentation
+    "A Boolean value that indicates whether the menu item is hidden.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/ishiddenorhashiddenancestor?language=objc")
+   ("hiddenOrHasHiddenAncestor"
+    :reader hidden-or-has-hidden-ancestor-p
+    :documentation
+    "Whether the menu item or any of its superitems is hidden.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitem/ishiddenorhashiddenancestor?language=objc")
+   ;; Managing the target and action
+   ("target"
+    :accessor target
+    :documentation
+    "The menu item's target.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/target?language=objc")
+   ("action"
+    :accessor action
+    :documentation
+    "The menu item's action-method selector.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/action?language=objc")
+   ;; Managing the title
+   ("title"
+    :accessor title
+    :documentation
+    "The menu item’s title.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/title?language=objc")
+   ("attributedTitle"
+    :accessor attributed-title
+    :documentation
+    "A custom string for a menu item.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/attributedtitle?language=objc")
+   ;; Managing the tag
+   ("tag"
+    :accessor tag
+    :documentation
+    "The menu item’s tag.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/tag?language=objc")
+   ;; Manging the state
+   ("state"
+    :accessor state
+    :before   as-ns-control-state-value
+    :documentation
+    "The state of the menu item.
+
+The image associated with the new state is displayed to the left of
+the menu item.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitem/state?language=objc")
+   ;; Managing the image
+   ("image"
+    :accessor image
+    :before   as-ns-image
+    :documentation
+    "The menu item’s image.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/image?language=objc")
+   ("onStateImage"
+    :accessor on-state-image
+    :before   as-ns-image
+    :documentation
+    "The image of the menu item that indicates an “on” state.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/onstateimage?language=objc")
+   ("offStateImage"
+    :accessor off-state-image
+    :before   as-ns-image
+    :documentation
+    "The image of the menu item that indicates an “off” state.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/offstateimage?language=objc")
+   ("mixedStateImage"
+    :accessor mixed-state-image
+    :before   as-ns-image
+    :documentation
+    "The image of the menu item that indicates a “mixed” state,
+that is, a state neither “on” nor “off.”
+see https://developer.apple.com/documentation/appkit/nsmenuitem/mixedstateimage?language=objc")
+   ;; Managing the badge
+   ("badge"
+    :accessor badge
+    :before   as-ns-menu-item-badge
+    :documentation
+    "Additional quantitative information specific to `ns-menu-item'.
+see `ns-menu-item-badge'. ")
+   ;; Managing the section header
+   ("sectionHeader"
+    :accessor section-header-p
+    :before   as-boolean
+    :documentation
+    "Whether the menu item is a section header.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/issectionheader?language=objc")
+   ;; Managing submenus
+   ("submenu"
+    :accessor submenu
+    :before   as-ns-menu
+    :documentation
+    "The submenu of the menu item.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/submenu?language=objc")
+   ("hasSubmenu"
+    :reader has-submenu-p
+    :documentation
+    "A Boolean value that indicates whether the menu item has a submenu.
+see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc")
+   ("parentItem"
+    :reader parent-item
+    :documentation
+    "The menu item whose submenu contains the receiver.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/parent?language=objc")
+   ;; Managing the separator item
+   ("separatorItem"
+    :reader separator-item-p
+    :documentation
+    "A Boolean value indicating whether the menu item is a separator item.
+see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc")
+   ;; Managing the owning menu
+   ("menu"
+    :reader menu
+    :documentation
+    "The menu item’s menu.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/menu?language=objc")
+   ;; Managing key equivalents
+   ("keyEquivalent"
+    :accessor key-equivalent
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The menu item’s unmodified key equivalent.
+
+If you want to specify the Backspace key as the key equivalent for a
+menu item, use a single character string with NSBackspaceCharacter
+(defined in NSText.h as 0x08) and for the Forward Delete key, use
+NSDeleteCharacter (defined in NSText.h as 0x7F). Note that these are
+not the same characters you get from an NSEvent key-down event when
+pressing those keys.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitem/keyequivalent?language=objc")
+   ("keyEquivalentModifierMask"
+    :accessor key-equivalent-modifier-mask
+    :before   as-ns-event-modifier-flags
+    :documentation
+    "The menu item’s keyboard equivalent modifiers.
+
+NSShiftKeyMask is a valid modifier for any key equivalent in
+mask. This allows you to specify key-equivalents such as
+Command-Shift-1 that are consistent across all keyboards. However,
+with a few exceptions (such as the German “ß” character), a lowercase
+character with NSShiftKeyMask is interpreted the same as the uppercase
+character without that mask. For example, Command-Shift-c and
+Command-C are considered to be identical key equivalents.
+
+See the NSEvent class specification for more information about
+modifier mask values.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitem/keyequivalentmodifiermask?language=objc")
+   ;; Managing mnemonics
+   ;; Managing user key equivalents
+   ;; Managing alternates
+   ;; Managing indentation levels
+   ;; Managing tool tips
+   ("toolTip"
+    :accessor tooltip
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "A help tag for the menu item.
+see https://developer.apple.com/documentation/appkit/nsmenuitem/tooltip?language=objc"))
   (:documentation
    "A command item in an app menu.
+
+The NSMenuItem class includes some private functionality needed to
+maintain binary compatibility with other components of Cocoa. Because
+of this fact, you can’t replace the NSMenuItem class with a different
+class, but you can subclass it if necessary.
+
 see https://developer.apple.com/documentation/appkit/nsmenuitem?language=objc"))
 
+(defmethod init ((item ns-menu-item)
+                 &key
+                   title
+                   action
+                   target
+                   (enabledp nil  enable?)
+                   (hiddenp  nil  hidden?)
+                   (tag      0    tag?)
+                   (state    :off state?)
+                   image
+                   on-state-image
+                   off-state-image
+                   mixed-state-image
+                   badge
+                   submenu
+                   menu
+                   tooltip
+                   (key-equivalent "")
+                   key-equivalent-modifier-mask
+                 &allow-other-keys)
+  "Initialize `ns-menu-item' ITEM.
+
+Parameters:
++ TITLE:
+  the menu item's title
++ ACTION:
+  the menu item's action-method selector.
++ TARGET:
+  the menu item's target.
++ ENABLEDP:
+  whether the menu item is enabled.
++ HIDDENP:
+  whether the menu item is hidden.
++ TAG:
+  The menu item’s tag.
++ STATE: (`ns-control-state-value')
+  The state of the menu item.
++ IMAGE
++ ON-STATE-IMAGE
++ OFF-STATE-IMAGE
++ MIXED-STATE-IMAGE
++ BADGE (`as-ns-menu-item-badge')
++ SUBMENU (`as-ns-menu')
++ MENU
+  `ns-menu' to add `ns-menu-item' ITEM
++ TOOLTIP (`as-ns-string')
++ SECTION-HEADER-P
++ KEY-EQUIVALENT:
+  a string of the menu item's unmodified key equivalent
++ KEY-EQUIVALENT-MODIFIER-MASK: (`ns-event-modifier-flags')
+  key modifier mask
+"
+  (declare (type ns-control-state-value state)
+           (type (or null ns-menu) menu))
+  (let ((item (invoke item "initWithTitle:action:keyEquivalent:"
+                      title
+                      (and action (coerce-to-selector action))
+                      (as-ns-string key-equivalent))))
+    (when target            (setf (target            item) target))
+    (when enable?           (setf (enabledp          item) enabledp))
+    (when hidden?           (setf (hiddenp           item) hiddenp))
+    (when tag?              (setf (tag               item) tag))
+    (when state?            (setf (state             item) state))
+    (when image             (setf (image             item) image))
+    (when on-state-image    (setf (on-state-image    item) on-state-image))
+    (when off-state-image   (setf (off-state-image   item) off-state-image))
+    (when mixed-state-image (setf (mixed-state-image item) mixed-state-image))
+    (when badge             (setf (badge             item) badge))
+    (when section-header-p  (setf (section-header-p  item) section-header-p))
+    (when submenu           (setf (submenu           item) (as-ns-menu submenu)))
+    (when tooltip           (setf (tooltip           item) tooltip))
+    (when key-equivalent-modifier-mask
+      (setf (key-equivalent-modifier-mask item) key-equivalent-modifier-mask))
+    (when menu (add-item menu item))))
+
+(defgeneric add-item (parent item &key &allow-other-keys))
+
+(defmethod add-item ((menu ns-menu) (item ns-menu-item)
+                     &key
+                       (index 0 index?)
+                     &allow-other-keys)
+  "Adds a menu item to the end of the menu.
+
+Parameters:
++ MENU: `ns-menu'
++ ITEM: `ns-menu-item'
+  The menu item (an object conforming to the NSMenuItem protocol) to
+  add to the menu.
++ INDEX: invokes insertItem:atIndex:
+
+This method invokes insertItem:atIndex:. Thus, the menu does not
+accept the menu item if it already belongs to another menu. After
+adding the menu item, the menu updates itself.
+"
+  (declare (type unsigned-byte index))
+  (cond (index? (invoke menu "insertItem:atIndex:" item index))
+        (t      (invoke menu "addItem:" item))))
+
+(defmethod add-item ((menu ns-menu) item &rest keys &key)
+  "By default, convert ITEM `as-ns-menu-item'. "
+  (add-item menu (apply #'as-ns-menu-item item keys)))
+
+(defgeneric as-ns-menu-item (item &key &allow-other-keys)
+  (:documentation "Convert ITEM as `ns-menu-item'. ")
+  (:method ((item ns-menu-item) &key) item)
+  (:method ((item string) &rest keys &key)
+    (setf (getf keys :title) item)
+    (apply #'alloc-init 'ns-menu-item keys)))
+
+(define-objc-enum ns-menu-item-badge-type
+  "Constants that define types of badges for display.
+
+The predefined strings that display are localizable and automatically
+handle any pluralization of itemCount.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitembadge/badgetype?language=objc"
+  (:alerts    3 "A badge representing the number of alerts.")
+  (:new-items 2 "A badge representing the number of new items.")
+  (:none      0 "A badge with no string portion.")
+  (:updates   1 "A badge representing the number of available updates."))
+
 (define-objc-class "NSMenuItemBadge" ()
-  ()
+  (;; Accessing menu item badge attributes
+   ("itemCount"
+    :reader item-count
+    :documentation
+    "The number of items the badge displays.
+
+If you create a badge with a custom string, this value is 0.
+
+see https://developer.apple.com/documentation/appkit/nsmenuitembadge/itemcount?language=objc")
+   ("stringValue"
+    :reader string-value
+    :after  ns-string-to-string
+    :documentation
+    "The string representation of the badge when it displays.
+see https://developer.apple.com/documentation/appkit/nsmenuitembadge/stringvalue-fc9f?language=objc")
+   ("type"
+    :reader badge-type
+    :documentation
+    "The type of items the badge displays.
+see https://developer.apple.com/documentation/appkit/nsmenuitembadge/type?language=objc"))
   (:documentation
    "A control that provides additional quantitative information specific to a menu item, such as the number of available updates.
+
+You create a badge using an initializer or a predefined factory
+method, and then you assign it to the badge property of a NSMenuItem
+for display.
+
+                   +---------------------+
+                   | Message         [6] |
+   NSMenuItem -->  | Changes [3 changes] | <-- NSMenuItemBadge
+                   | New Items   [3 new] |
+                   +---------------------+
+
+For example, to display a badge with a count, use the initWithCount:
+initalizer, passing in the value of count as an Int.
+
+    (alloc-init 'ns-menu-item-badge :count 6)
+
+To display a badge with a custom string, use the initWithString:
+initializer, passing in the string you want to display.
+
+    (alloc-init 'ns-menu-item-badge :string \"(N) changes\")
+
+To display a badge using a predefined NSMenuItemBadgeType, use a
+factory method such as newItemsWithCount:, passing in the count of the
+badge to display.
+
+Important
+If you use one of the predefined badge types, the system localizes and
+pluralizes the string for you. If you create your own custom badge
+string, you need to localize and pluralize that string yourself. For
+more information on how to localize and pluralize text, see Localizing
+and varying text with a string catalog.
+
 see https://developer.apple.com/documentation/appkit/nsmenuitembadge?language=objc"))
+
+(defmethod init ((badge ns-menu-item-badge)
+                 &key
+                   (count  0     count?)
+                   (type   :none type?)
+                   (string ""    string?))
+  "Initialize `ns-menu-item-badge' with COUNT or TYPE or STRING.
+
+Parameters:
++ COUNT:
+  Creates a badge with a count and an empty string.
++ TYPE (`ns-menu-item-badge-type')
++ STRING:
+  Creates a badge with the provided custom string."
+  (declare (type integer count)
+           (type ns-menu-item-badge-type type))
+  (cond ((type?   (invoke badge "initWithCount:type:" count
+                          (as-ns-menu-item-badge-type type)))
+         (string? (invoke badge "initWithString:" (as-ns-string string)))
+         (t       (invoke badge "initWithCount:" count)))))
+
+(defgeneric as-ns-menu-item-badge (badge &key &allow-other-keys)
+  (:documentation "Convert BADGE as `ns-menu-item-badge'. ")
+  (:method ((badge ns-menu-item-badge) &key) badge)
+  (:method (default &key)
+    "Default converting DEFAULT as string. "
+    (alloc-init 'ns-menu-item-badge :string default)))
 
 ;;; Menu Validation
 
@@ -4341,6 +5210,8 @@ see https://developer.apple.com/documentation/appkit/nsimage?language=objc"))
 
 (defgeneric as-ns-image (object &key &allow-other-keys)
   (:documentation "Turn OBJECT as `ns-image'. ")
+  (:method ((image ns-image) &key)
+    image)
   (:method ((pathname pathname) &key)
     "Initializes and returns an image object using the specified file.
 Return an initialized NSImage object or nil if the new object cannot
@@ -6517,10 +7388,21 @@ onscreen and offscreen windows, whether or not they are visible on any
 space. There is no guarantee of the order of the windows in the array.
 see https://developer.apple.com/documentation/appkit/nsapplication/windows?language=objc")
    ("applicationIconImage"
-    :reader application-icon-image
+    :accessor application-icon-image
+    :before   as-ns-image
     :documentation
     "The image used for the app’s icon.
-see https://developer.apple.com/documentation/appkit/nsapplication/applicationiconimage?language=objc"))
+see https://developer.apple.com/documentation/appkit/nsapplication/applicationiconimage?language=objc")
+   ("mainMenu"
+    :accessor main-menu
+    :before   as-ns-menu
+    :documentation
+    "The app’s main menu bar.
+
+Use this property to assign a new menu bar for your app or to access
+the current menu bar.
+
+see https://developer.apple.com/documentation/appkit/nsapplication/mainmenu?language=objc"))
   (:documentation
    "An object that manages an app’s main event loop and resources used by all of that app's objects.
 Every app uses a single instance of `ns-application' to control the main

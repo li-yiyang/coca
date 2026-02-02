@@ -1266,7 +1266,8 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 
 (defgeneric as-ns-string (string)
   (:documentation "Convert STRING into NSString. ")
-  (:method (default) (string-to-ns-string (format nil "~A" default)))
+  (:method (default)     (string-to-ns-string (format nil "~A" default)))
+  (:method ((null null)) nil)
   (:method ((ns-string ns-string)) ns-string)
   (:method ((string string))       (string-to-ns-string string)))
 
