@@ -1735,8 +1735,7 @@ menu item in your menu.
 
 An NSComboButton doesn’t support the addition of a contextual menu.
 
-see https://developer.apple.com/documentation/appkit/nscombobutton/menu?language=objc")
-   ())
+see https://developer.apple.com/documentation/appkit/nscombobutton/menu?language=objc"))
   (:documentation
    "A button with a pull-down menu and a default action.
 
