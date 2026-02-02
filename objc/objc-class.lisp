@@ -179,7 +179,8 @@ It should return the class of slot definition required. "
   (let ((writer (objc-property-writer slot)))
     (if writer
         (invoke object writer (funcall (objc-property-before-write slot) value))
-        (error "ObjC property ~S is read only. " (c2mop:slot-definition-name slot)))))
+        (error "ObjC property ~S is read only. " (c2mop:slot-definition-name slot)))
+    value))
 
 (defmethod c2mop:slot-boundp-using-class
     ((class objc-class) object (slot objc-property-slot))

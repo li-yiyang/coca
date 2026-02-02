@@ -204,6 +204,7 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-operating-system-version-minor
    #:ns-operating-system-version-patch
    #:ns-process-info
+   #:process-name
    #:operating-system-version
    #:ns-background-activity-scheduler
    #:ns-user-notification
@@ -1266,8 +1267,7 @@ The original METHOD should return `ns-string' and it would be turned into lisp s
 
 (defgeneric as-ns-string (string)
   (:documentation "Convert STRING into NSString. ")
-  (:method (default)     (string-to-ns-string (format nil "~A" default)))
-  (:method ((null null)) nil)
+  (:method (default)               (string-to-ns-string (format nil "~A" default)))
   (:method ((ns-string ns-string)) ns-string)
   (:method ((string string))       (string-to-ns-string string)))
 
@@ -3119,10 +3119,203 @@ see https://developer.apple.com/documentation/foundation/timer?language=objc"))
 ;;; Process Info
 
 (define-objc-class "NSProcessInfo" ()
-  ()
+  (("processName"
+    :reader process-name
+    :after  ns-string-to-string
+    :documentation
+    "The name of the process.
+
+The process name is used to register application defaults and is used
+in error messages. It does not uniquely identify the process.
+
+Warning
+User defaults and other aspects of the environment might depend on the
+process name, so be very careful if you change it. Setting the process
+name in this manner is not thread safe.
+
+see https://developer.apple.com/documentation/foundation/processinfo/processname?language=objc"))
   (:documentation
    "A collection of information about the current process.
+
+Each process has a single, shared NSProcessInfo object known as a
+process information agent that can return information such as
+arguments, environment variables, host name, and process name. The
+processInfo class method returns the shared agent for the current
+process. For example, the following line returns the NSProcessInfo
+object, which then provides the name of the current process:
+
+    (process-name (ns-process-info))
+
+Note
+NSProcessInfo is thread-safe in macOS 10.7 and later.
+
+The NSProcessInfo class also includes the operatingSystemVersion
+property, which returns an NSOperatingSystemVersion structure
+identifying the operating system version on which the process is
+executing.
+
+NSProcessInfo objects attempt to interpret environment variables and
+command-line arguments in the user’s default C string encoding if they
+can’t convert to Unicode as UTF-8 strings. If neither the Unicode nor
+C string conversion works, the NSProcessInfo object ignores these
+values.
+
+Manage Activities
+The system has heuristics to improve battery life, performance, and
+responsiveness of applications for the benefit of the user. You can
+use the following methods to manage activities that give hints to the
+system that your application has special requirements:
+
++ beginActivityWithOptions:reason:
++ endActivity:
++ performActivityWithOptions:reason:usingBlock:
+
+In response to creating an activity, the system disables some or all
+of the heuristics so your application can finish quickly while still
+providing responsive behavior if the user needs it.
+
+You use activities when your application performs a long-running
+operation. If the activity can take different amounts of time (for
+example, calculating the next move in a chess game), it should use
+this API to ensure correct behavior when the amount of data or the
+capabilities of the user’s computer varies. Activities fall into two
+major categories:
+
++ User-initiated activities are explicitly started by the
+  user. Examples include exporting or downloading a user-specified
+  file.
++ Background activities perform the normal operations of your
+  application and aren’t explicitly started by the user. Examples
+  include autosaving, indexing, and automatic downloading of files.
+
+In addition, if your application requires high priority input/output
+(I/O), you can include the NSActivityLatencyCritical flag (using a
+bitwise OR). You should only use this flag for activities like audio
+or video recording that require high priority I/O.
+
+If your activity takes place synchronously inside an event callback on
+the main thread, you don’t need to use this API.
+
+Be aware that failing to end these activities for an extended period
+of time can have significant negative impacts on the performance of
+your user’s computer, so be sure to use only the minimum amount of
+time required. User preferences may override your application’s
+request.
+
+You can also use this API to control automatic termination or sudden
+termination (see Support Sudden Termination). For example, the
+following code brackets the work to protect it from sudden
+termination:
+
+    (let ((activity (begin-activity (ns-process-info)
+                                    :options :automatic-termination-disabled
+                                    :reason  \"Good Reason\")))
+      (end-activity activity))
+
+The above example is equivalent to the following code, which uses the
+disableAutomaticTermination: method:
+
+    (disable-automatic-termination (ns-process-info) \"Good Reason\")
+    (enable-automatic-termination  (ns-process-info) \"Good Reason\")
+
+Because this API returns an object, it may be easier to pair begins
+and ends than when using the automatic termination API. If your app
+deallocates the object before the endActivity: call, the activity ends
+automatically.
+
+This API also provides a mechanism to disable system-wide idle sleep
+and display idle sleep. These can have a large impact on the user
+experience, so be careful to end activities that disable sleep
+(including NSActivityUserInitiated).
+
+Support Sudden Termination
+macOS 10.6 and later includes a mechanism that allows the system to
+log out or shut down more quickly by, whenever possible, killing
+applications instead of requesting that they quit themselves.
+
+Your application can enable this capability on a global basis and then
+manually override its availability during actions that could cause
+data corruption or a poor user experience by allowing sudden
+termination.
+
+Alternatively, your application can manually enable and disable this
+functionality. Creating a process assigns a counter that indicates if
+the process is safe to terminate. You decrement and increment the
+counter using the methods enableSuddenTermination and
+disableSuddenTermination. A value of 0 enables the system to terminate
+the process without first sending a notification or event.
+
+Your application can support sudden termination upon launch by adding
+a key to the application’s Info.plist file. If the
+NSSupportsSuddenTermination key exists in the Info.plist file and has
+a value of true, it’s the equivalent of calling
+enableSuddenTermination during your application launch. This allows
+the system to terminate the process immediately. You can still
+override this behavior by invoking disableSuddenTermination.
+
+Typically, you disable sudden termination whenever your app defers
+work that the app must complete before it terminates. If, for example,
+your app defers writing data to disk and enables sudden termination,
+you should bracket the sensitive operations with a call to
+disableSuddenTermination, perform the necessary operations, and then
+send a balancing enableSuddenTermination message.
+
+In agents or daemon executables that don’t depend on AppKit, you can
+manually invoke enableSuddenTermination right away. You can then use
+the enable and disable methods whenever the process has work it must
+do before it terminates.
+
+Some AppKit functionality automatically disables sudden termination on
+a temporary basis to ensure data integrity.
+
++ NSUserDefaults temporarily disables sudden termination to prevent
+  the process from terminating between the time at which it sets the
+  default and the time at which it writes the preferences file —
+  including that default — to disk.
++ NSDocument temporarily disables sudden termination to prevent the
+  process from terminating between the time at which the user has
+  made a change to a document and the time at which NSDocument
+  writes the user’s change to disk.
+
+Tip
+You can determine the value of the sudden termination using the
+following LLDB command.
+
+    (invoke (ns-process-info) \"_suddenTerminationDisablingCount\")
+
+Don’t attempt to invoke or override suddenTerminationDisablingCount (a
+private method) in your application. It’s there for this debugging
+purpose and may disappear at any time.  Monitor Thermal State to
+Adjust App Performance
+
+Thermal state indicates the level of heat generated by logic
+components as they run apps. As the thermal state increases, the
+system decreases heat by reducing the speed of the
+processors. Optimize your app’s performance by monitoring the thermal
+state and reducing system usage as the thermal state increases. Query
+the current state with thermalState to determine if your app needs to
+reduce system usage. You can register the
+NSProcessInfoThermalStateDidChangeNotification for notifications of a
+change in thermal state. For recommended actions, see
+NSProcessInfoThermalState.
+
 see https://developer.apple.com/documentation/foundation/processinfo?language=objc"))
+
+(defparameter *ns-process-info* nil
+  "The process information agent for the process.")
+
+(defun ns-process-info ()
+  "Returns the process information agent for the process.
+
+An NSProcessInfo object is created the first time this method is
+invoked, and that same object is returned on each subsequent
+invocation.
+
+see https://developer.apple.com/documentation/foundation/processinfo/processinfo?language=objc"
+  (or *ns-process-info*
+      (setf *ns-process-info* (invoke 'ns-process-info "processInfo"))))
+
+(define-coca-init :pre (setf *ns-process-info* nil))
 
 ;;; Threads and Locking
 

@@ -222,6 +222,9 @@ This is equal to generating below C code:
                                            null))
                            (:struct   `(or ,(objc-encoding-lisp-type type)
                                            simple-vector))
+                           (:sel      '(or sel
+                                           null
+                                           foreign-pointer))
                            (otherwise (objc-encoding-lisp-type  type)))
             :collect arg :into args
             :collect sym :into syms
