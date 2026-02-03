@@ -494,6 +494,8 @@ Parameters:
                                                                    :writers  writers
                                                                    :initargs initargs)))
                                     :name ,name)))
+         ;; TODO: for those not interned as ObjC slots,
+         ;; maybe show warning or define wrapper method instead
          (direct (loop :for slotd :in (c2mop:class-direct-slots class)
                        :for objc-p := (eq (c2mop:slot-definition-allocation slotd) :objc)
                        :for update := (and objc-p
@@ -502,17 +504,56 @@ Parameters:
                                                   :test #'string=))
                        :if update
                          :collect
-                         (destructuring-bind (name &key
-                                                     before after accessor
-                                                     (reader accessor)
-                                                     (writer accessor)
-                                                     (encoding (objc-property-encoding slotd))
-                                                     (getter   (objc-property-reader   slotd))
-                                                     (setter   (objc-property-writer   slotd))
-                                                     documentation
-                                              &allow-other-keys)
-                             update
-                           (declare (ignore name))
+                         (multiple-value-bind
+                               (before after readers writers getter setter encoding doc)
+                             (loop :with before   := nil
+                                   :with after    := nil
+                                   :with getter   := nil
+                                   :with setter   := nil
+                                   :with readers  := ()
+                                   :with writers  := ()
+                                   :with encoding := nil
+                                   :with doc      := nil
+                                   :for (key val) :on (cdr update) :by #'cddr
+                                   :do (ecase key
+                                         (:before
+                                          (if before
+                                              (error "Duplicated :before within ~S" update)
+                                              (setf before val)))
+                                         (:after
+                                          (if after
+                                              (error "Duplicated :after within ~S" update)
+                                              (setf after val)))
+                                         (:getter
+                                          (if getter
+                                              (error "Duplicated :getter within ~S" update)
+                                              (setf getter val)))
+                                         (:setter
+                                          (if setter
+                                              (error "Duplicated :setter within ~S" update)
+                                              (setf setter val)))
+                                         (:writer
+                                          (pushnew `(setf ,val) writers :key #'second))
+                                         (:reader
+                                          (pushnew val readers))
+                                         (:accessor
+                                          (pushnew `(setf ,val) writers :key #'second)
+                                          (pushnew val readers))
+                                         (:documentation
+                                          (if doc
+                                              (error "Duplicated :documentation within ~S" update)
+                                              (setf doc val)))
+                                         (:encoding
+                                          (if encoding
+                                              (error "Duplicated :encoding within ~S" update )
+                                              (setf encoding val))))
+                                   :finally (return
+                                              (values before  after
+                                                      readers writers
+                                                      (or getter   (objc-property-reader   slotd))
+                                                      (or setter   (objc-property-writer   slotd))
+                                                      (or encoding (objc-property-encoding slotd))
+                                                      doc)))
                            `(:name                       ,(c2mop:slot-definition-name slotd)
                              :objc-property              ,(objc-property-name   slotd)
                              :objc-property-encoding     ,encoding
@@ -521,12 +562,12 @@ Parameters:
                              :objc-property-before-write ,(or before #'identity)
                              :objc-property-after-read   ,(or after  #'identity)
                              :initargs                   ()
-                             :readers                    ,(when reader `(,reader))
-                             :writers                    ,(when writer `((setf ,writer)))
+                             :readers                    ,readers
+                             :writers                    ,writers
                              :allocation                 :objc
-                             :documentation              ,documentation))
+                             :documentation              ,doc))
                        :else :if (objc-property-slot-p slotd)
-   :collect (%normalize-objc-class-properties slotd)))
+                               :collect (%normalize-objc-class-properties slotd)))
          (dslots     (append direct slotd)))
     (setf (find-class name)
           (c2mop:ensure-finalized
