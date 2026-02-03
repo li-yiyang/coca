@@ -187,6 +187,15 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:image
    #:image-scaling
    #:menu
+   #:ns-combo-box
+   #:has-vertical-scroller-p
+   #:intercell-spacing
+   #:borderedp
+   #:item-height
+   #:number-of-visible-items
+   #:index-of-selected-item
+   #:add-item
+   #:select-item-at-index
    #:ns-image-view
    #:ns-level-indicator
    #:ns-pop-up-button
@@ -1772,6 +1781,25 @@ see https://developer.apple.com/documentation/appkit/nscombobutton?language=objc
                    target
                    action
                  &allow-other-keys)
+  "Initialize `ns-combo-button'.
+
+Parameters:
++ TITLE:
+  localized string that the button displays.
++ IMAGE (`ns-image')
+  image that the button displays.
++ IMAGE-SCALING (`ns-image-scaling')
+  scaling behavior to apply to the button’s image.
++ MENU
++ STYLE (`ns-combo-button-style')
+  appearance setting that determines how the button presents its menu.
++ FRAME (`ns-rect')
+  bouding frame of COMBO
++ TARGET
+  target of COMBO action to send
++ ACTION
+  action of COMBO, triggered when clicking button left
+"
   (declare (type ns-image-scaling image-scaling)
            (type ns-combo-button-style style)
            (type ns-rect frame))
@@ -1784,6 +1812,208 @@ see https://developer.apple.com/documentation/appkit/nscombobutton?language=objc
     (setf (target combo) target
           (action combo) action
           (menu   combo) menu)))
+
+(define-objc-class "NSComboBox" ()
+  (;; Setting Display Attributes
+   ("hasVerticalScroller"
+    :accessor has-vertical-scroller-p
+    :before   as-boolean
+    :documentation
+    "Whether the combo box has a vertical scroller.
+
+When the value of this property is true, the combo box displays a
+vertical scroller even when the pop-up list contains few enough items
+that a scroller is not needed. The default value of this property is
+true.
+
+If the value of this property is false and the combo box has more list
+items (either in its internal item list or from its data source) than
+are allowed by numberOfVisibleItems, only a subset of items are
+displayed. The NSComboBox class’ scroll... methods can be used to
+position this subset within the pop-up list.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/hasverticalscroller?language=objc")
+   ("intercellSpacing"
+    :accessor intercell-spacing
+    :documentation
+    "The horizontal and vertical spacing between cells in the pop-up list.
+
+Spacing values are measured in points.
+The default spacing is (3.0, 2.0).
+
+see https://developer.apple.com/documentation/appkit/nscombobox/intercellspacing?language=objc")
+   ("buttonBordered"
+    :accessor borderedp
+    :before   as-boolean
+    :documentation
+    "Whether the combo box displays a border.
+
+When the value of this property is true, the combo box displays a
+border. For example, when displaying a combo box in a table, it is
+often useful to display the combo box without a border. The default
+value of this property is true.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/isbuttonbordered?language=objc")
+   ("itemHeight"
+    :accessor item-height
+    :documentation
+    "The height of each item in the pop-up list.
+
+The height of items is measured in points.
+The default item height is 16.0 points.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/itemheight?language=objc")
+   ("numberOfVisibleItems"
+    :accessor number-of-visible-items
+    :documentation
+    "The maximum number of visible items to display in the pop-up list
+at one time.
+
+Use this property to configure how many items can be displayed at the
+same time. If the combo box has a scroller, the user can scroll to
+view additional items beyond the visible range.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/numberofvisibleitems?language=objc")
+   ;; Configuring the Combo Box Items
+   ("objectValues"
+    :reader items
+    :after  ns-array-to-list
+    :documentation
+    "A list of the items from the combo box’s internal list.
+
+The array contains the objects you added or inserted into the combo
+box, so the type of each object can vary. Accessing this property logs
+a warning if the usesDataSource property is true.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/objectvalues?language=objc")
+   ("numberOfItems"
+    :reader len
+    :documentation
+    "The total number of items in the pop-up list.
+see https://developer.apple.com/documentation/appkit/nscombobox/numberofitems?language=objc")
+   ;; Manipulating the Selection
+   ("indexOfSelectedItem"
+    :reader index-of-selected-item
+    :documentation
+    "The index of the last item selected from the pop-up list.
+
+The value of this property is -1 if no item is selected; otherwise, it
+is the index of the selected item. Nothing is selected in a newly
+initialized combo box.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/indexofselecteditem?language=objc"))
+  (:documentation
+   "A view that displays a list of values in a pop-up menu where the
+user selects a value or types in a custom value.
+
+A combo box combines the behavior of an NSTextField object with an
+NSPopUpButton object. A combo box displays a list of values from a
+pop-up list, but also provides a means for users to type in custom
+values. For example, here’s a combo box in its initial state.
+
+Clicking in the text portion of the control allows the user to edit
+the current value. When the user clicks the down arrow at the right
+side of the text field, the pop-up list appears.
+
+The NSComboBox class uses NSComboBoxCell to implement its user
+interface.
+
+Also see the NSComboBoxDataSource protocol, which declares the methods
+that NSComboBox uses to access the contents of its data source object.
+
+see https://developer.apple.com/documentation/appkit/nscombobox?language=objc"))
+
+(defmethod delegate ((combo ns-combo-box))
+  (invoke combo "delegate"))
+
+(defmethod (setf delegate) (delegate (combo ns-combo-box))
+  (invoke combo "setDelegate:" delegate))
+
+(defmethod init ((combo ns-combo-box)
+                 &key
+                   frame
+                   (has-vertical-scroller-p nil            vertical?)
+                   (intercell-spacing       #(3.0d0 2.0d0) spacing?)
+                   (borderedp               nil            bordered?)
+                   (item-height             16.0d0         height?)
+                   (number-of-visible-items 3              visible?)
+                   (delegate :self)
+                   items
+                   (action nil action?)
+                   (target nil target?)
+                 &allow-other-keys)
+  "Initialize instance of `ns-combo-box' of COMBO.
+
+Parameters:
++ HAS-VERTICAL-SCROLLER-P
+  Whether COMBO has a vertical scroller.
++ INTERCELL-SPACING (`ns-size')
+  horizontal and vertical spacing between cells in the pop-up list.
++ BORDEREDP
+  whether COMBO displays a border
++ ITEM-HEIGHT
+  height of each item in the pop-up list in points
++ NUMBER-OF-VISIBLE-ITEMS
+  maximum number of visible items to display in the pop-up list
+  at one time.
++ DELEGATE
+  the COMBO's delegate
++ ITEMS
+  a list of items to insert into COMBO
++ ACTION
+  actions triggered when user confirms (enter, select),
+  or loss focus
++ TARGET
+  target to send actions
+"
+  (let ((combo (invoke combo "initWithFrame:" frame)))
+    (when vertical? (setf (has-vertical-scroller-p combo)
+                          has-vertical-scroller-p))
+    (when spacing?  (setf (intercell-spacing       combo)
+                          intercell-spacing))
+    (when bordered? (setf (borderedp   combo) borderedp))
+    (when height?   (setf (item-height combo) item-height))
+    (when visible?  (setf (number-of-visible-items combo)
+                          number-of-visible-items))
+    (setf (delegate combo) (if (eq delegate :self) combo delegate))
+    (dolist (item items)
+      (add-item combo item))
+    (when action? (setf (action combo) action))
+    (when target? (setf (target combo) target))))
+
+(defmethod add-item ((combo ns-combo-box) item &key (index -1 index?))
+  "Add ITEM to COMBO.
+
+Parameters:
++ INDEX:
+  index of where to insert,
+  if not given, by default invokes addItemWithObjectValue:
+  if given, invokes insertItemWithObjectValue:atIndex:
+"
+  (if index?
+      (invoke combo "insertItemWithObjectValue:atIndex:" item index)
+      (invoke combo "addItemWithObjectValue:" item)))
+
+(defmethod add-item ((combo ns-combo-box) (string string) &rest keys &key)
+  (apply #'add-item combo (string-to-ns-string string) keys))
+
+(defmethod select-item-at-index ((combo ns-combo-box) (index integer))
+  "Selects the pop-up list row at the given index.
+
+Parameter:
++ The index of the item to select in the pop-up list.
+
+Posts an NSComboBoxSelectionDidChangeNotification to the default
+notification center if the selection does in fact change. Note that
+this method does not alter the contents of the combo box’s text
+field—see Setting the Combo Box’s Value for more information.
+
+see https://developer.apple.com/documentation/appkit/nscombobox/selectitem(at:)?language=objc"
+  (invoke combo "selectItemAtIndex:" index))
+
+(defmethod (setf index-of-selected-item) (index (combo ns-combo-box))
+  "Invokes `select-item-at-index'. "
+  (invoke combo "selectItemAtIndex:" index))
 
 (define-objc-class "NSImageView" ()
   ()

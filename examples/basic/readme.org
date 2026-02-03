@@ -1263,10 +1263,74 @@ abcdefghijklmnopqrstuvwxyz
 
 ** ComboBox
 #+begin_src lisp
+<<action-table-mixin>>
+
+(define-objc-class ("ComboWindow" combo-window)
+    (ns-window action-table-mixin)
+  ())
+
+(defmethod window-will-close ((window combo-window) sender)
+  (terminate (ns-app) sender))
+
+(defmethod init ((window combo-window) &rest keys &key)
+  (invoke-super (window keys)
+    (:frame (make-ns-rect :x 200 :y 200 :w 300 :h 300))
+    (:title "ComboBox example"))
+  (add-subview-with-actions* window
+    ((@ combo1 ns-combo-box
+               :frame (make-ns-rect :x 10 :y 260 :w 121 :h 26)
+               :items '("Combo 1" "Combo 2" "Combo 3"))
+     (select-item-at-index combo2 (index-of-selected-item combo1)))
+    ((@ combo2 ns-combo-box
+               :frame (make-ns-rect :x 10 :y 220 :w 121 :h 26)
+               :items '("Combo 3" "Combo 2" "Combo 1"))
+     (select-item-at-index combo1 (index-of-selected-item combo2)))))
 #+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: ComboBox example
+[[file:./combo-box.gif]]
 
 *Reference*
 + [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/ComboBox/ComboBox.m][ComboBox.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ [[https://developer.apple.com/documentation/appkit/nscombobox?language=objc][NSComboBox]] is like the [[https://developer.apple.com/documentation/appkit/nstextfield?language=objc][NSTextField]],
+  so it's action is only triggered when user hits enter
++ other possible =init= parameters could be seen
+  in the documentation
+
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (find-method #'init () (list (find-class 'ns-combo-box))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Initialize instance of `ns-combo-box' of COMBO.
+
+  Parameters:
+  + HAS-VERTICAL-SCROLLER-P
+    Whether COMBO has a vertical scroller.
+  + INTERCELL-SPACING (`ns-size')
+    horizontal and vertical spacing between cells in the pop-up list.
+  + BORDEREDP
+    whether COMBO displays a border
+  + ITEM-HEIGHT
+    height of each item in the pop-up list in points
+  + NUMBER-OF-VISIBLE-ITEMS
+    maximum number of visible items to display in the pop-up list
+    at one time.
+  + DELEGATE
+    the COMBO's delegate
+  + ITEMS
+    a list of items to insert into COMBO
+  + ACTION
+    actions triggered when user confirms (enter, select),
+    or loss focus
+  + TARGET
+    target to send actions
+  #+end_example
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.
