@@ -23,8 +23,8 @@
 - [-] Controls
   - [X] Button
   - [X] CheckBox
-  - [ ] ComboBox
-  - [ ] Label
+  - [X] ComboBox
+  - [X] Label
   - [ ] LevelIndicator
   - [ ] ListBox
 - [ ] Components
@@ -1331,6 +1331,37 @@ abcdefghijklmnopqrstuvwxyz
   + TARGET
     target to send actions
   #+end_example
+
+** Label
+#+begin_src lisp
+(let ((app (ns-app))
+      (win (alloc-init 'ns-window
+                       :frame (make-ns-rect :x 100 :y 100
+                                            :w 300 :h 300))))
+  (add-subview win (alloc-init 'ns-text-field
+                               :frame (make-ns-rect :x 100 :y 270
+                                                    :w 100 :h 20)
+                               :text              "label1"
+                               :bezeledp           nil
+                               :draws-background-p nil
+                               :editablep          nil
+                               :selectablep        nil))
+  (setf (activation-policy app) :regular)
+  (run app))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Button example
+[[file:./label.png]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/Label/Label.m][Label.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ here we use a different approch to create the NSWindow --
+  not creating custom classes, but just modify the =win= (=ns-window=)
+  directly after we created it
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.
