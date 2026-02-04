@@ -45,12 +45,19 @@ Parameters:
        ',name)))
 
 (trivial-indent:define-indentation define-objc-struct (4 &body))
-(defmacro define-objc-struct ((lisp-name objc-name) &body slot-definitions)
+(defmacro define-objc-struct ((lisp-name objc-name) &body slot-definitions
+                              &aux (docstring
+                                    (let ((doc (pop slot-definitions)))
+                                      (cond ((stringp doc) doc)
+                                            (t (push doc slot-definitions)
+                                               (format nil
+                                                       "ObjC struct ~A"
+                                                       objc-name))))))
   "Define ObjC struct.
 
 Example:
 
-    ;; the
+    ;; plain
     (define-objc-struct (ns-point \"CGPoint\")
       (x :double)
       (y :double))
@@ -65,11 +72,13 @@ Example:
 Syntax:
 
     (define-objc-struct (LISP-NAME OBJC-NAME)
-      { (SLOT OBJC-ENCODING &key TYPE) }*)
+      [DOCSTRING]
+      { (SLOT OBJC-ENCODING &key TYPE DOCUMENTATION) }*)
 
 Parameters:
 + LISP-NAME: symbol of lisp struct
 + OBJC-NAME: string of ObjC struct
++ DOCSTRING: documentation string of struct type
 + SLOT: symbol of slot
 + OBJC-ENCODING: ObjC encoding of struct slot
 + TYPE: lisp type of slot,
@@ -83,11 +92,12 @@ This will define:
   the struct in Coca.ObjC could be replaced by `simple-vector',
   which means calling with (coca:make-ns-rect ...) is equal to
   calling with #(300d0 300d0 400d0 400d0).
-"
++ lisp type of LISP-NAME* as alias of (or LISP-NAME simple-vector),
+  use that when declaring argument types"
   (declare (type symbol lisp-name)
            (type string objc-name))
-  (multiple-value-bind (slots encodings inits types coerce-p)
-      (loop :for (slot objc-encoding &key type) :in slot-definitions
+  (multiple-value-bind (slots encodings inits types coerce-p documentations)
+      (loop :for (slot objc-encoding &key type documentation) :in slot-definitions
             :for encoding := (as-objc-encoding objc-encoding)
             :for coerce   := (and type t)
             :for stype    := (or  type (objc-encoding-lisp-type encoding))
@@ -96,13 +106,31 @@ This will define:
             :collect (objc-encoding-init-value encoding) :into inits
             :collect stype                               :into types
             :collect coerce                              :into coerce-p
-            :finally (return (values slots encodings inits types coerce-p)))
+            :collect documentation                       :into documentations
+            :finally (return
+                       (values slots encodings inits types coerce-p documentations)))
     `(progn
        (defstruct ,lisp-name
          ,@(loop :for slot :in slots
                  :for type :in types
                  :for init :in inits
                  :collect (list slot init :type type)))
+       (setf (documentation ',lisp-name 'type)
+             ,(with-output-to-string (*standard-output*)
+                (write-line docstring)
+                (write-line "Struct Slots:")
+                (loop :for slot :in slots
+                      :for type :in types
+                      :for doc  :in documentations
+                      :if doc
+                        :do (format t "+ ~S (~S)~%  ~A~%" slot type doc)
+                      :else
+                        :do (format t "+ ~S (~S)~%"       slot type))))
+       (deftype ,(intern (str:concat (symbol-name lisp-name) "*")
+                         (symbol-package lisp-name))
+           ()
+         ,(format nil "Alias of type (or ~S simple-vector). " lisp-name)
+         '(or ,lisp-name simple-vector))
        (defcstruct ,lisp-name
          ,@(loop :for slot :in slots
                  :for enc  :in encodings

@@ -63,6 +63,7 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-url-query-item
    #:ns-uuid
    #:ns-rect
+   #:ns-rect*
    #:ns-rect-p
    #:make-ns-rect
    #:ns-rect-x
@@ -70,11 +71,13 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-rect-w
    #:ns-rect-h
    #:ns-point
+   #:ns-point*
    #:ns-point-p
    #:make-ns-point
    #:ns-point-x
    #:ns-point-y
    #:ns-size
+   #:ns-size*
    #:ns-size-p
    #:make-ns-size
    #:ns-size-h
@@ -1203,7 +1206,6 @@ see https://developer.apple.com/documentation/foundation/nsuuid?language=objc"))
 (define-objc-struct (cps-process-serial-number "CPSProcessSerNum")
   (hi :unsigned-int)
   (lo :unsigned-int))
-
 
 (define-objc-class "NSAffineTransform" ()
   ()
