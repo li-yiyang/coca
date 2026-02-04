@@ -1007,6 +1007,75 @@ abcdefghijklmnopqrstuvwxyz
                              ...))))
   #+end_example
 
+* Containers
+** NSBox
+#+begin_src lisp
+(let ((app (ns-app))
+      (win (alloc-init 'ns-window
+                       :frame #(100 100 640 480)
+                       :title "NSBox example")))
+  (add-subview win (alloc-init 'ns-box
+                               :frame #(10 10 305 460)
+                               :title "GroupBox 1"))
+  (add-subview win (alloc-init 'ns-box
+                               :frame #(325 10 305 460)
+                               :title ""))
+  (setf (activation-policy app) :regular)
+  (run app))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: NSBox example
+[[file:./ns-box.png]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Containers/GroupBox/GroupBox.m][GroupBox.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ here we use a simple-vector =#(100 100 640 480)= to specify the
+  frame (=ns-rect=), which is a trivial shortcut to make code
+  easier to write (just lazy)
++ [[https://developer.apple.com/documentation/appkit/nsbox?language=objc][NSBox]] draws the box as a container
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (find-method #'init () (list (find-class 'ns-box))) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Initialize `ns-box' BOX.
+
+  Parameters:
+  + FRAME:
+    size and position of the box
+  + BOX-TYPE (`ns-box-type')
+    The BOX's box type.
+  + TRANSPARENTP
+    Whether BOX is transparent.
+  + TITLE
+    The title of BOX
+  + TITLE-FONT
+    The font of TITLE
+  + TITLE-POSITION (`ns-title-position')
+    The position of TITLE
+  + BORDER-COLOR
+    The color of the receiver’s border when the receiver is a custom
+    box with a simple line border.
+  + BORDER-WIDTH
+    The width of the receiver’s border when the receiver is a custom
+    box with a simple line border.
+  + CORNER-RADIUS
+    The radius of the receiver’s corners when the receiver is a
+    custom box with a simple line border.
+
+  Note: when setting BORDER-COLOR, BORDER-WIDTH, CORNER-RADIUS,
+  the BOX-TYPE would be updated as :custom if necessary.
+  #+end_example
+
+  #+html: </details>
+
 * Controls
 ** Button
 #+begin_src lisp
@@ -1119,12 +1188,17 @@ abcdefghijklmnopqrstuvwxyz
       (add-subview-with-actions* VIEW
         ((CLASS . ALLOC-INIT-PLIST) . ACTION-BODY)
         ((@ NAME CLASS . ALLOC-INIT-PLIST) . ACTION-BODY)
-        ...)
+        ...
+        [:body   . BODY]
+        [:before . BEFORE-BODY]
+        [:after  . AFTER-BODY])
 
   + VIEW: the super view to add subviews
   + CLASS: class of object to `alloc-init'
   + ALLOC-INIT-PLIST: properties used for `alloc-init'
   + ACTION-BODY: action codes
+  + BEFORE-BODY: codes before adding subview
+  + BODY, AFTER-BODY: codes after adding subview
 
   Example:
 
@@ -1132,30 +1206,53 @@ abcdefghijklmnopqrstuvwxyz
         ((ns-button :frame (make-ns-rect ...) ...)
          (format t \"Clicked\"))
         ((@ button1 ns-button :frame (make-ns-rect ..) ...)
-         (format t \"State: ~S\" (state button))))
+         (format t \"State: ~S\" (state button)))
+        :body (setf (value button1) \"Haha\"))
   "
     (let ((actions* (gensym "ACTIONS")))
-      `(with-slots ((,actions* actions)) ,view
-         ,(loop :for (object . body) :in subviews
-                :for (class . plist) := (coca.objc::listfy object)
-                :for name := (if (eq class '@)
-                                 (let ((name (pop plist)))
-                                   (setf class (pop plist))
-                                   name)
-                                 (gensym "OBJECT"))
-                :for fn   := (if (and (= 1 (length body))
-                                      (functionp (first body)))
-                                 (first body)
-                                 `(lambda () ,@body))
-                :do (setf (getf plist :action) '#'on-action
-                          (getf plist :target) view)
-                :collect `(,name (autorelease (alloc-init ',class ,@plist)))
-                  :into bindings
-                :collect `(setf (gethash ,name ,actions*) ,fn)
-                  :into actions
-                :collect `(add-subview ,view ,name)
-                  :into addsubs
-                :finally (return `(let ,bindings ,@actions ,@addsubs))))))
+      (multiple-value-bind (subviews before after)
+          (loop :for (subview rest) :on subviews
+                :while (listp subview)
+                :collect subview :into subviews*
+                :finally (return
+                           (loop :with before := ()
+                                 :with after  := ()
+                                 :with state  := (car rest)
+                                 :for  expr  :in (cdr rest)
+                                 :do (if (keywordp expr)
+                                         (setf state expr)
+                                         (ecase state
+                                           (:before        (push expr before))
+                                           ((:body :after) (push expr after))))
+                                 :finally (return (values subviews*
+                                                          (reverse before)
+                                                          (reverse after))))))
+        `(with-slots ((,actions* actions)) ,view
+           ,(loop :for (object . body) :in subviews
+                  :for (class . plist) := (coca.objc::listfy object)
+                  :for name := (if (eq class '@)
+                                   (let ((name (pop plist)))
+                                     (setf class (pop plist))
+                                     name)
+                                   (gensym "OBJECT"))
+                  :for fn   := (if (and (= 1 (length body))
+                                        (functionp (first body)))
+                                   (first body)
+                                   `(lambda () ,@body))
+                  :do (setf (getf plist :action) '#'on-action
+                            (getf plist :target) view)
+                  :collect `(,name (autorelease (alloc-init ',class ,@plist)))
+                    :into bindings
+                  :collect `(setf (gethash ,name ,actions*) ,fn)
+                    :into actions
+                  :collect `(add-subview ,view ,name)
+                    :into addsubs
+                  :finally (return
+                             `(let ,bindings
+                                ,@actions
+                                ,@before
+                                ,@addsubs
+                                ,@after)))))))
   #+end_src
 
 ** CheckBox

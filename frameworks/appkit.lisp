@@ -210,7 +210,25 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-glass-effect-container-view
    #:ns-background-extension-view
    #:ns-visual-effect-view
+   #:ns-box-type
+   #:ns-box-type-p
+   #:as-ns-box-type
+   #:decode-ns-box-type
+   #:ns-title-position
+   #:ns-title-position-p
+   #:as-ns-title-position
+   #:decode-ns-title-position
    #:ns-box
+   #:border-rect
+   #:box-type
+   #:transparentp
+   #:title
+   #:title-font
+   #:title-position
+   #:border-color
+   #:border-width
+   #:fill-color
+   #:corner-radius
 
    ;; View Management
    #:ns-window-controller
@@ -1651,7 +1669,7 @@ Parameters:
 Dev Note:
 at least one of TITLE and IMAGE should be given.
 "
-  (declare (type ns-rect frame)
+  (declare (type ns-rect* frame)
            (type (or null standard-objc-object) target)
            (type ns-control-state-value         state))
   (unless (or title? image?)
@@ -1802,7 +1820,7 @@ Parameters:
 "
   (declare (type ns-image-scaling image-scaling)
            (type ns-combo-button-style style)
-           (type ns-rect frame))
+           (type ns-rect* frame))
   (let ((combo (invoke combo "initWithFrame:" frame)))
     (when title? (setf (title combo) title))
     (when style? (setf (style combo) style))
@@ -2105,11 +2123,234 @@ see https://developer.apple.com/documentation/appkit/nsmatrix?language=objc"))
    "A view that adds translucency and vibrancy effects to the views in your interface.
 see https://developer.apple.com/documentation/appkit/nsvisualeffectview?language=objc"))
 
+(define-objc-enum ns-box-type
+  "These constants and data type identifies box types, which, in
+conjunction with a box’s border type, define the appearance of the
+box.
+
+see https://developer.apple.com/documentation/appkit/nsbox/boxtype-swift.enum?language=objc"
+  (:primary   0 "Specifies the primary box appearance. "
+               "This is the default box type.")
+  (:separator 2 "Specifies that the box is a separator.")
+  (:custom    4 "Specifies that the appearance of the box "
+              "is determined entirely by the by box-configuration"
+              "methods, without automatically applying Apple human"
+              "interface guidelines. See Customizing for details."))
+
+(define-objc-enum ns-title-position
+  "Specify the location of a box’s title with respect to its border.
+see https://developer.apple.com/documentation/appkit/nsbox/titleposition-swift.enum?language=objc"
+  (:no-title     0 "The box has no title.")
+  (:above-top    1 "Title positioned above the box’s top border.")
+  (:at-top       2 "Title positioned within the box’s top border.")
+  (:below-top    3 "Title positioned below the box’s top border.")
+  (:above-bottom 4 "Title positioned above the box’s bottom border.")
+  (:at-bottom    5 "Title positioned within the box’s bottom border.")
+  (:below-bottom 6 "Title positioned below the box’s bottom border."))
+
 (define-objc-class "NSBox" ()
-  ()
+  (("borderRect"
+    :reader border-rect
+    :documentation
+    "The rectangle in which the receiver’s border is drawn.
+see https://developer.apple.com/documentation/appkit/nsbox/borderrect?language=objc")
+   ("boxType"
+    :accessor box-type
+    :before   as-ns-box-type
+    :after    decode-ns-box-type
+    :documentation
+    "The receiver’s box type.
+
+A constant describing the type of box.
+These constants are described in `ns-box-type'.
+By default, the box type of an NSBox is `:primary'.
+
+see https://developer.apple.com/documentation/appkit/nsbox/boxtype-swift.property?language=objc")
+   ("transparent"
+    :accessor transparentp
+    :before   as-boolean
+    :documentation
+    "Whether the receiver is transparent.
+see https://developer.apple.com/documentation/appkit/nsbox/istransparent?language=objc")
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :after    ns-string-to-string
+    :documentation
+    "The receiver’s title.
+
+The title of the NSBox.
+By default, a box’s title is “Title.”
+If the size of the new title is different from that of the old title,
+the content view is resized to absorb the difference.
+
+see https://developer.apple.com/documentation/appkit/nsbox/title?language=objc")
+   ("titleFont"
+    :accessor title-font
+    :before   as-ns-font
+    :documentation
+    "The font object used to draw the receiver’s title.
+see https://developer.apple.com/documentation/appkit/nsbox?language=objc")
+   ("titlePosition"
+    :accessor title-position
+    :before   as-ns-title-position
+    :after    decode-ns-title-position
+    :documentation
+    "A constant representing the title position.
+
+A constant representing the position of the receiver’s title.
+See `ns-title-position' for possible values.
+If the new title position changes the size of the box’s border area,
+the content view is resized to absorb the difference, and the box is
+marked as needing redisplay.
+
+see https://developer.apple.com/documentation/appkit/nsbox/titleposition-swift.property?language=objc")
+   ("borderColor"
+    :accessor border-color
+    :before   as-ns-color
+    :documentation
+    "The color of the receiver’s border when the receiver is a custom
+box with a simple line border.
+
+The receiver’s border color.
+It must be a custom box—that is, it has a type of NSBoxCustom - and it
+must have a border style of NSLineBorder.
+
+Special Considerations
+Functional only when the receiver’s box type (boxType) is NSBoxCustom
+and its border type (borderType) is NSLineBorder.
+
+see https://developer.apple.com/documentation/appkit/nsbox/bordercolor?language=objc")
+   ("borderWidth"
+    :accessor border-width
+    :documentation
+    "The width of the receiver’s border when the receiver is a custom
+box with a simple line border.
+see https://developer.apple.com/documentation/appkit/nsbox/borderwidth?language=objc")
+   ("fillColor"
+    :accessor fill-color
+    :before   as-ns-color
+    :documentation
+    "The color of the receiver’s background when the receiver is a
+custom box with a simple line border.
+see https://developer.apple.com/documentation/appkit/nsbox/fillcolor?language=objc"))
   (:documentation
    "A stylized rectangular box with an optional title.
+
+Use box objects to visually group the contents of your window. For
+example, you might use boxes to group related views. Use an NSBox
+object to configure the appearance of the box.
+
+Subclassing Notes
+An NSBox object is a view that draws a line around its rectangular
+bounds and that displays a title on or near the line (or might display
+neither line nor title). You can adjust the style of the line (bezel,
+grooved, or plain) as well as the placement and font of the title. An
+NSBox also has a content view to which other views can be added; it
+thus offers a way for an application to group related views. You could
+create a custom subclass of NSBox that alters or augments its
+appearance or that modifies its grouping behavior. For example, you
+might add color to the lines or background, add a new line style, or
+have the views in the group automatically snap to an invisible grid
+when added.
+
+Methods to Override
+You must override the drawRect: method (inherited from NSView) if you
+want to customize the appearance of your NSBox objects. Depending on
+the visual effect you’re trying to achieve, you may have to invoke
+super‘s implementation first. For example, if you are compositing a
+small image in a corner of the box, you would invoke the superclass
+implementation first. If you’re adding a new style of line, you would
+provide a way to store a request for this line type (such as a boolean
+instance variable and related accessor methods). Then, in drawRect:,
+if a request for this line type exists, you would draw the entire view
+yourself (that is, without calling super). Otherwise, you would invoke
+the superclass implementation.
+
+If you wish to change grouping behavior or other behavioral
+characteristics of the NSBox class, consider overriding contentView,
+sizeToFit, or addSubview: (inherited from NSView).
+
+Special Considerations
+If you are drawing the custom NSBox entirely by yourself, and you want
+it to look exactly like the superclass object (except for your
+changes), it may take some effort and time to get the details right.
+
 see https://developer.apple.com/documentation/appkit/nsbox?language=objc"))
+
+(defmethod corner-radius ((box ns-box))
+  "The radius of the receiver’s corners when the receiver is a
+custom box with a simple line border.
+see https://developer.apple.com/documentation/appkit/nsbox/cornerradius?language=objc"
+  (invoke box "cornerRadius"))
+
+(defmethod (setf corner-radius) (radius (box ns-box))
+  (invoke box "setCornerRadius:" radius))
+
+(defmethod init ((box ns-box)
+                 &key
+                   frame
+                   (box-type       :primary  box-type?)
+                   (transparentp   nil       transparent?)
+                   (title          ""        title?)
+                   (title-font     nil       title-font?)
+                   (title-position :no-title title-position?)
+                   (border-color   nil       border-color?)
+                   border-width
+                   corner-radius
+                   (fill-color     nil       fill-color?)
+                 &allow-other-keys)
+  "Initialize `ns-box' BOX.
+
+Parameters:
++ FRAME:
+  size and position of the box
++ BOX-TYPE (`ns-box-type')
+  The BOX's box type.
++ TRANSPARENTP
+  Whether BOX is transparent.
++ TITLE
+  The title of BOX
++ TITLE-FONT
+  The font of TITLE
++ TITLE-POSITION (`ns-title-position')
+  The position of TITLE
++ BORDER-COLOR
+  The color of the receiver’s border when the receiver is a custom
+  box with a simple line border.
++ BORDER-WIDTH
+  The width of the receiver’s border when the receiver is a custom
+  box with a simple line border.
++ CORNER-RADIUS
+  The radius of the receiver’s corners when the receiver is a
+  custom box with a simple line border.
+
+Note: when setting BORDER-COLOR, BORDER-WIDTH, CORNER-RADIUS,
+the BOX-TYPE would be updated as :custom if necessary. "
+  (declare (type ns-rect*          frame)
+           (type ns-box-type       box-type)
+           (type ns-title-position title-position))
+  (invoke box "initWithFrame:" frame)
+  (cond
+    ;; if specifies BOX-TYPE directly, use it
+    (box-type? (setf (box-type box) box-type))
+    ;; if customing border, force as `:custom'
+    ((or border-color?
+         border-width
+         corner-radius)
+     (setf (box-type box) :custom)))
+  (when transparent? (setf (transparentp box) transparentp))
+  (cond (title?
+         (setf (title box) title)
+         (when title-font? (setf (title-font box) title-font)))
+        (t
+         (setf title-position? t
+               title-position  :no-title)))
+  (when title-position? (setf (title-position box) title-position))
+  (when border-color?   (setf (border-color   box) border-color))
+  (when border-width    (setf (border-width   box) border-width))
+  (when corner-radius   (setf (corner-radius  box) corner-radius))
+  (when fill-color?     (setf (fill-color     box) fill-color)))
 
 ;;; UI validation
 
@@ -2784,7 +3025,7 @@ this invokes
 
 see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:)?language=objc
 see https://developer.apple.com/documentation/appkit/nswindow/init(contentrect:stylemask:backing:defer:screen:)?language=objc"
-  (declare (type ns-rect frame)
+  (declare (type ns-rect* frame)
            (type (satisfies ns-window-style-mask-p)  style)
            (type (satisfies ns-backing-store-type-p) backing)
            (type (or null ns-screen)                 screen))
