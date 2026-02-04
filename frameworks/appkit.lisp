@@ -135,6 +135,54 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:action
    #:target
    #:continuousp
+   #:ns-border-type
+   #:ns-border-type-p
+   #:as-ns-border-type
+   #:decode-ns-border-type
+   #:ns-scroller-knob-style
+   #:ns-scroller-knob-style-p
+   #:as-ns-scroller-knob-style
+   #:decode-ns-scroller-knob-style
+   #:ns-scroller-style
+   #:ns-scroller-style-p
+   #:as-ns-scroller-style
+   #:decode-ns-scroller-style
+   #:ns-scroll-view
+   #:content-size
+   #:document-visible-rect
+   #:draws-background-p
+   #:border-type
+   #:document-cursor
+   #:content-view
+   #:document-view
+   #:horizontal-scroller
+   #:vertical-scroller
+   #:has-horizontal-scroller-p
+   #:has-vertical-scroller-p
+   #:auto-hides-scrollers-p
+   #:ruler-view-class
+   #:has-horizontal-ruler-p
+   #:has-vertical-ruler-p
+   #:horizontal-ruler-view
+   #:vertical-ruler-view
+   #:rulers-visible-p
+   #:automatically-adjusts-content-insets-p
+   #:scroller-knob-style
+   #:scroller-style
+   #:line-scroll
+   #:horizontal-line-scroll
+   #:vertical-line-scroll
+   #:page-scroll
+   #:horizontal-page-scroll
+   #:vertical-page-scroll
+   #:scrolls-dynamically-p
+   #:allows-magnification-p
+   #:magnification
+   #:min-magnification
+   #:max-magnification
+   #:ruler-view-class
+   #:content-insets
+   #:scroller-insets
    #:ns-cell
    #:ns-action-cell
    #:ns-split-view
@@ -1305,6 +1353,518 @@ see https://developer.apple.com/documentation/appkit/nscontrol?language=objc"))
 
 (defmethod (setf string-value) ((string ns-string) (control ns-control))
   (invoke control "setStringValue:" string))
+
+(define-objc-enum ns-border-type
+  "These constants specify the type of a view’s border.
+see https://developer.apple.com/documentation/appkit/nsbordertype?language=objc"
+  (:bezel   2 "A concave border that makes the view look sunken.")
+  (:groove  3 "A thin border that looks etched around the image.")
+  (:line    1 "A black line border around the view.")
+  (:none    0 "No border"))
+
+(define-objc-enum ns-scroller-knob-style
+  "Specify different knob styles.
+see https://developer.apple.com/documentation/appkit/nsscroller/knobstyle-swift.enum?language=objc"
+  (:default 0 "Specifies a dark knob with a light border.")
+  (:dark    1 "Specifies a dark knob.")
+  (:light   2 "Specifies a light knob."))
+
+(define-objc-enum ns-scroller-style
+  "Constants to specify the scroller style.
+see https://developer.apple.com/documentation/appkit/nsscroller/style?language=objc"
+  (:legacy  0 "Specifies legacy-style scrollers as prior to macOS 10.7.")
+  (:overlay 1 "Specifies overlay-style scrollers in macOS 10.7 and later."))
+
+(define-objc-class "NSScrollView" ()
+  (;; Determining Component Sizes
+   ("contentSize"
+    :reader content-size
+    :documentation
+    "The size of the scroll view’s content view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/contentsize?language=objc")
+   ("documentVisibleRect"
+    :reader document-visible-rect
+    :documentation
+    "The portion of the document view, in its own coordinate system,
+visible through the scroll view’s content view.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/documentvisiblerect?language=objc")
+   ;; Managing Graphics Attributes
+   ("drawsBackground"
+    :accessor draws-background-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view draws its background.
+
+When the value of this property is true, the scroll view cell fills
+the background with its background color.
+
+If the scroll view encloses an NSClipView, setting this property to
+false also sets the NSClipView property copiesOnScroll to false. The
+side effect of setting drawsBackground directly on the NSClipView
+instead is the appearance of “trails” (vestiges of previous drawing)
+in the document view as it is scrolled.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/drawsbackground?language=objc")
+   ("borderType"
+    :accessor border-type
+    :before   as-ns-border-type
+    :after    decode-ns-border-type
+    :documentation
+    "A value that specifies the appearance of the scroll view’s border.
+
+See `ns-border-type' for possible values.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/bordertype?language=objc")
+   ("documentCursor"
+    :accessor document-cursor
+    :before   as-ns-cursor
+    :documentation
+    "The content view’s document cursor.
+see https://developer.apple.com/documentation/appkit/nsscrollview/documentcursor?language=objc")
+   ;; Managing the Views
+   ("contentView"
+    :reader content-view
+    :documentation
+    "The scroll view’s content view, the view that clips the document view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/contentview?language=objc")
+   ("documentView"
+    :reader document-view
+    :documentation
+    "The view the scroll view scrolls within its content view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/documentview?language=objc")
+   ;; Managing Scrollers
+   ("horizontalScroller"
+    :reader horizontal-scroller
+    :documentation
+    "The scroll view’s horizontal scroller.
+see https://developer.apple.com/documentation/appkit/nsscrollview/horizontalscroller?language=objc")
+   ("hasHorizontalScroller"
+    :accessor has-horizontal-scroller-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view has a horizontal scroller.
+see https://developer.apple.com/documentation/appkit/nsscrollview/hashorizontalscroller?language=objc")
+   ("verticalScroller"
+    :accessor vertical-scroller
+    :documentation
+    "The scroll view’s vertical scroller.
+see https://developer.apple.com/documentation/appkit/nsscrollview/verticalscroller?language=objc")
+   ("hasVerticalScroller"
+    :accessor has-vertical-scroller-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view has a vertical scroller.
+see https://developer.apple.com/documentation/appkit/nsscrollview/hasverticalscroller?language=objc")
+   ("autohidesScrollers"
+    :accessor auto-hides-scrollers-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view automatically hides its scroll bars when
+they are not needed.
+see https://developer.apple.com/documentation/appkit/nsscrollview/autohidesscrollers?language=objc")
+   ;; Managing Rulers
+   ("rulerViewClass"
+    :accessor ruler-view-class
+    :before   coerce-to-objc-class
+    :documentation
+    "The default class to be used for ruler objects in `ns-scroller-view'.
+see https://developer.apple.com/documentation/appkit/nsscrollview/rulerviewclass?language=objc")
+   ("hasHorizontalRuler"
+    :accessor has-horizontal-ruler-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view keeps a horizontal ruler object.
+see https://developer.apple.com/documentation/appkit/nsscrollview/hashorizontalruler?language=objc")
+   ("horizontalRulerView"
+    :reader horizontal-ruler-view
+    :documentation
+    "The scroll view’s horizontal ruler view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/horizontalrulerview?language=objc")
+   ("hasVerticalRuler"
+    :accessor has-vertical-ruler-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view keeps a vertical ruler object.
+see https://developer.apple.com/documentation/appkit/nsscrollview/hasverticalruler?language=objc")
+   ("verticalRulerView"
+    :reader vertical-ruler-view
+    :documentation
+    "The scroll view’s vertical ruler view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/verticalrulerview?language=objc")
+   ("rulersVisible"
+    :accessor rulers-visible-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view displays its rulers.
+see https://developer.apple.com/documentation/appkit/nsscrollview/rulersvisible?language=objc")
+   ;; Managing Inserts
+   ("automaticallyAdjustsContentInsets"
+    :accessor automatically-adjusts-content-insets-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view automatically adjusts its content insets.
+see https://developer.apple.com/documentation/appkit/nsscrollview/automaticallyadjustscontentinsets?language=objc")
+   ;; Scroller Style
+   ("scrollerKnobStyle"
+    :accessor scroller-knob-style
+    :before   as-ns-scroller-knob-style
+    :after    decode-ns-scroller-knob-style
+    :documentation
+    "The knob style of scroll views that use the overlay scroller style.
+see https://developer.apple.com/documentation/appkit/nsscrollview/scrollerknobstyle?language=objc")
+   ("scrollerStyle"
+    :accessor scroller-style
+    :before   as-ns-scroller-style
+    :after    decode-ns-scroller-style
+    :documentation
+    "The scroller style used by the scroll view.
+
+See `ns-scroller-style' for possible values.
+
+This setting is automatically set at runtime, based on the user’s
+preference setting and, if relevant, the set of connected pointing
+devices and their configured scroll capabilities, as determined by the
+NSScroller method preferredScrollerStyle.
+
+Setting an scroll view’s scroller style sets the style of both the
+horizontal and vertical scrollers. If the scroll view subsequently
+creates or is assigned a new horizontal or vertical scroller, they are
+assigned the same scroller style assigned to the scroll view.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/scrollerstyle?language=objc")
+   ;; Setting Scrolling Behavior
+   ("lineScroll"
+    :accessor line-scroll
+    :documentation
+    "The scroll view’s line by line scroll amount.
+
+The value of this property is the amount by which the scroll view
+scrolls itself when scrolling line by line, expressed in the content
+view’s coordinate system. This value is used when the user clicks the
+scroll arrows without holding down a modifier key. When displaying
+text in a scroll view, for example, you might set this value to the
+height of a single line of text in the default font. As part of its
+implementation, this property accesses verticalLineScroll.
+
+Note that a scroll view can have two different line scroll amounts:
+verticalLineScroll and horizontalLineScroll. Set this property only if
+you can be sure they’re both the same; setting this property sets both
+verticalLineScroll and horizontalLineScroll to the same value.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/linescroll?language=objc")
+   ("horizontalLineScroll"
+    :accessor horizontal-line-scroll
+    :documentation
+    "The scroll view’s horizontal line by line scroll amount.
+
+The value of this property is the amount by which the scroll view
+scrolls itself horizontally when scrolling line by line, expressed in
+the content view’s coordinate system. This value is used when the user
+clicks the scroll arrows on the horizontal scroll bar without holding
+down a modifier key.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/horizontallinescroll?language=objc")
+   ("verticalLineScroll"
+    :accessor vertical-line-scroll
+    :documentation
+    "The scroll view’s vertical line by line scroll amount.
+
+The value of this property is the amount by which the scroll view
+scrolls itself vertically when scrolling line by line, expressed in
+the content view’s coordinate system. This value is used when the user
+clicks the scroll arrows on the vertical scroll bar without holding
+down a modifier key.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/verticallinescroll?language=objc")
+   ("pageScroll"
+    :accessor page-scroll
+    :documentation
+    "The amount of the document view kept visible when scrolling page by page.
+
+The value of this property is the amount of the document view kept
+visible when scrolling page by page, expressed in the content view’s
+coordinate system. This value is used when the user clicks the scroll
+arrows while holding down the Option key. As part of its
+implementation, this property accesses verticalPageScroll.
+
+This amount expresses the context that remains when the scroll view
+scrolls by one page, allowing the user to orient to the new
+display. It differs from the line scroll amount, which indicates how
+far the document view moves. The page scroll amount is the amount
+common to the content view before and after the document view is
+scrolled by one page. Thus, setting the page scroll amount to 0.0
+implies that the entire visible portion of the document view is
+replaced when a page scroll occurs.
+
+Note that a scroll view can have two different page scroll amounts:
+verticalPageScroll and horizontalPageScroll. Set this property only if
+you can be sure they’re both the same; setting this property sets both
+verticalPageScroll and horizontalPageScroll to the same value.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/pagescroll?language=objc")
+   ("horizontalPageScroll"
+    :accessor horizontal-page-scroll
+    :documentation
+    "The amount of the document view kept visible when scrolling horizontally page by page.
+
+The value of this property is the amount of the document view kept
+visible when scrolling horizontally page by page, expressed in the
+content view’s coordinate system. This value is used when the user
+clicks the scroll arrows on the horizontal scroll bar while holding
+down the Option key.
+
+This amount expresses the context that remains when the receiver
+scrolls by one page, allowing the user to orient to the new
+display. It differs from the line scroll amount, which indicates how
+far the document view moves. The page scroll amount is the amount
+common to the content view before and after the document view is
+scrolled by one page. Thus, setting the page scroll amount to 0.0
+implies that the entire visible portion of the document view is
+replaced when a page scroll occurs.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/horizontalpagescroll?language=objc")
+   ("verticalPageScroll"
+    :accessor vertical-page-scroll
+    :documentation
+    "The amount of the document view kept visible when scrolling vertically page by page.
+
+The value of this property is the amount of the document view kept
+visible when scrolling vertically page by page, expressed in the
+content view’s coordinate system. This value is used when the user
+clicks the scroll arrows on the vertical scroll bar while holding down
+the Option key.
+
+This amount expresses the context that remains when the receiver
+scrolls by one page, allowing the user to orient to the new
+display. It differs from the line scroll amount, which indicates how
+far the document view moves. The page scroll amount is the amount
+common to the content view before and after the document view is
+scrolled by one page. Thus, setting the page scroll amount to 0.0
+implies that the entire visible portion of the document view is
+replaced when a page scroll occurs.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/verticalpagescroll?language=objc")
+   ("scrollsDynamically"
+    :accessor scrolls-dynamically-p
+    :before   as-boolean
+    :documentation
+    "Whether the scroll view redraws its document view while scrolling continuously.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/scrollsdynamically?language=objc")
+   ;; Zooming the Scroll View
+   ("allowsMagnification"
+    :accessor allows-magnification-p
+    :documentation
+    "Allows the user to magnify the scroll view.
+
+This property does not prevent the developer from manually adjusting
+the magnification value. If magnification exceeds either the maximum
+or minimum limits for magnification, and allowsMagnification is true,
+the scroll view temporarily animates the content magnification just
+past those limits before returning to them. The default value is
+false.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/allowsmagnification?language=objc")
+   ("magnification"
+    :accessor magnification
+    :documentation
+    "The amount by which the content is currently scaled.
+
+To animate the magnification, use the object’s animator.
+The default value is 1.0.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview/magnification?language=objc")
+   ("maxMagnification"
+    :accessor max-magnification
+    :documentation
+    "The maximum value to which the content can be magnified.
+see https://developer.apple.com/documentation/appkit/nsscrollview/maxmagnification?language=objc")
+   ("minMagnification"
+    :accessor min-magnification
+    :documentation
+    "The minimum value to which the content can be magnified.
+see https://developer.apple.com/documentation/appkit/nsscrollview/minmagnification?language=objc"))
+  (:documentation
+   "A view that displays a portion of a document view and provides
+scroll bars that allow the user to move the document view within
+the scroll view.
+
+The NSScrollView class is the central coordinator for AppKit’s
+scrolling machinery, which is composed of this class, and the
+NSClipView and NSScroller classes.
+
+When using an NSClipView object within a scroll view (the usual
+configuration), you should issue messages that control background
+drawing state to the scroll view directly, rather than messaging the
+clip view.
+
+see https://developer.apple.com/documentation/appkit/nsscrollview?language=objc"))
+
+(defmethod background-color ((view ns-scroll-view))
+  "The color of the content view’s background.
+see https://developer.apple.com/documentation/appkit/nsscrollview/backgroundcolor?language=objc"
+  (invoke view "backgroundColor"))
+
+(defmethod (setf background-color) (color (view ns-scroll-view))
+  (invoke view "setBackgroundColor:" (as-ns-color color)))
+
+(defmethod ruler-view-class ((view ns-scroll-view))
+  "The default class to be used for ruler objects in `ns-scroller-view'.
+see https://developer.apple.com/documentation/appkit/nsscrollview/rulerviewclass?language=objc"
+  (invoke view "rulerViewClass"))
+
+(defmethod (setf ruler-view-class) (class (view ns-scroll-view))
+  (invoke view "setRulerViewClass:" (coerce-to-objc-class class)))
+
+(defmethod content-insets ((view ns-scroll-view))
+  "The distance that the scroll view’s subviews are inset from the enclosing scroll view during tiling.
+see https://developer.apple.com/documentation/appkit/nsscrollview/contentinsets?language=objc"
+  (invoke view "contentInsets"))
+
+(defmethod (setf content-insets) (insets (view ns-scroll-view))
+  (invoke view "setContentInsets:" insets))
+
+(defmethod scroller-insets ((view ns-scroll-view))
+  "The distance the scrollers are inset from the edge of the scroll view.
+see https://developer.apple.com/documentation/appkit/nsscrollview/scrollerinsets?language=objc"
+  (invoke view "scrollerInsets"))
+
+(defmethod (setf scroller-insets) (insets (view ns-scroll-view))
+  (invoke view "setScrollerInsets:" insets))
+
+(defmethod init
+           ((self ns-scroll-view)
+            &key frame
+              (border-type         :none border-type?)
+              (scroller-knob-style :default scroller-knob-style?)
+              (scroller-style      :legacy scroller-style?)
+              (content-insets  #() content-insets?)
+              (scroller-insets #() scroller-insets?)
+              (horizontal-page-scroll 0.0 horizontal-page-scroll?)
+              (vertical-page-scroll   0.0 vertical-page-scroll?)
+              (background-color       nil background-color?)
+              (has-horizontal-ruler-p nil has-horizontal-ruler-p?)
+              (has-vertical-ruler-p   nil has-vertical-ruler-p?)
+              (auto-hides-scrollers-p nil auto-hides-scrollers-p?)
+              (ruler-view-class       nil ruler-view-class?)
+              (rulers-visible-p       nil rulers-visible-p?)
+              (line-scroll            nil line-scroll?)
+              (horizontal-line-scroll nil horizontal-line-scroll?)
+              (vertical-line-scroll   nil vertical-line-scroll?)
+              (page-scroll            nil page-scroll?)
+              (scrolls-dynamically-p  nil scrolls-dynamically-p?)
+              (allows-magnification-p nil allows-magnification-p?)
+              (magnification          nil magnification?)
+              (max-magnification      nil max-magnification?)
+              (min-magnification      nil min-magnification?)
+              (automatically-adjusts-content-insets-p
+               nil
+               automatically-adjusts-content-insets-p?)
+            &allow-other-keys)
+  "Initialize `ns-scroll-view'.
+
+Parameters:
++ BACKGROUND-COLOR
+  The color of the content view’s background.
++ BORDER-TYPE
+  A value that specifies the appearance of the scroll view’s border.
++ CONTENT-INSETS
+  The distance that the scroll view’s subviews are inset from the
+  enclosing scroll view during tiling.
++ SCROLLER-INSETS
+  The distance the scrollers are inset from the edge of the scroll view.
++ HORIZONTAL-PAGE-SCROLL
+  The amount of the document view kept visible when scrolling
+  horizontally page by page.
++ VERTICAL-PAGE-SCROLL
+  The amount of the document view kept visible when scrolling
+  vertically page by page.
++ AUTO-HIDES-SCROLLERS-P
+  Whether the scroll view automatically hides its scroll bars when
++ RULER-VIEW-CLASS
+  The default class to be used for ruler objects in `ns-scroller-view'.
++ HAS-HORIZONTAL-RULER-P
+  Whether the scroll view keeps a horizontal ruler object.
++ HAS-VERTICAL-RULER-P
+  Whether the scroll view keeps a vertical ruler object.
++ RULERS-VISIBLE-P
+  Whether the scroll view displays its rulers.
++ AUTOMATICALLY-ADJUSTS-CONTENT-INSETS-P
+  Whether the scroll view automatically adjusts its content insets.
++ SCROLLER-KNOB-STYLE
+  The knob style of scroll views that use the overlay scroller style.
++ SCROLLER-STYLE
+  The scroller style used by the scroll view.
++ LINE-SCROLL
+  The scroll view’s line by line scroll amount.
++ HORIZONTAL-LINE-SCROLL
+  The scroll view’s horizontal line by line scroll amount.
++ VERTICAL-LINE-SCROLL
+  The scroll view’s vertical line by line scroll amount.
++ PAGE-SCROLL
+  The amount of the document view kept visible when scrolling page by page.
++ SCROLLS-DYNAMICALLY-P
+  Whether the scroll view redraws its document view while scrolling
+  continuously.
++ ALLOWS-MAGNIFICATION-P
+  Allows the user to magnify the scroll view.
++ MAGNIFICATION
+  The amount by which the content is currently scaled.
++ MAX-MAGNIFICATION
+  The maximum value to which the content can be magnified.
++ MIN-MAGNIFICATION
+  The minimum value to which the content can be magnified.
+"
+  (declare (type ns-rect* frame)
+           (type ns-border-type border-type)
+           (type ns-edge-insets* content-insets scroller-insets)
+           (type ns-scroller-knob-style scroller-knob-style)
+           (type ns-scroller-style scroller-style))
+  (invoke self "initWithFrame:" frame)
+  (when background-color? (setf (background-color self) background-color))
+  (when border-type? (setf (border-type self) border-type))
+  (when content-insets? (setf (content-insets self) content-insets))
+  (when scroller-insets? (setf (scroller-insets self) scroller-insets))
+  (when horizontal-page-scroll?
+    (setf (horizontal-page-scroll self) horizontal-page-scroll))
+  (when vertical-page-scroll?
+    (setf (vertical-page-scroll self) vertical-page-scroll))
+  (when has-horizontal-ruler-p?
+    (setf (has-horizontal-ruler-p self) has-horizontal-ruler-p))
+  (when has-vertical-ruler-p?
+    (setf (has-vertical-ruler-p self) has-vertical-ruler-p))
+  (when auto-hides-scrollers-p?
+    (setf (auto-hides-scrollers-p self) auto-hides-scrollers-p))
+  (when ruler-view-class? (setf (ruler-view-class self) ruler-view-class))
+  (when has-horizontal-ruler-p?
+    (setf (has-horizontal-ruler-p self) has-horizontal-ruler-p))
+  (when has-vertical-ruler-p?
+    (setf (has-vertical-ruler-p self) has-vertical-ruler-p))
+  (when rulers-visible-p? (setf (rulers-visible-p self) rulers-visible-p))
+  (when automatically-adjusts-content-insets-p?
+    (setf (automatically-adjusts-content-insets-p self)
+            automatically-adjusts-content-insets-p))
+  (when scroller-knob-style?
+    (setf (scroller-knob-style self) scroller-knob-style))
+  (when scroller-style? (setf (scroller-style self) scroller-style))
+  (when line-scroll? (setf (line-scroll self) line-scroll))
+  (when horizontal-line-scroll?
+    (setf (horizontal-line-scroll self) horizontal-line-scroll))
+  (when vertical-line-scroll?
+    (setf (vertical-line-scroll self) vertical-line-scroll))
+  (when page-scroll? (setf (page-scroll self) page-scroll))
+  (when horizontal-page-scroll?
+    (setf (horizontal-page-scroll self) horizontal-page-scroll))
+  (when vertical-page-scroll?
+    (setf (vertical-page-scroll self) vertical-page-scroll))
+  (when scrolls-dynamically-p?
+    (setf (scrolls-dynamically-p self) scrolls-dynamically-p))
+  (when allows-magnification-p?
+    (setf (allows-magnification-p self) allows-magnification-p))
+  (when magnification? (setf (magnification self) magnification))
+  (when max-magnification? (setf (max-magnification self) max-magnification))
+  (when min-magnification? (setf (min-magnification self) min-magnification)))
 
 (define-objc-class "NSCell" ()
   ()
@@ -5454,10 +6014,171 @@ see https://developer.apple.com/documentation/appkit/nsstatusbarbutton?language=
 ;;; Cursors
 
 (define-objc-class "NSCursor" ()
-  ()
+  (("image"
+    :reader image
+    :documentation
+    "The cursor’s image.
+
+The cursor image or nil if none exists. Note that an NSCursor object
+is immutable: you cannot change its image after it’s created. Instead,
+use initWithImage:hotSpot: to create a new cursor with the new
+settings.
+
+see https://developer.apple.com/documentation/appkit/nscursor/image?language=objc")
+   ("hotSpot"
+    :reader hot-spot
+    :documentation
+    "The position of the click location within the cursor.
+
+The hot spot precisely determines the click location within the
+cursor’s image. Using its flipped coordinate system, you calculate the
+hot spot in points with the top-left corner acting as the origin. For
+example, the arrow cursor’s hot spot is at the intersection of its
+left and right edges, which is inset 4pts from the image’s corner to
+account for the arrow’s stroke and shadow.
+
+Note that an NSCursor object is immutable: you can’t change its hot
+spot after it’s created. Instead, use initWithImage:hotSpot: to create
+a new cursor with the new settings.
+
+see https://developer.apple.com/documentation/appkit/nscursor/hotspot?language=objc"))
   (:documentation
    "A pointer (also called a cursor).
+
+Cursor rectangles
+In Cocoa, you can change the currently displayed cursor based on the
+position of the mouse over one of your views. You might use this
+technique to provide visual feedback about what actions the user can
+take with the mouse. For example, you might display one of the resize
+cursors whenever the mouse moves over a portion of your view that acts
+as a custom resizing handle. To set this up, you associate a cursor
+object with one or more cursor rectangles in the view.
+
+Cursor rectangles are a specialized type of tracking rectangles, which
+are used to monitor the mouse location in a view. Views implement
+cursor rectangles using tracking rectangles but provide methods for
+setting and refreshing cursor rectangles that are distinct from the
+generic tracking rectangle interface. For information on how to set up
+cursor rectangles, see Mouse-Tracking and Cursor-Update Events.
+
+Balancing cursor hiding and unhiding
+Each call to hide cursor must have a corresponding unhide call.
+For example,
+
+    (invoke 'ns-cursor \"hide\")
+    (invoke 'ns-cursor \"hide\")
+    ;; ...
+    (invoke 'ns-cursor \"unhide\")
+
+Will result in the cursor still being hidden because the hide and
+unhide method invocations are not balanced. Instead you must balance
+the method calls, such as in the following example:
+
+    (invoke 'ns-cursor \"hide\")
+    (invoke 'ns-cursor \"hide\")
+    ;; ...
+    (invoke 'ns-cursor \"unhide\")
+    (invoke 'ns-cursor \"unhide\")
+
+There are corresponding cursor hide and unhide calls, thus the cursor
+will become visible.
+
 see https://developer.apple.com/documentation/appkit/nscursor?language=objc"))
+
+(defmethod init ((cursor ns-cursor) &key image hot-spot)
+  "Initializes a CURSOR with the given IMAGE and HOT-SPOT.
+
+Parameters:
++ IMAGE: The image to assign to the cursor.
++ HOT-SPOT: The point to set as the cursor’s hot spot.
+"
+  (declare (type ns-point* hot-spot))
+  (invoke cursor "initWithImage:hotSpot:" (as-ns-image image) hot-spot))
+
+(macrolet ((cursor* (&body bindings)
+             `(defgeneric as-ns-cursor (cursor &key &allow-other-keys)
+                (:documentation "Convert CURSOR as `ns-cursor'. ")
+                (:method ((c ns-cursor) &key) c)
+                ,@(loop :for (key sel) :in bindings
+                        :collect `(:method ((c (eql ,key)) &key)
+                                    (invoke 'ns-cursor ,sel))))))
+  (cursor*
+   (:current                "currentCursor")
+   (:current-system         "currentSystemCursor")
+   (:arrow                  "arrowCursor")
+   (:contextual-menu-cursor "contextualMenuCursor")
+   (:closed-hand            "closedHandCursor")
+   (:crosshair              "corsshairCursor")
+   (:disappearing-item      "disappearingItemCursor")
+   (:drag-copy              "dragCopyCursor")
+   (:drag-link              "dragLinkCursor")
+   (:insert                 "IBeamCursor")
+   (:vertical-insert        "IBeamCursorForVerticalLayout")
+   (:open-hand              "openHandCursor")
+   (:operation-not-allowed  "operationNotAllowedCursor")
+   (:pointing-hand          "pointingHandCursor")
+   (:zoom-in                "zoomInCursor")
+   (:zoom-out               "zoomOutCursor")
+   (:resize-left            "resizeLeftCursor")
+   (:resize-right           "resizeRightCursor")
+   (:resize-left-right      "resizeLeftRightCursor")
+   (:resize-up              "resizeUpCursor")
+   (:resize-down            "resizeDownCursor")
+   (:resize-up-down         "resizeUpDownCursor")
+   (:column-resize          "columnResizeCursor")
+   (:row-resize             "rowResizeCursor")))
+
+(defmethod as-ns-cursor ((img ns-image) &key (hot-spot :top-left))
+  "Convert IMG as `ns-cursor'.
+
+Parameters:
++ HOT-SPOT: (`ns-point')
+  position of hot-spot of `ns-cursor'
+
+  Possible shortcuts:
+  + :top-left, :left-top
+  + :top-right, :right-top
+  + :bottom-left, :left-bottom
+  + :bottom-right, :right-bottom
+  + :center
+"
+  (declare (type (or ns-point* (member :top-left :left-top
+                                       :top-right :right-top
+                                       :bottom-left :left-bottom
+                                       :bottom-right :right-bottom
+                                       :center))
+                 hot-spot))
+  (etypecase hot-spot
+    (ns-point*
+     (alloc-init 'ns-cursor :image img :hot-spot hot-spot))
+    (keyword
+     (let ((size (size img)))
+       (ecase hot-spot
+         ((:top-left :left-top)
+          (alloc-init 'ns-cursor
+                      :image    img
+                      :hot-spot (make-ns-point :x 0
+                                               :y (ns-size-h size))))
+         ((:top-right :right-top)
+          (alloc-init 'ns-cursor
+                      :image    img
+                      :hot-spot (make-ns-point :x (ns-size-w size)
+                                               :y (ns-size-h size))))
+         ((:bottom-left :left-bottom)
+          (alloc-init 'ns-cursor
+                      :image    img
+                      :hot-spot (make-ns-point :x 0
+                                               :y 0)))
+         ((:bottom-right :right-bottom)
+          (alloc-init 'ns-cursor
+                      :image    img
+                      :hot-spot (make-ns-point :x (ns-size-w size)
+                                               :y 0)))
+         (:center
+          (alloc-init 'ns-cursor
+                      :image    img
+                      :hot-spot (make-ns-point :x (/ (ns-size-w size) 2.0)
+                                               :y (/ (ns-size-h size) 2.0)))))))))
 
 (define-objc-class "NSTrackingArea" ()
   ()

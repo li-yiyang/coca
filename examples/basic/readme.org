@@ -15,9 +15,9 @@
   - [X] MessageBox
 - [X] Menus and toolbars
   - [X] MainMenu
-- [ ] Containers
-  - [ ] NSBox
-  - [ ] NSScrollView
+- [-] Containers
+  - [X] NSBox
+  - [X] NSScrollView
   - [ ] NSTabView
   - [ ] NSWindow
 - [-] Controls
@@ -1075,6 +1075,34 @@ abcdefghijklmnopqrstuvwxyz
   #+end_example
 
   #+html: </details>
+
+** NSScrollView
+#+begin_src lisp
+(let ((app (ns-app))
+      (win (alloc-init 'ns-window
+                       :frame #(100 100 640 480)
+                       :title "NSScrollview example")))
+  (add-subview win (alloc-init 'ns-scroll-view
+                               :frame #(10 10 305 460)
+                               :border-type :line))
+  (add-subview win (alloc-init 'ns-scroll-view
+                               :frame #(325 10 305 460)
+                               :border-type :groove))
+  (setf (activation-policy app) :regular)
+  (run app))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: NSScrollView example
+[[file:./ns-scroll-view.png]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Containers/Panel/Panel.m][Panel.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ I just copied the example from Cocoa examples, but it this enough?
+  I don't known, maybe need something more...
 
 * Controls
 ** Button
