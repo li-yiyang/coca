@@ -97,7 +97,12 @@ This will define:
   (declare (type symbol lisp-name)
            (type string objc-name))
   (multiple-value-bind (slots encodings inits types coerce-p documentations)
-      (loop :for (slot objc-encoding &key type documentation) :in slot-definitions
+      (loop :for slotd :in slot-definitions
+            :for (slot objc-encoding type documentation)
+              := (destructuring-bind
+                     (slot objc-encoding &key type documentation)
+                     slotd
+                   (list slot objc-encoding type documentation))
             :for encoding := (as-objc-encoding objc-encoding)
             :for coerce   := (and type t)
             :for stype    := (or  type (objc-encoding-lisp-type encoding))

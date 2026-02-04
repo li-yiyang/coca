@@ -795,8 +795,9 @@ Syntax:
            (:objc-class-name . ,objc-name)
            (:documentation ,(or (second (assoc :documentation class-options))
                                 (format nil "ObjC Class of ~A" objc-name))))
-        `(doc-objc-class (,objc-name ,lisp-name)
-           ,direct-ivars
-           ,@(cdr (assoc :documentation class-options))))))
+        `(eval-when (:compile-toplevel :load-toplevel :execute)
+           (doc-objc-class (,objc-name ,lisp-name)
+             ,direct-ivars
+             ,@(cdr (assoc :documentation class-options)))))))
 
 ;;;; objc-class.lisp ends here

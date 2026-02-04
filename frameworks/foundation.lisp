@@ -83,6 +83,14 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-size-h
    #:ns-size-w
    #:ns-affine-transform
+   #:ns-edge-insets
+   #:ns-edge-insets*
+   #:make-ns-edge-insets
+   #:ns-edge-insets-bottom
+   #:ns-edge-insets-left
+   #:ns-edge-insets-right
+   #:ns-edge-insets-top
+   #:ns-edge-insets-p
 
    ;; Strings and Text
    #:ns-string
@@ -1190,14 +1198,31 @@ see https://developer.apple.com/documentation/foundation/nsuuid?language=objc"))
 ;;; Geometry
 
 (define-objc-struct (ns-size "CGSize")
+  "A two-dimensional size.
+
+Normally, the values of `ns-size-w' and `ns-size-h' are non-negative.
+The functions that create an `ns-size' structure do not prevent you from
+setting a negative value for these attributes. If the value of width
+or height is negative, however, the behavior of some methods may be
+undefined.
+
+see https://developer.apple.com/documentation/foundation/nssize?language=objc"
   (w :double :type real)
   (h :double :type real))
 
 (define-objc-struct (ns-point "CGPoint")
+  "A point in a Cartesian coordinate system.
+see https://developer.apple.com/documentation/foundation/nspoint?language=objc"
   (x :double :type real)
   (y :double :type real))
 
 (define-objc-struct (ns-rect "CGRect")
+  "A rectangle.
+
+Dev Note:
+Unlike NSRect, `ns-rect' is flattened as x, y, w, h slots.
+
+see https://developer.apple.com/documentation/foundation/nsrect?language=objc"
   (x :double :type real)
   (y :double :type real)
   (w :double :type real)
@@ -1212,6 +1237,42 @@ see https://developer.apple.com/documentation/foundation/nsuuid?language=objc"))
   (:documentation
    "A graphics coordinate transformation.
 see https://developer.apple.com/documentation/foundation/nsaffinetransform?language=objc"))
+
+(define-objc-struct (ns-edge-insets "NSEdgeInsets")
+  "A description of the distance between the edges of two rectangles.
+
+Edge insets describe the distance between the edges of one rectangle
+to a related rectangle that can be described by measuring a constant
+but edge-specific distance from each edge.
+
+A common use for this structure is to describe the relationship
+between a view’s frame and its alignment rectangle.
+
+see https://developer.apple.com/documentation/Foundation/NSEdgeInsets?language=objc"
+  (bottom
+   :double
+   :type real
+   :documentation
+   "The distance from the bottom of the source rectangle to the bottom
+of the result rectangle.")
+  (left
+   :double
+   :type real
+   :documentation
+   "The distance from the left side of the source rectangle to the
+left side of the result rectangle.")
+  (right
+   :double
+   :type real
+   :documentation
+   "The distance from the right side of the source rectangle to the
+right side of the result rectangle.")
+  (top
+   :double
+   :type real
+   :documentation
+   "The distance from the top of the source rectangle to the top of
+the result rectangle."))
 
 ;;; Ranges
 
