@@ -27,8 +27,8 @@
   - [X] Label
   - [ ] LevelIndicator
   - [ ] ListBox
-- [ ] Components
-  - [ ] Timer
+- [X] Components
+  - [X] Timer
 - [ ] Events
   - [ ] ApplicationIdle
   - [ ] WindowAndMessages
@@ -1543,7 +1543,7 @@ abcdefghijklmnopqrstuvwxyz
           (lambda ()
             (cond (enablep
                    (invalidate timer)
-                   #+sbcl (sb-ext:gc :full t)
+                   ,#+sbcl (sb-ext:gc :full t)
                    (setf (title button) "Start"
                          counter        0
                          enablep        nil))
@@ -1557,7 +1557,8 @@ abcdefghijklmnopqrstuvwxyz
                                :repeats   t))
                    (add-timer (ns-current-run-loop) timer :default)
                    (setf (title   button) "Stop"
-                         (counter window) 0)))))))
+                         (counter window) 0
+                         enablep          t)))))))
 #+end_src
 
 #+attr_html: :width 80%
@@ -1627,7 +1628,9 @@ abcdefghijklmnopqrstuvwxyz
   |       20 |               118 |
 
   But currently, I will only focus on the functionalities.
-  The efficiency and memory usage will be put later. 
+  The efficiency and memory usage will be put later.
++ note: you can also try using =bt:thread=, but I found that it may
+  raise illegal instructs... so, for now, not recommanded.
 
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.
