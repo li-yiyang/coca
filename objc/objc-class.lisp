@@ -478,7 +478,8 @@ Parameters:
            (type symbol name)
            #-sbcl (ignore loc))
   (let* ((super  (c2mop:class-direct-superclasses class))
-         (slotd  (loop :for (name . lisp-slots) :in objc-properties
+         (slotd  (loop :for objc-property* :in objc-properties
+                       :for (name . lisp-slots) := (listfy objc-property*)
                        :if (symbolp name)
                          :collect `(,@(loop :for (key val) :on lisp-slots :by #'cddr
                                             :if (eql key :initarg)
@@ -766,7 +767,8 @@ Syntax:
     (if (not (or (endp direct-superclass)
                  (not (null-pointer-p (objc_getClass objc-name)))))
         `(defclass ,lisp-name ,direct-superclass
-           ,(loop :for (name . options) :in direct-ivars
+           ,(loop :for ivars :in direct-ivars
+                  :for (name . options) := (listfy ivars)
                   :if (stringp name)
                     :collect (destructuring-bind (&key
                                                     before after accessor
