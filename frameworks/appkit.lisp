@@ -7868,7 +7868,7 @@ Styles Parameters:
 + FONT:        set the text field (see `as-ns-font')
 + BEZELEDP:    set if draws bezeled background (boarder) (see `bezeledp')
 "
-  (declare (type (or null ns-rect) frame))
+  (declare (type (or null ns-rect*) frame))
   ;; TODO: initWithFrame: should be moved to NSControl init method
   (cond (frame (invoke field "initWithFrame:" frame)
                (when text (setf (string-value field) text)))
@@ -8292,9 +8292,28 @@ Return value is double float in points. ")
 Return `ns-font'.
 
 Parameters:
-+ SIZE: font size in points (see `as-ns-font-size')
-+ WEIGHT: font weight (see `as-ns-font-weight')
++ SIZE:
+  font size in points (see `as-ns-font-size')
++ WEIGHT:
+  font weight (see `as-ns-font-weight')
++ TRAITS: (`ns-font-trait-mask')
+  traits of a font.
 ")
+  (:method :around (default &key traits)
+    (let ((manager (ns-font-manager))
+          (font    (call-next-method)))
+      (when traits
+        (setf font (invoke manager
+                           "convertFont:toHaveTrait:"
+                           font
+                           (as-ns-font-trait-mask trait))))
+      font))
+  (:method ((expr list) &rest keys &key)
+    (let ((font       (car expr))
+          (properties (cdr expr)))
+      (loop :for (key val) :on keys :by #'cddr :do
+        (setf (getf properties key) val))
+      (apply #'as-ns-font (cons font properties))))
   (:method ((font ns-font) &key size)
     (let ((font font))
       (when size
@@ -8303,6 +8322,14 @@ Parameters:
                            font
                            (coerce size 'double-float))))
       font))
+  (:method ((name string) &key size)
+    (invoke 'ns-font "fontWithName:size:"
+            (string-to-ns-string name)
+            (as-ns-font-size size)))
+  (:method ((name ns-string) &key size)
+    (invoke 'ns-font "fontWithName:size:"
+            name
+            (as-ns-font-size size)))
   (:method ((font (eql :system)) &key (size :system) (weight :regular weight?))
     "Returns the standard system font with the specified size.
 

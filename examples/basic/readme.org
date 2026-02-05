@@ -1488,6 +1488,147 @@ abcdefghijklmnopqrstuvwxyz
   not creating custom classes, but just modify the =win= (=ns-window=)
   directly after we created it
 
+* Components
+** Timer
+#+begin_src lisp
+(define-objc-class ("TimerWindow" timer-window) (ns-window)
+  (action
+   (counter :accessor counter)))
+
+(defmethod window-will-close ((window timer-window) sender)
+  (terminate (ns-app) sender))
+
+(define-objc-method ("TimerWindow" "onClick:" on-click) :void
+    ((sender :object))
+  (:method ((window timer-window) sender)
+    (with-slots (action) window
+      (funcall action))))
+
+(define-objc-method ("TimerWindow" "onTimerTick:") :void
+    ((timer :object))
+  (:method ((window timer-window) timer)
+    (let ((label (user-info timer)))
+      (setf (string-value label)
+            (format nil "~,2F" (/ (incf (counter window)) 100))))))
+
+(defmethod init ((window timer-window) &rest keys
+                 &key &allow-other-keys)
+  (invoke-super (window keys)
+    (:frame (make-ns-rect :x 100 :y 100 :w 230 :h 130))
+    (:title "Timer example"))
+  (let* ((counter 0)
+         (enablep nil)
+         (button  (alloc-init 'ns-button
+                              :frame  #(10 10 90 32)
+                              :title  "Start"
+                              :action "onClick:"
+                              :target window
+                              :bezel-style :rounded))
+         (label   (alloc-init 'ns-text-field
+                              :frame      #(10 50 210 70)
+                              :text       (format nil "~,2F" (/ counter 100))
+                              :text-color #(0.117 0.565 1.0 1.0)
+                              :font       (as-ns-font "Arial"
+                                                      :size   64
+                                                      :traits '(:italic :bold))
+                              :bezeledp     nil
+                              :editablep    nil
+                              :selectablep  nil
+                              :draws-background-p nil))
+         (timer   nil))
+
+    (add-subview window button)
+    (add-subview window label)
+    (setf (slot-value window 'action)
+          (lambda ()
+            (cond (enablep
+                   (invalidate timer)
+                   #+sbcl (sb-ext:gc :full t)
+                   (setf (title button) "Start"
+                         counter        0
+                         enablep        nil))
+                  (t
+                   (setf timer
+                         (send 'ns-timer
+                               :timer-with-time-interval  0.01d0
+                               :target    window
+                               :selector (coerce-to-selector "onTimerTick:")
+                               :user-info label
+                               :repeats   t))
+                   (add-timer (ns-current-run-loop) timer :default)
+                   (setf (title   button) "Stop"
+                         (counter window) 0)))))))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: Timer example
+[[file:./timer.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Components/Timer/Timer.m][Timer.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ here we use =send= as syntax sugar wrapper of =invoke=
+
+  #+html: <details><summary>documentation</summary>
+  #+begin_src lisp :exports results :results verbatim replace :eval yes
+  (documentation (macro-function 'send) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  CCL's objc:send style macro for `invoke'.
+
+  Example:
+
+      (send object :message-like-this) ;; => (invoke object \"messageLikeThis\")
+      (send object :foo-abc a :bar b)  ;; => (invoke object \"fooAbc:Bar:\" a b)
+
+  Dev Note:
+  Just a compability layer.
+  Use with caution.
+  #+end_example
+
+  #+html: </details>
+
+  Note: i don't think current implementation of =ns-timer= is enough.
+  I think we should do it better.
++ a possible issue?
+
+  during testing, I happened to encounter a crash:
+
+  #+begin_example
+  fatal error encountered in SBCL pid 34764 pthread 0x2054a6c40:
+  unexpected forwarding pointer in scavenge_control_stack: 0x105bf17a8, start=0x105bf0000, end=0x105bf1be0
+
+  Welcome to LDB, a low-level debugger for the Lisp runtime environment.
+  (GC in progress, oldspace=0, newspace=7)
+  ldb> q
+  Really quit? [y] y
+  #+end_example
+
+  However, when I try to re-run the program, nothing happens.
+  Since I was not monitoring the program, I don't know and could
+  not reproduce this issue.
+
+  Possibly, this is triggered when invoking =sb-ext:gc=.
+  But triggering at different position in codes might results in
+  different results... Not sure.
++ I have run the example for a while to test possible memory leakage:
+
+  #+caption: Memory Usage along the running time
+  | Time (s) | Memory Usage (MB) |
+  |----------+-------------------|
+  |      192 |             163.1 |
+  |      450 |             165.4 |
+  |      600 |             167.6 |
+  |  [reset] |               113 |
+  |       20 |               118 |
+
+  But currently, I will only focus on the functionalities.
+  The efficiency and memory usage will be put later. 
+
 * Events
 Use =define-objc-method= to define event handler methods in lisp side.
 For example, a =window-will-close:= method should be defined like below:
