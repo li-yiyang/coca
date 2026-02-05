@@ -350,7 +350,17 @@ https://developer.apple.com/documentation/foundation?language=objc")
    #:ns-run-loop-mode
    #:+ns-run-loop-common-modes+
    #:+ns-default-run-loop-mode+
+   #:ns-main-run-loop
+   #:ns-current-run-loop
+   #:add-timer
    #:ns-timer
+   #:validp
+   #:fire-date
+   #:time-interval
+   #:user-info
+   #:tolerance
+   #:fire
+   #:invalidate
    #:ns-process-info
    #:ns-thread
    #:ns-lock
@@ -1566,7 +1576,7 @@ Parameters:
 
 (defun ns-date-now ()
   "The current date and time, as of the time of access. "
-  (alloc-init 'ns-date))
+  (invoke 'ns-date "date"))
 
 ;; Getting Temporal Boundaries
 
@@ -3173,12 +3183,278 @@ see https://developer.apple.com/documentation/foundation/runloop/mode/common?lan
   "The mode set to handle input sources other than connection objects.
 see https://developer.apple.com/documentation/foundation/runloop/mode/default?language=objc")
 
+(defun ns-main-run-loop ()
+  "Returns the run loop of the main thread. "
+  (invoke 'ns-run-loop "mainRunLoop"))
+
+(defun ns-current-run-loop ()
+  "Returns the run loop for the current thread. "
+  (invoke 'ns-run-loop "currentRunLoop"))
+
+(defmethod add-timer ((run-loop ns-run-loop) (timer ns-timer) (mode ns-string))
+  "Registers a given timer with a given input mode.
+Return TIMER, the `ns-timer'.
+
+Parameters:
++ TIMER:
+  The timer to register with the receiver
++ MODE:
+  The mode in which to add aTimer.
+  You may specify a custom mode or use one of the modes
+  listed in Run Loop Modes.
+
+  Possible Values:
+  + `+ns-run-loop-common-modes+'
+  + `+ns-default-run-loop-mode+'
+"
+  (invoke run-loop "addTimer:forMode:" timer mode)
+  timer)
+
+(defmethod add-timer (run-loop timer (mode (eql :default)))
+  (add-timer run-loop timer +ns-default-run-loop-mode+))
+
+(defmethod add-timer (run-loop timer (mode (eql :common)))
+  (add-timer run-loop timer +ns-run-loop-common-modes+))
+
 (define-objc-class "NSTimer" ()
-  ()
+  (("valid"
+    :reader validp
+    :documentation
+    "A Boolean value that indicates whether the timer is currently valid.
+see https://developer.apple.com/documentation/foundation/timer/isvalid?language=objc")
+   ("fireDate"
+    :reader fire-date
+    :documentation
+    "The date at which the timer will fire.
+see https://developer.apple.com/documentation/foundation/timer/firedate?language=objc")
+   ("timeInterval"
+    :reader time-interval
+    :documentation
+    "The timer’s time interval, in seconds.
+see https://developer.apple.com/documentation/foundation/timer/timeinterval?language=objc")
+   ("userInfo"
+    :reader user-info
+    :documentation
+    "The receiver’s userInfo object.
+see https://developer.apple.com/documentation/foundation/timer/userinfo?language=objc")
+   ("tolerance"
+    :accessor tolerance
+    :documentation
+    "The amount of time after the scheduled fire date that the timer may fire.
+
+The default value is zero, which means no additional tolerance is
+applied.
+
+Setting a tolerance for a timer allows it to fire later than the
+scheduled fire date. Allowing the system flexibility in when a timer
+fires increases the ability of the system to optimize for increased
+power savings and responsiveness.
+
+The timer may fire at any time between its scheduled fire date and the
+scheduled fire date plus the tolerance. The timer will not fire before
+the scheduled fire date. For repeating timers, the next fire date is
+calculated from the original fire date regardless of tolerance applied
+at individual fire times, to avoid drift. The system reserves the
+right to apply a small amount of tolerance to certain timers
+regardless of the value of this property.
+
+see https://developer.apple.com/documentation/foundation/timer/tolerance?language=objc"))
   (:documentation
    "A timer that fires after a certain time interval has elapsed,
 sending a specified message to a target object.
+
+Timers work in conjunction with run loops. Run loops maintain strong
+references to their timers, so you don’t have to maintain your own
+strong reference to a timer after you have added it to a run loop.
+
+To use a timer effectively, you should be aware of how run loops
+operate. See Threading Programming Guide for more information.
+
+A timer is not a real-time mechanism. If a timer’s firing time occurs
+during a long run loop callout or while the run loop is in a mode that
+isn’t monitoring the timer, the timer doesn’t fire until the next time
+the run loop checks the timer. Therefore, the actual time at which a
+timer fires can be significantly later. See also Timer Tolerance.
+
+NSTimer is toll-free bridged with its Core Foundation counterpart,
+CFRunLoopTimerRef. See Toll-Free Bridging for more information.
+Comparing Repeating and Nonrepeating Timers
+
+You specify whether a timer is repeating or nonrepeating at creation
+time. A nonrepeating timer fires once and then invalidates itself
+automatically, thereby preventing the timer from firing again. By
+contrast, a repeating timer fires and then reschedules itself on the
+same run loop. A repeating timer always schedules itself based on the
+scheduled firing time, as opposed to the actual firing time. For
+example, if a timer is scheduled to fire at a particular time and
+every 5 seconds after that, the scheduled firing time will always fall
+on the original 5-second time intervals, even if the actual firing
+time gets delayed. If the firing time is delayed so far that it passes
+one or more of the scheduled firing times, the timer is fired only
+once for that time period; the timer is then rescheduled, after
+firing, for the next scheduled firing time in the future.  Timer
+Tolerance
+
+In iOS 7 and later and macOS 10.9 and later, you can specify a
+tolerance for a timer (tolerance). This flexibility in when a timer
+fires improves the system’s ability to optimize for increased power
+savings and responsiveness. The timer may fire at any time between its
+scheduled fire date and the scheduled fire date plus the
+tolerance. The timer doesn’t fire before the scheduled fire date. For
+repeating timers, the next fire date is calculated from the original
+fire date regardless of tolerance applied at individual fire times, to
+avoid drift. The default value is zero, which means no additional
+tolerance is applied. The system reserves the right to apply a small
+amount of tolerance to certain timers regardless of the value of the
+tolerance property.
+
+As the user of the timer, you can determine the appropriate tolerance
+for a timer. A general rule, set the tolerance to at least 10% of the
+interval, for a repeating timer. Even a small amount of tolerance has
+significant positive impact on the power usage of your
+application. The system may enforce a maximum value for the tolerance.
+Scheduling Timers in Run Loops
+
+You can register a timer in only one run loop at a time, although it
+can be added to multiple run loop modes within that run loop. There
+are three ways to create a timer:
+
++ Use the scheduledTimerWithTimeInterval:invocation:repeats: or
+  scheduledTimerWithTimeInterval:target:selector:userInfo:repeats:
+  class method to create the timer and schedule it on the current
+  run loop in the default mode.
++ Use the timerWithTimeInterval:invocation:repeats: or
+  timerWithTimeInterval:target:selector:userInfo:repeats: class
+  method to create the timer object without scheduling it on a run
+  loop. (After creating it, you must add the timer to a run loop
+  manually by calling the addTimer:forMode: method of the
+  corresponding NSRunLoop object.)
++ Allocate the timer and initialize it using the
+  initWithFireDate:interval:target:selector:userInfo:repeats:
+  method. (After creating it, you must add the timer to a run loop
+  manually by calling the addTimer:forMode: method of the
+  corresponding NSRunLoop object.)
+
+Once scheduled on a run loop, the timer fires at the specified
+interval until it is invalidated. A nonrepeating timer invalidates
+itself immediately after it fires. However, for a repeating timer, you
+must invalidate the timer object yourself by calling its invalidate
+method. Calling this method requests the removal of the timer from the
+current run loop; as a result, you should always call the invalidate
+method from the same thread on which the timer was
+installed. Invalidating the timer immediately disables it so that it
+no longer affects the run loop. The run loop then removes the timer
+(and the strong reference it had to the timer), either just before the
+invalidate method returns or at some later point. Once invalidated,
+timer objects cannot be reused.
+
+After a repeating timer fires, it schedules the next firing for the
+nearest future date that is an integer multiple of the timer interval
+after the last scheduled fire date, within the specified tolerance. If
+the time taken to call out to perform a selector or invocation is
+longer than the specified interval, the timer schedules only the next
+firing; that is, the timer doesn’t attempt to compensate for any
+missed firings that would have occurred while calling the specified
+selector or invocation.  Subclassing Notes
+
+Do not subclass NSTimer.
+
 see https://developer.apple.com/documentation/foundation/timer?language=objc"))
+
+;;; TODO: FIXME
+;; not working, not sure why
+(defmethod init ((timer ns-timer)
+                 &key
+                   (fire-date     (ns-date-now))
+                   (time-interval 1.0           interval?)
+                   (repeats-p     interval?)
+                   (callback      nil           callback?)
+                   (target        :self)
+                   action
+                   user-info
+                   run-loop
+                   (run-loop-mode :default))
+  "Initialize TIMER `ns-timer'.
+
+Parameters:
++ FIRE-DATE (`ns-date')
+  time at which the timer should first fire
+  default as `ns-date-now'
++ TIME-INTERVAL:
+  For a repeating timer, this parameter contains the number of
+  seconds between firings of the timer.
+  If interval is less than or equal to 0.0, this method chooses
+  the nonnegative value of 0.0001 seconds instead.
++ REPEATS-P
+  if TIMER repeats,
+  if setting with TIME-INTERVAL, the REPEATS-P would be `t'
++ CALLBACK
+  a callback cffi function pointer,
+  if setting, will invoke initWithFireDate:interval:repeats:block:
++ TARGET (default `:self')
+  default as TIMER self
++ ACTION
+  The message to send to target when the timer fires.
+
+  The selector should have the following signature: timerFireMethod:
+  (including a colon to indicate that the method takes an
+  argument). The timer passes itself as the argument, thus the method
+  would adopt the following pattern:
++ USER-INFO
+  Custom user info for the timer.
+  The timer maintains a strong reference to this object until it
+  (the timer) is invalidated. This parameter may be nil.
++ RUN-LOOP (`ns-run-loop')
+  run loop to add TIMER
+  if nil, ignore (not add) (default);
+
+  Other possible values:
+  + `:current' `ns-current-run-loop'
+  + `:main'    `ns-main-run-loop'
++ RUN-LOOP-MODE
+  run mode `ns-string'
+
+  Possible values:
+  + `:default', `+ns-default-run-loop-mode+'
+  + `:common',  `+ns-run-loop-common-modes+'
+"
+  (declare (type ns-date fire-date)
+           (type real    time-interval)
+           (type (or symbol cffi:foreign-pointer) callback)
+           (type (or null (eql :self) ns-object)  target)
+           (type (or null ns-object)              user-info)
+           (type (or nil ns-run-loop (member :current :main)) run-loop))
+  (if callback?
+      (invoke timer
+              "initWithFireDate:interval:repeats:block:"
+              fire-date
+              (coerce time-interval 'double-float)
+              (as-boolean repeats-p)
+              (etypecase callback
+                (symbol               (cffi:get-callback callback))
+                (cffi:foreign-pointer callback)))
+      (invoke timer
+              "initWithFireDate:interval:target:selector:userInfo:repeats:"
+              fire-date
+              (coerce time-interval 'double-float)
+              (if (eq target :self) timer target)
+              (coerce-to-selector action)
+              user-info
+              (as-boolean repeats-p)))
+  (etypecase run-loop
+    (null           nil)
+    (ns-run-loop    (add-timer run-loop              timer run-loop-mode))
+    ((eql :current) (add-timer (ns-current-run-loop) timer run-loop-mode))
+    ((eql :main)    (add-timer (ns-main-run-loop)    timer run-loop-mode))))
+
+(defmethod fire ((timer ns-timer))
+  "Causes the timer’s message to be sent to its target. "
+  (invoke timer "fire"))
+
+(defmethod invalidate ((timer ns-timer))
+  "Stops the timer from ever firing again and requests its removal
+from its run loop."
+  (invoke timer "invalidate"))
 
 ;;; Process Info
 
