@@ -472,7 +472,7 @@ Use with caution. "
                  :for arg := (if (endp rest)
                                  (error "Missing argument after ~S. " key)
                                  (first rest))
-                 :do (setf sel (str:concat sel (str:pascal-case key) ":"))
+                 :do (setf sel (str:concat sel (str:camel-case key) ":"))
                      (push arg args)
                  :finally (return `(invoke ,object ,sel ,@(reverse args)))))
           (t
