@@ -6,6 +6,7 @@
    ;; Utils
    #:objc-error
    #:as-boolean
+   #:as-double
 
    ;; CFFI
    #:objc-object-pointer

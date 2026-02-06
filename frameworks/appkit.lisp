@@ -245,7 +245,36 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:add-item
    #:select-item-at-index
    #:ns-image-view
+   #:ns-tick-mark-position
+   #:ns-tick-mark-position-p
+   #:as-ns-tick-mark-position
+   #:decode-ns-tick-mark-position
+   #:ns-level-indicator-style
+   #:ns-level-indicator-style-p
+   #:as-ns-level-indicator-style
+   #:decode-ns-level-indicator-style
+   #:ns-level-indicator-placeholder-visibility
+   #:ns-level-indicator-placeholder-visibility-p
+   #:as-ns-level-indicator-placeholder-visibility
+   #:decode-ns-level-indicator-placeholder-visibility
+   #:value
+   #:min-value
+   #:max-value
+   #:warning-value
+   #:critical-value
+   #:tick-mark-position
+   #:number-of-tick-marks
+   #:style
+   #:rating-image
+   #:draws-tiered-capacity-levels-p
+   #:fill-color
+   #:warning-fill-color
+   #:critical-fill-color
+   #:rating-placeholder-image
+   #:placeholder-visibility
+   #:editablep
    #:ns-level-indicator
+
    #:ns-pop-up-button
    #:ns-progress-indicator
    #:ns-rule-editor
@@ -2599,11 +2628,262 @@ see https://developer.apple.com/documentation/appkit/nscombobox/selectitem(at:)?
    "A display of image data in a frame.
 see https://developer.apple.com/documentation/appkit/nsimageview?language=objc"))
 
+(define-objc-enum ns-tick-mark-position
+  "The position where a linear slider’s tick marks appear
+(above, below, leading, or trailing).
+see https://developer.apple.com/documentation/appkit/nsslider/tickmarkposition-swift.enum?language=objc"
+  ((:below :leading)  0 "tick marks are displayed below/leading  the slider.")
+  ((:above :trailing) 1 "tick marks are displayed above/trailing the slider."))
+
+(define-objc-enum ns-level-indicator-style
+  "Constants that specify a level indicator’s appearance.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/style?language=objc"
+  (:relevancy           0 "A style that indicates the relevancy of an item, "
+                         "such as a search result.")
+  (:continuous-capacity 1 "A style that indicates the capacity of something, "
+                        "such as how much data is on a hard disk.")
+  (:discrete-capacity   2 "A style that displays discrete segments that indicate "
+                      "the capacity of something, such as an audio level.")
+  (:rating              3 "A style that indicates a rank, "
+                      "such as a star ranking display."))
+
+(define-objc-enum ns-level-indicator-placeholder-visibility
+  "Defines the visibility behaviors for placeholder images in a level
+indicator to control how inactive rating increments are presented to
+the user.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/placeholdervisibility-swift.enum?language=objc"
+  (:automatic     0)
+  (:always        1 "Always show rating placeholder. ")
+  (:while-editing 2 "Only show when hover and editing"))
+
 (define-objc-class "NSLevelIndicator" ()
-  ()
+  (("minValue"
+    :accessor min-value
+    :before   as-double
+    :documentation
+    "The receiver’s minimum value.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/minvalue?language=objc")
+   ("maxValue"
+    :accessor max-value
+    :before   as-double
+    :documentation
+    "The receiver’s maximum value.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/maxvalue?language=objc")
+   ("warningValue"
+    :accessor warning-value
+    :before   as-double
+    :documentation
+    "The receiver’s warning value.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/warningvalue?language=objc")
+   ("criticalValue"
+    :accessor critical-value
+    :before   as-double
+    :documentation
+    "The receiver’s critical value.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/criticalvalue?language=objc")
+   ("tickMarkPosition"
+    :accessor tick-mark-position
+    :before   as-ns-tick-mark-position
+    :after    decode-ns-tick-mark-position
+    :documentation
+    "Determines how the receiver’s tick marks are aligned with it.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/tickmarkposition?language=objc")
+   ("numberOfTickMarks"
+    :accessor number-of-tick-marks
+    :documentation
+    "The number of tick marks associated with the receiver.
+
+By default, this value is 0, and no tick marks appear. The number of
+tick marks assigned to a slider, along with the slider’s minimum and
+maximum values, determines the values associated with the tick marks.
+
+see https://developer.apple.com/documentation/appkit/nslevelindicator/numberoftickmarks?language=objc")
+   ("numberOfMajorTickMarks"
+    :accessor number-of-major-tick-marks
+    :documentation
+    "The number of tick marks associated with the receiver.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/numberoftickmarks?language=objc")
+   ("levelIndicatorStyle"
+    :accessor style
+    :before   as-ns-level-indicator-style
+    :after    decode-ns-level-indicator-style
+    :documentation
+    "The appearance of the indicator.
+see https://developer.apple.com/documentation/appkit/nslevelindicator/levelindicatorstyle?language=objc")
+   ("ratingImage"
+    :accessor rating-image
+    :before   as-ns-image
+    :documentation
+    "Image used to draw the level indicator item.
+Avaliable when `style' is `:rating'. ")
+   ("drawsTieredCapacityLevels"
+    :accessor draws-tiered-capacity-levels-p
+    :before   as-boolean
+    :documentation
+    "If draws different color on different range of the level indicator.
+see `fill-color', `warning-fill-color', `critical-fill-color' for
+customizing different fill color. ")
+   ("fillColor"
+    :accessor fill-color
+    :before   as-ns-color
+    :documentation
+    "Filling color for normal range.
+Avaliable if `draws-tiered-capacity-levels-p' is set to be `t'. ")
+   ("warningFillColor"
+    :accessor warning-fill-color
+    :before   as-ns-color
+    :documentation
+    "Filling color for warning range.
+Avaliable if `draws-tiered-capacity-levels-p' is set to be `t'. ")
+   ("criticalFillColor"
+    :accessor critical-fill-color
+    :before   as-ns-color
+    :documentation
+    "Filling color for critical range.
+Avaliable if `draws-tiered-capacity-levels-p' is set to be `t'. ")
+   ("ratingPlaceholderImage"
+    :accessor rating-placeholder-image
+    :before   as-ns-image
+    :documentation
+    "Image used for level indicator place holder. ")
+   ("placeholderVisibility"
+    :accessor placeholder-visibility
+    :before   as-ns-level-indicator-placeholder-visibility
+    :after    decode-ns-level-indicator-placeholder-visibility
+    :documentation
+    "Customize the visibility of the level indicator placeholder.")
+   ("editable"
+    :accessor editablep
+    :before   as-boolean
+    :documentation
+    "If level indicator is editable. "))
   (:documentation
    "A visual representation of a level or quantity, using discrete values.
+
+A level indicator is similar to an NSSlider object, but provides a
+more customized visual feedback to the user. Unlike sliders, level
+indicators do not have a “knob” indicating the current setting, and
+they do not allow the user to adjust the current setting. You set the
+value of the level indicator programmatically. The supported indicator
+styles include:
+
++ A capacity style level indicator. The continuous mode for this
+  style is often used to indicate conditions such as how much data
+  is on hard disk. The discrete mode is similar to audio level
+  indicators in audio playback applications. You can specify both a
+  warning value and a critical value that provides additional visual
+  feedback to the user.
++ A ranking style level indicator. This is similar to the star
+  ranking displays provided in iTunes and iPhoto. You can also
+  specify your own ranking image.
++ A relevancy style level indicator. This style is used to display
+  the relevancy of a search result, for example in Mail.
+
+NSLevelIndicator uses an NSLevelIndicatorCell to implement much of the
+control’s functionality. NSLevelIndicator provides cover methods for
+most of the NSLevelIndicatorCell methods, which call the corresponding
+cell method.
+
 see https://developer.apple.com/documentation/appkit/nslevelindicator?language=objc"))
+
+(defmethod value ((level ns-level-indicator))
+  "Level indicator value. "
+  (invoke level "doubleValue"))
+
+(defmethod (setf value) ((value real) (level ns-level-indicator))
+  (invoke level "setDoubleValue:" (as-double value)))
+
+(defmethod init
+           ((self ns-level-indicator)
+            &key
+              frame
+              (value 0.0)
+              (min-value      0.0 min-value?)
+              (max-value      1.0 max-value?)
+              (warning-value  0.0 warning-value?)
+              (critical-value 0.0 critical-value?)
+              (tick-mark-position         :below tick-mark-position?)
+              (number-of-tick-marks       nil    number-of-tick-marks?)
+              (number-of-major-tick-marks nil    number-of-major-tick-marks?)
+              (style                      :relevancy style?)
+              (draws-tiered-capacity-levels-p nil draws-tiered-capacity-levels-p?)
+              (fill-color               nil fill-color?)
+              (warning-fill-color       nil warning-fill-color?)
+              (critical-fill-color      nil critical-fill-color?)
+              (rating-image             nil rating-image?)
+              (rating-placeholder-image nil rating-placeholder-image?)
+              (placeholder-visibility   :automatic placeholder-visibility?)
+              (editablep                nil editablep?)
+            &allow-other-keys)
+  "Initialize `ns-level-indicator'.
+
+Parameters:
++ FRAME
++ VALUE
+  Level indicator value
++ MIN-VALUE
+  The receiver’s minimum value.
++ MAX-VALUE
+  The receiver’s maximum value.
++ WARNING-VALUE
+  The receiver’s warning value.
++ CRITICAL-VALUE
+  The receiver’s critical value.
++ TICK-MARK-POSITION
+  Determines how the receiver’s tick marks are aligned with it.
++ NUMBER-OF-TICK-MARKS
+  The number of tick marks associated with the receiver.
++ NUMBER-OF-MAJOR-TICK-MARKS
+  The number of tick marks associated with the receiver.
++ STYLE (`ns-level-indicator-style')
+  The appearance of the indicator.
++ RATING-IMAGE
+  Image used to draw the level indicator item.
++ DRAWS-TIERED-CAPACITY-LEVELS-P
+  If draws different color on different range of the level indicator.
++ FILL-COLOR
+  Filling color for normal range.
++ WARNING-FILL-COLOR
+  Filling color for warning range.
++ CRITICAL-FILL-COLOR
+  Filling color for critical range.
++ RATING-PLACEHOLDER-IMAGE
+  Image used for level indicator place holder.
++ PLACEHOLDER-VISIBILITY
+  Customize the visibility of the level indicator placeholder.
++ EDITABLEP
+  If level indicator is editable.
+"
+  (declare (type ns-rect* frame)
+           (type ns-tick-mark-position tick-mark-position)
+           (type ns-level-indicator-style style)
+           (type ns-tick-mark-position    tick-mark-position)
+           (type ns-level-indicator-placeholder-visibility placeholder-visibility))
+  (invoke self "initWithFrame:" frame)
+  (setf (value self) value)
+  (when min-value?      (setf (min-value      self) min-value))
+  (when max-value?      (setf (max-value      self) max-value))
+  (when warning-value?  (setf (warning-value  self) warning-value))
+  (when critical-value? (setf (critical-value self) critical-value))
+  (when tick-mark-position?
+    (setf (tick-mark-position self) tick-mark-position))
+  (when number-of-tick-marks?
+    (setf (number-of-tick-marks self) number-of-tick-marks))
+  (when number-of-major-tick-marks?
+    (setf (number-of-major-tick-marks self) number-of-major-tick-marks))
+  (when style?        (setf (style        self) style))
+  (when rating-image? (setf (rating-image self) rating-image))
+  (when draws-tiered-capacity-levels-p?
+    (setf (draws-tiered-capacity-levels-p self)
+            draws-tiered-capacity-levels-p))
+  (when fill-color?          (setf (fill-color          self) fill-color))
+  (when warning-fill-color?  (setf (warning-fill-color  self) warning-fill-color))
+  (when critical-fill-color? (setf (critical-fill-color self) critical-fill-color))
+  (when rating-placeholder-image?
+    (setf (rating-placeholder-image self) rating-placeholder-image))
+  (when placeholder-visibility?
+    (setf (placeholder-visibility self) placeholder-visibility))
+  (when editablep? (setf (editablep self) editablep)))
 
 (define-objc-class "NSPopUpButton" ()
   ()

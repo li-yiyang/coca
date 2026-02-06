@@ -104,8 +104,15 @@ Parameters:
           (find-if (lambda (elem) (tree-find-if elem pred)) tree)
           nil)))
 
+(declaim (inline as-boolean))
 (defun as-boolean (value)
   "Convert VALUE as boolean value. "
   (and value t))
+
+(declaim (inline as-double))
+(defun as-double (value)
+  "Convert VALUE as double (CGFloat) value. "
+  (declare (type real value))
+  (coerce value 'double-float))
 
 ;;;; utils.lisp ends here

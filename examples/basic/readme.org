@@ -1488,6 +1488,57 @@ abcdefghijklmnopqrstuvwxyz
   not creating custom classes, but just modify the =win= (=ns-window=)
   directly after we created it
 
+** LevelIndicator
+#+begin_src lisp
+(sb-int:set-floating-point-modes :traps ())
+(let ((app (ns-app))
+      (win (alloc-init 'ns-window
+                       :frame #(100 100 300 300)
+                       :title "LevelIndicator example")))
+  (add-subview win (alloc-init 'ns-level-indicator
+                               :frame #(50 230 200 30)
+                               :value 0))
+  (add-subview win (alloc-init 'ns-level-indicator
+                               :frame #(50 200 200 20)
+                               :value 2))
+  (add-subview win (alloc-init 'ns-level-indicator
+                               :frame #(50 170 200 20)
+                               :value 4
+                               :style :continuous-capacity))
+  (let* ((value 0)
+         (level (alloc-init 'ns-level-indicator
+                            :frame #(50 140 200 20)
+                            :value value))
+         (min   (min-value level))
+         (max   (max-value level))
+         (range (1+ (- max min))))
+    (bt:make-thread
+     (lambda ()
+       (loop :do (shiftf (value level) value (+ (mod (1+ value) range) min))
+             :do (sleep 0.5))))
+    (add-subview win level))
+  (add-subview win (alloc-init 'ns-level-indicator
+                               :frame #(50 110 200 20)
+                               :value 3
+                               :style :rating))
+  (setf (activation-policy app) :regular)
+  (make-main-window win)
+  (run app))
+#+end_src
+
+#+attr_html: :width 80%
+#+attr_org: :width 300px
+#+caption: LevelIndicator example
+[[file:./level-indicator.gif]]
+
+*Reference*
++ [[https://github.com/gammasoft71/Examples_Cocoa/blob/master/src/Controls/LevelIndicator/LevelIndicator.m][LevelIndicator.m]] ([[https://github.com/gammasoft71/Examples_Cocoa/][Cocoa examples (github:gammasoft71/Examples_Cocoa)]])
+
+*Explain*
++ You could use =ns-timer=, but I found =bt:thread= is workable.
+  However, you have to be careful with =bt:thread=, to stop the
+  update thread loop after you close the window (free... ?)
+
 * Components
 ** Timer
 #+begin_src lisp
