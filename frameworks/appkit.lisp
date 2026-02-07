@@ -736,6 +736,163 @@ see https://developer.apple.com/documentation/appkit?language=objc")
 (cffi:use-foreign-library appkit)
 
 
+
+(define-objc-class "NSImage" ()
+  (("size"
+    :accessor size
+    :documentation
+    "The size of the image.
+
+Defaults to {0.0, 0.0} if no size has been set and the size cannot be
+determined from any of the receiver’s image representations. If the
+size of the image hasn’t already been set when an image representation
+is added, the size is taken from the image representation’s data. For
+EPS images, the size is taken from the image’s bounding box. For TIFF
+images, the size is taken from the ImageLength and ImageWidth
+attributes.
+
+Changing the size of an NSImage after it has been used effectively
+resizes the image. Changing the size invalidates all its caches and
+frees them. When the image is next composited, the selected
+representation will draw itself in an offscreen window to recreate the
+cache.
+
+see https://developer.apple.com/documentation/appkit/nsimage/size?language=objc"))
+  (:documentation
+   "A high-level interface for manipulating image data.
+
+You use instances of NSImage to load existing images, create new
+images, and draw the resulting image data into your views. Although
+you use this class predominantly for image-related operations, the
+class itself knows little about the underlying image data. Instead, it
+works in conjunction with one or more image representation objects
+(subclasses of NSImageRep) to manage and render the image data. For
+the most part, these interactions are transparent.
+
+The class serves many purposes, providing support for the following
+tasks:
+
++ Loading images stored on disk or at a specified URL.
++ Drawing images into a view or graphics context.
++ Providing the contents of a CALayer object.
++ Creating new images based on a series of captured drawing commands.
++ Producing versions of the image in a different format.
+
+The NSImage class itself is capable of managing image data in a
+variety of formats. The specific list of formats is dependent on the
+version of the operating system but includes many standard formats
+such as TIFF, JPEG, GIF, PNG, and PDF among others. AppKit manages
+each format using a specific type of image representation object,
+whose job is to manage the actual image data. You can get a list of
+supported formats using the methods described in Determining Supported
+Types of Images.
+
+For more information about how to use image objects in your app, see
+Cocoa Drawing Guide.  Using Images with Core Animation Layers
+
+Although you can assign an NSImage object directly to the contents
+property of a CALayer object, doing so may not always yield the best
+results. Instead of using your image object, you can use the
+layerContentsForContentsScale: method to obtain an object that you can
+use for your layer’s contents. The image created by that method serves
+as the contents of a layer, which also supports all of the layer’s
+gravity modes. By contrast, the NSImage class supports only the
+kCAGravityResize, kCAGravityResizeAspect, and
+kCAGravityResizeAspectFill modes.
+
+Before calling the layerContentsForContentsScale: method, use the
+recommendedLayerContentsScale: method to get the recommended scale
+factor for the resulting image. The code listing below shows a typical
+example that uses the scale factor of a window’s backing store as the
+desired scale factor. From that scale factor, the code gets the scale
+factor for the specified image object and creates an object that you
+assign to the layer. You might use this code for images that fit the
+layer bounds precisely or for which you rely on the contentsGravity
+property of the layer to position or scale the image.
+
+see https://developer.apple.com/documentation/appkit/nsimage?language=objc"))
+
+(defgeneric as-ns-image (object &key &allow-other-keys)
+  (:documentation "Turn OBJECT as `ns-image'. ")
+  (:method ((image ns-image) &key)
+    image)
+  (:method ((pathname pathname) &key)
+    "Initializes and returns an image object using the specified file.
+Return an initialized NSImage object or nil if the new object cannot
+be initialized.
+
+Parameter:
++ PATHNAME: pathname specifying the file with the desired image data.
+  Relative paths must be relative to the current working directory.
+
+This method initializes the image object lazily. It does not actually
+open the specified file or create any image representations from its
+data until an app attempts to draw the image or request information
+about it.
+
+The filename parameter should include the file extension that
+identifies the type of the image data. The mechanism that actually
+creates the image representation for filename looks for an NSImageRep
+subclass that handles that data type from among those registered with
+NSImage.
+
+Because this method doesn’t actually create image representations for
+the image data, your app should do error checking before attempting to
+use the image; one way to do so is by accessing the valid property to
+check whether the image can be drawn.
+
+This method invokes setDataRetained: with an argument of true, thus
+enabling it to hold onto its filename. When archiving an image created
+with this method, only the image’s filename is written to the archive.
+
+If the cached version of the image uses less memory than the original
+image data, AppKit deletes the original data and uses the cached
+image. (This can occur for images whose resolution is greater than 72
+dpi.) If you resize the image by less than 50%, AppKit loads the data
+in again from the file. If you expect to delete the file or change its
+contents, use initWithContentsOfFile: instead.
+
+see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencingfile:)?language=objc"
+    (let ((image (invoke (alloc 'ns-image)
+                         "initByReferencingFile:"
+                         (string-to-ns-string
+                          (uiop:native-namestring pathname)))))
+      (if image
+          image
+          (error "~A cannot be initialized as `ns-image'. " pathname))))
+  (:method ((url ns-url) &key)
+    "Initializes and returns an image object using the specified URL.
+Return an initialized NSImage object.
+
+Parameter:
++ URL: the `ns-url' identifying the image
+
+This method initializes the image object lazily. It does not attempt
+to retrieve the data from the specified URL or create any image
+representations from that data until an app attempts to draw the image
+or request information about it.
+
+The url parameter should include a file extension that identifies the
+type of the image data. The mechanism that actually creates the image
+representation looks for an NSImageRep subclass that handles that data
+type from among those registered with NSImage.
+
+Because this method doesn’t actually create image representations for
+the image data, your app should do error checking before attempting to
+use the image; one way to do so is by accessing the valid property to
+check whether the image can be drawn.
+
+This method invokes setDataRetained: with an argument of true, thus
+enabling it to hold onto its URL. When archiving an image created with
+this method, only the image’s URL is written to the archive.
+
+see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencing:)?language=objc"
+    (invoke (alloc 'ns-image) "initByReferencingURL:" url))
+  (:method (default &key)
+    "Treat DEFAULT as `ns-url'. "
+    (as-ns-image (as-ns-url default))))
+
+
 ;;;; Documents, Data, and Pasteboard
 ;; Organize your app’s data and preferences, and share that data on the pasteboard or in iCloud.
 ;; see https://developer.apple.com/documentation/appkit/documents-data-and-pasteboard?language=objc
@@ -6733,161 +6890,6 @@ see https://developer.apple.com/documentation/appkit/nsaccessibilityelement-swif
 ;; see https://developer.apple.com/documentation/appkit/images-and-pdf?language=objc
 
 ;;; Images
-
-(define-objc-class "NSImage" ()
-  (("size"
-    :accessor size
-    :documentation
-    "The size of the image.
-
-Defaults to {0.0, 0.0} if no size has been set and the size cannot be
-determined from any of the receiver’s image representations. If the
-size of the image hasn’t already been set when an image representation
-is added, the size is taken from the image representation’s data. For
-EPS images, the size is taken from the image’s bounding box. For TIFF
-images, the size is taken from the ImageLength and ImageWidth
-attributes.
-
-Changing the size of an NSImage after it has been used effectively
-resizes the image. Changing the size invalidates all its caches and
-frees them. When the image is next composited, the selected
-representation will draw itself in an offscreen window to recreate the
-cache.
-
-see https://developer.apple.com/documentation/appkit/nsimage/size?language=objc"))
-  (:documentation
-   "A high-level interface for manipulating image data.
-
-You use instances of NSImage to load existing images, create new
-images, and draw the resulting image data into your views. Although
-you use this class predominantly for image-related operations, the
-class itself knows little about the underlying image data. Instead, it
-works in conjunction with one or more image representation objects
-(subclasses of NSImageRep) to manage and render the image data. For
-the most part, these interactions are transparent.
-
-The class serves many purposes, providing support for the following
-tasks:
-
-+ Loading images stored on disk or at a specified URL.
-+ Drawing images into a view or graphics context.
-+ Providing the contents of a CALayer object.
-+ Creating new images based on a series of captured drawing commands.
-+ Producing versions of the image in a different format.
-
-The NSImage class itself is capable of managing image data in a
-variety of formats. The specific list of formats is dependent on the
-version of the operating system but includes many standard formats
-such as TIFF, JPEG, GIF, PNG, and PDF among others. AppKit manages
-each format using a specific type of image representation object,
-whose job is to manage the actual image data. You can get a list of
-supported formats using the methods described in Determining Supported
-Types of Images.
-
-For more information about how to use image objects in your app, see
-Cocoa Drawing Guide.  Using Images with Core Animation Layers
-
-Although you can assign an NSImage object directly to the contents
-property of a CALayer object, doing so may not always yield the best
-results. Instead of using your image object, you can use the
-layerContentsForContentsScale: method to obtain an object that you can
-use for your layer’s contents. The image created by that method serves
-as the contents of a layer, which also supports all of the layer’s
-gravity modes. By contrast, the NSImage class supports only the
-kCAGravityResize, kCAGravityResizeAspect, and
-kCAGravityResizeAspectFill modes.
-
-Before calling the layerContentsForContentsScale: method, use the
-recommendedLayerContentsScale: method to get the recommended scale
-factor for the resulting image. The code listing below shows a typical
-example that uses the scale factor of a window’s backing store as the
-desired scale factor. From that scale factor, the code gets the scale
-factor for the specified image object and creates an object that you
-assign to the layer. You might use this code for images that fit the
-layer bounds precisely or for which you rely on the contentsGravity
-property of the layer to position or scale the image.
-
-see https://developer.apple.com/documentation/appkit/nsimage?language=objc"))
-
-(defgeneric as-ns-image (object &key &allow-other-keys)
-  (:documentation "Turn OBJECT as `ns-image'. ")
-  (:method ((image ns-image) &key)
-    image)
-  (:method ((pathname pathname) &key)
-    "Initializes and returns an image object using the specified file.
-Return an initialized NSImage object or nil if the new object cannot
-be initialized.
-
-Parameter:
-+ PATHNAME: pathname specifying the file with the desired image data.
-  Relative paths must be relative to the current working directory.
-
-This method initializes the image object lazily. It does not actually
-open the specified file or create any image representations from its
-data until an app attempts to draw the image or request information
-about it.
-
-The filename parameter should include the file extension that
-identifies the type of the image data. The mechanism that actually
-creates the image representation for filename looks for an NSImageRep
-subclass that handles that data type from among those registered with
-NSImage.
-
-Because this method doesn’t actually create image representations for
-the image data, your app should do error checking before attempting to
-use the image; one way to do so is by accessing the valid property to
-check whether the image can be drawn.
-
-This method invokes setDataRetained: with an argument of true, thus
-enabling it to hold onto its filename. When archiving an image created
-with this method, only the image’s filename is written to the archive.
-
-If the cached version of the image uses less memory than the original
-image data, AppKit deletes the original data and uses the cached
-image. (This can occur for images whose resolution is greater than 72
-dpi.) If you resize the image by less than 50%, AppKit loads the data
-in again from the file. If you expect to delete the file or change its
-contents, use initWithContentsOfFile: instead.
-
-see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencingfile:)?language=objc"
-    (let ((image (invoke (alloc 'ns-image)
-                         "initByReferencingFile:"
-                         (string-to-ns-string
-                          (uiop:native-namestring pathname)))))
-      (if image
-          image
-          (error "~A cannot be initialized as `ns-image'. " pathname))))
-  (:method ((url ns-url) &key)
-    "Initializes and returns an image object using the specified URL.
-Return an initialized NSImage object.
-
-Parameter:
-+ URL: the `ns-url' identifying the image
-
-This method initializes the image object lazily. It does not attempt
-to retrieve the data from the specified URL or create any image
-representations from that data until an app attempts to draw the image
-or request information about it.
-
-The url parameter should include a file extension that identifies the
-type of the image data. The mechanism that actually creates the image
-representation looks for an NSImageRep subclass that handles that data
-type from among those registered with NSImage.
-
-Because this method doesn’t actually create image representations for
-the image data, your app should do error checking before attempting to
-use the image; one way to do so is by accessing the valid property to
-check whether the image can be drawn.
-
-This method invokes setDataRetained: with an argument of true, thus
-enabling it to hold onto its URL. When archiving an image created with
-this method, only the image’s URL is written to the archive.
-
-see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencing:)?language=objc"
-    (invoke (alloc 'ns-image) "initByReferencingURL:" url))
-  (:method (default &key)
-    "Treat DEFAULT as `ns-url'. "
-    (as-ns-image (as-ns-url default))))
 
 (define-objc-class "NSImageRep" ()
   ()
