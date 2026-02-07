@@ -14,10 +14,10 @@
   :author ("凉凉")
   :license "LLGPL"
   ;; ROADMAP:
-  ;; + 0.1.0: can call ObjC method
-  ;; + 0.2.0: can define ObjC class, can implement ObjC method
   ;; + 0.3.0: documentation, bug fix
-  :version "0.0.5"
+  ;; + 0.4.0: more stable API
+  ;; + 1.0.0: possibly some breaking API change 
+  :version "0.2.0"
   :description "ObjC Runtime bridging in Common Lisp"
   :long-description
   "Coca/ObjC is a Common Lisp bridge to ObjC Runtime.
@@ -35,19 +35,18 @@ LispWorks' API."
   :pathname "objc"
   :components
   ((:file        "package")
-   ;; TODO: wrapper compile result should be cached
-   (:objc-file   "wrapper"     :depends-on ("package"))
-   (:file        "utils"       :depends-on ("package"))
-   (:file        "cffi"        :depends-on ("wrapper"))
-   (:file        "sel"         :depends-on ("cffi"))
-   (:file        "objc-class"  :depends-on ("cffi"))
-   (:file        "objc-object" :depends-on ("cffi"))
-   (:file        "encoding"    :depends-on ("sel"
-                                            "objc-class"
-                                            "objc-object"))
-   (:file        "method"      :depends-on ("encoding"))
-   (:file        "sugar"       :depends-on ("encoding"
-                                            "method"))))
+   (:objc-file   "coca-objc-wrapper" :depends-on ("package"))
+   (:file        "utils"             :depends-on ("package"))
+   (:file        "cffi"              :depends-on ("coca-objc-wrapper"))
+   (:file        "sel"               :depends-on ("cffi"))
+   (:file        "objc-class"        :depends-on ("cffi"))
+   (:file        "objc-object"       :depends-on ("cffi"))
+   (:file        "encoding"          :depends-on ("sel"
+                                                  "objc-class"
+                                                  "objc-object"))
+   (:file        "method"            :depends-on ("encoding"))
+   (:file        "sugar"             :depends-on ("encoding"
+                                                  "method"))))
 
 
 (defsystem #:coca/frameworks
