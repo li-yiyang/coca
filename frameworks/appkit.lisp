@@ -511,6 +511,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:string-value
    #:badge-type
    #:ns-status-bar
+   #:ns-system-status-bar
    #:ns-status-item
    #:ns-status-bar-button
    #:ns-cursor
@@ -666,6 +667,43 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-mutable-paragraph-style
    #:ns-text-tab
    #:ns-text-list
+   #:ns-table-view
+   #:data-source
+   #:uses-static-contents-p
+   #:double-action
+   #:clicked-column
+   #:clicked-row
+   #:allows-column-reordering-p
+   #:allows-column-resizing-p
+   #:allows-column-selection-p
+   #:uses-automatic-row-heights-p
+   #:intercell-spacing
+   #:row-height
+   #:background-color
+   #:uses-alternating-row-background-colors-p
+   #:style
+   #:selection-highlight-style
+   #:grid-color
+   #:grid-style
+   #:row-size-style
+   #:selected-column
+   #:delegate
+   #:ns-table-view-style
+   #:ns-table-view-style-p
+   #:as-ns-table-view-style
+   #:decode-ns-table-view-style
+   #:ns-table-view-selection-highlight-style
+   #:ns-table-view-selection-highlight-style-p
+   #:as-ns-table-view-selection-highlight-style
+   #:decode-ns-table-view-selection-highlight-style
+   #:ns-table-view-grid-line-style
+   #:ns-table-view-grid-line-style-p
+   #:decode-ns-table-view-grid-line-style
+   #:as-ns-table-view-grid-line-style
+   #:ns-table-view-row-size-style
+   #:as-ns-table-view-row-size-style
+   #:ns-table-view-row-size-style-p
+   #:decode-ns-table-view-row-size-style
    #:ns-text-table
    #:ns-text-table-block
    #:ns-text-block
@@ -726,8 +764,7 @@ see https://developer.apple.com/documentation/appkit?language=objc")
    #:ns-writing-tools-coordinator
    #:ns-writing-tools-coordinator-context
    #:ns-writing-tools-coordinator-animation-parameters
-   #:ns-text-preview
-   ))
+   #:ns-text-preview))
 
 (in-package :coca.appkit)
 
@@ -757,7 +794,13 @@ frees them. When the image is next composited, the selected
 representation will draw itself in an offscreen window to recreate the
 cache.
 
-see https://developer.apple.com/documentation/appkit/nsimage/size?language=objc"))
+see https://developer.apple.com/documentation/appkit/nsimage/size?language=objc")
+   ("template"
+    :accessor template-p
+    :before   as-boolean
+    :documentation
+    "Whether the image represents a template image.
+see https://developer.apple.com/documentation/appkit/nsimage/istemplate?language=objc"))
   (:documentation
    "A high-level interface for manipulating image data.
 
@@ -890,7 +933,13 @@ see https://developer.apple.com/documentation/appkit/nsimage/init(byreferencing:
     (invoke (alloc 'ns-image) "initByReferencingURL:" url))
   (:method (default &key)
     "Treat DEFAULT as `ns-url'. "
-    (as-ns-image (as-ns-url default))))
+    (as-ns-image (as-ns-url default)))
+  (:method :around (image &key size (template-p nil template-p?))
+    "Modify IMAGE if needed. "
+    (declare (type (or null ns-size*) size))
+    (let ((image (call-next-method)))
+      (when size        (setf (size       image) size))
+      (when template-p? (setf (template-p image) template-p)))))
 
 
 ;;;; Documents, Data, and Pasteboard
@@ -2086,6 +2135,509 @@ see https://developer.apple.com/documentation/appkit/nsstackview?language=objc")
 see https://developer.apple.com/documentation/appkit/nstabview?language=objc"))
 
 ;;; Content views
+
+;; Browser View
+
+;; Collection View
+
+;; Outline View
+
+;; Table View
+;; =================
+;; 
+
+(define-objc-enum ns-table-view-style
+  "Contains the possible style values for a table view. "
+  (:automatic   0 "The system resolves the table view style"
+                  "based on the table view hierarchy.")
+  (:full-width  1 "The table view style resolves to a full-width style.")
+  (:inset       2 "The table view style resolves to an inset style.")
+  (:source-list 3 "The table view style resolves to a source-list style.")
+  (:plain       4 "The table view style resolves to a plain style."))
+
+(define-objc-enum ns-table-view-selection-highlight-style
+  "The following constants specify the selection highlight styles.
+These constants are used by the selectionHighlightStyle property.
+see https://developer.apple.com/documentation/appkit/nstableview/selectionhighlightstyle-swift.enum?language=objc"
+  (:none    -1)
+  (:regular  0))
+
+(define-objc-mask ns-table-view-grid-line-style
+  "NSTableView defines these constants to specify grid styles.
+
+These constants are used by the gridStyleMask property. The mask can
+be either NSTableViewGridNone or it can contain either or both of the
+other options combined using the C bitwise OR operator.
+
+see https://developer.apple.com/documentation/appkit/nstableview/gridlinestyle?language=objc"
+  (:none              0 "Specifies that no grid lines should be displayed.")
+  (:solid-vertical    1 "Specifies that vertical grid lines should be displayed.")
+  (:solid-horizontal  2 "Specifies that horizontal grid lines should be displayed.")
+  (:dashed-horizontal 8 "Specifies that the horizontal grid lines should be drawn dashed."))
+
+(define-objc-enum ns-table-view-row-size-style
+  "The row size style constants define the size of the rows in the
+table view. They are used by the effectiveRowSizeStyle and
+rowSizeStyle properties. You can also query the row size in the
+NSTableCellView class’ property rowSizeStyle.
+see https://developer.apple.com/documentation/appkit/nstableview/rowsizestyle-swift.enum?language=objc"
+  (:default -1 "The table will use the system default layout size: "
+            "small, medium or large.")
+  (:custom  0 "The table will use the rowHeight or invoke the delegate method"
+            "tableView:heightOfRow:, if implemented. The cell layout is not changed.")
+  (:small   1 "The table will use a row height specified for a small table. "
+            "It is required that the size be fully tested and supported "
+            "if NSTableViewRowSizeStyleCustom is not used.")
+  (:medium  2 "The table will use a row height specified for a medium table. "
+            "It is required that the size be fully tested and supported if "
+            "NSTableViewRowSizeStyleCustom is not used.")
+  (:large   3 "The table will use a row height specified for a large table. "
+            "It is required that the size be fully tested and supported if"
+            "NSTableViewRowSizeStyleCustom is not used."))
+
+(define-objc-class "NSTableView" ()
+  (("dataSource"
+    :accessor data-source
+    :documentation
+    "The object that provides the data displayed by the table view.
+
+The data source for the table view must implement the appropriate
+methods of the NSTableViewDataSource protocol. See Populating a Table
+View Programmatically and the NSTableViewDataSource protocol
+specification for more information. Note that in versions of macOS
+prior to v10.12, the table view did not retain the data source in a
+managed memory environment.
+
+Setting the data source invokes tile.
+
+If the delegate doesn’t respond to either numberOfRowsInTableView: or
+tableView:objectValueForTableColumn:row:,
+NSInternalInconsistencyException may be raised.
+
+see https://developer.apple.com/documentation/appkit/nstableview/datasource?language=objc")
+   ("usesStaticContents"
+    :accessor uses-static-contents-p
+    :before as-boolean
+    :documentation
+    "A Boolean value indicating whether the table uses static data.
+
+A static table does not rely on a data source to provide the number of
+rows. A static table view’s contents are set at design time and can be
+changed programmatically as needed. Typically, you do not change the
+contents of a static table view after setting them.
+
+In Xcode, any rows you add to a static table are saved in the
+corresponding nib or storyboard file and loaded with the rest of the
+table at runtime. You can add table rows programmatically to a static
+table view using the insertRowsAtIndexes:withAnimation: method. When
+adding rows programmatically, your table view delegate must implement
+the tableView:viewForTableColumn:row: method to provide the
+corresponding view for any new rows. You can also remove rows at any
+time using the removeRowsAtIndexes:withAnimation: method.
+
+Note
+A table with static contents must be an NSView-based table view.
+
+see https://developer.apple.com/documentation/appkit/nstableview/usesstaticcontents?language=objc")
+   ("doubleAction"
+    :accessor double-action
+    :before   coerce-to-selector
+    :documentation
+    "The message sent to the table view’s target when the user
+double-clicks a cell or column header.
+see https://developer.apple.com/documentation/appkit/nstableview/doubleaction?language=objc")
+   ("clickedColumn"
+    :reader clicked-column
+    :documentation
+    "The index of the column the user clicked.
+see https://developer.apple.com/documentation/appkit/nstableview/clickedcolumn?language=objc")
+   ("clickedRow"
+    :reader clicked-row
+    :documentation
+    "The index of the row the user clicked.
+see https://developer.apple.com/documentation/appkit/nstableview/clickedrow?language=objc")
+   ("allowsColumnReordering"
+    :accessor allows-column-reordering-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the table view allows the user
+to rearrange columns by dragging their headers.")
+   ("allowsColumnResizing"
+    :accessor allows-column-resizing-p
+    :before   as-boolean
+    :documentation
+    "Boolean value indicating whether the table view allows the user to
+resize columns by dragging between their headers.")
+   ("allowsMultipleSelection"
+    :accessor allows-multiple-selection-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the table view allows the
+user to select more than one column or row at a time.")
+   ("allowsEmptySelection"
+    :accessor allows-empty-selection-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the table view allows the
+user to select zero columns or rows.")
+   ("allowsColumnSelection"
+    :accessor allows-column-selection-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the table view allows the
+user to select columns by clicking their headers.")
+   ("usesAutomaticRowHeights"
+    :accessor uses-automatic-row-heights-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value that indicates whether the table view uses
+autolayout to calculate the height of rows.")
+   ("intercellSpacing"
+    :accessor intercell-spacing
+    :documentation
+    "The horizontal and vertical spacing between cells.
+
+Changing the value of this property causes the table view to redisplay
+itself. Negative values aren’t supported. The default spacing varies
+based on the table’s style.
+
+Table views normally have a 1-pixel separation between consecutively
+selected rows or columns. An intercell spacing of (1.0, 1.0) or
+greater is required if you want this separation. An intercell spacing
+of (0.0, 0.0) forces no separation between consecutive selections.
+
+see https://developer.apple.com/documentation/appkit/nstableview/intercellspacing?language=objc")
+   ("rowHeight"
+    :accessor row-height
+    :before   as-double
+    :documentation
+    "The height of each row in the table.
+
+The default row height is 16.0. The value in this property is used
+only if the table’s rowSizeStyle is set to
+NSTableViewRowSizeStyleCustom.
+
+When you change the value of this property, the table view calls the
+tile method to redisplay the rows using the new value.
+
+see https://developer.apple.com/documentation/appkit/nstableview/rowheight?language=objc")
+   ("backgroundColor"
+     :accessor background-color
+     :before   as-ns-color
+     :documentation
+     "The color used to draw the background of the table.
+
+The default background color is light gray.
+
+see https://developer.apple.com/documentation/appkit/nstableview/backgroundcolor?language=objc")
+   ("usesAlternatingRowBackgroundColors"
+    :accessor uses-alternating-row-background-colors-p
+    :before   as-boolean
+    :documentation
+    "A Boolean value indicating whether the table view uses
+alternating row colors for its background.
+see https://developer.apple.com/documentation/appkit/nstableview/usesalternatingrowbackgroundcolors?language=objc")
+   ("style"
+    :accessor style
+    :getter   "effectiveStyle"
+    :before   as-ns-table-view-style
+    :after    decode-ns-table-view-style
+    :documentation
+    "The style that the table view uses.
+
+The default value for this property is `:automatic' in macOS 11 and later.
+Apps that link to previous macOS versions default to `:plain'.
+
+see https://developer.apple.com/documentation/appkit/nstableview/style-swift.property?language=objc")
+   ("selectionHighlightStyle"
+    :accessor selection-highlight-style
+    :before   as-ns-table-view-selection-highlight-style
+    :after    decode-ns-table-view-selection-highlight-style
+    :documentation
+    "The selection highlight style used by the table view to indicate
+row and column selection.
+
+Setting the selection highlight style to
+NSTableViewSelectionHighlightStyleSourceList causes the table view to
+draw its background using the source list style. It also sets the
+draggingDestinationFeedbackStyle to
+NSTableViewDraggingDestinationFeedbackStyleSourceList.
+
+see https://developer.apple.com/documentation/appkit/nstableview/selectionhighlightstyle-swift.property?language=objc")
+   ("gridColor"
+    :accessor grid-color
+    :before   as-ns-color
+    :documentation
+    "The color used to draw grid lines.
+see https://developer.apple.com/documentation/appkit/nstableview/gridcolor?language=objc")
+   ("gridStyleMask"
+    :accessor grid-style
+    :getter   "effectiveRowSizeStyle"
+    :before   as-ns-table-view-grid-line-style
+    :after    decode-ns-table-view-grid-line-style
+    :documentation
+    "The grid lines drawn by the table view.
+
+Use this property to specify whether lines should be drawn between
+rows and columns. When setting this property, you can specify multiple
+styles at once by adding the corresponding constants together. The
+default value of this property is NSTableViewGridNone.
+
+see https://developer.apple.com/documentation/appkit/nstableview/gridstylemask?language=objc")
+   ("rowSizeStyle"
+    :accessor row-size-style
+    :before   as-ns-table-view-row-size-style
+    :after    decode-ns-table-view-row-size-style
+    :documentation
+    "The row size style (small, medium, large, or custom) used by the table view.
+
+To set the row size style on a row by row basis, set the value of this
+property to NSTableViewRowSizeStyleCustom and implement the
+tableView:heightOfRow: method in your table view delegate object.
+
+The default value of this property is NSTableViewRowSizeStyleCustom,
+which tells the table to use the rowHeight of the table instead of any
+pre-determined system values. Generally, rowSizeStyle should always be
+NSTableViewRowSizeStyleCustom except for “source lists”.
+
+see https://developer.apple.com/documentation/appkit/nstableview/rowsizestyle-swift.property?language=objc")
+   ("tableColumns"
+    :reader table-columns
+    :after  ns-array-to-list
+    :documentation
+    "A list containing the current table column objects.
+see https://developer.apple.com/documentation/appkit/nstableview/tablecolumns?language=objc")
+   ("selectedColumn"
+    :reader selected-column
+    :documentation
+    "The index of the last selected column
+(or the last column added to the selection).
+see https://developer.apple.com/documentation/appkit/nstableview/selectedcolumn?language=objc")
+   ("delegate" :accessor delegate))
+  (:documentation
+   "A set of related records, displayed in rows that represent
+individual records and columns that represent the attributes of
+those records.
+
+Table views are displayed in scroll views. Beginning with macOS v10.7,
+you can use NSView objects (most commonly customized NSTableCellView
+objects) instead of cells for specifying rows and columns. You can
+still use NSCell objects for each row and column item if you prefer.
+
+A table view does not store its own data; it retrieves data values as
+needed from a data source to which it has a weak reference. You should
+not, therefore, directly set data values programmatically in the table
+view; instead, modify the values in the data source and allow the
+changes to be reflected in the table view. To learn about the methods
+that an NSTableView object uses to provide and access the contents of
+its data source object, see NSTableViewDataSource.
+
+To customize a table view’s behavior without subclassing NSTableView,
+use the methods defined by the NSTableViewDelegate protocol. For
+example, the delegate supports table column management, type-to-select
+functionality, row selection and editing, custom tracking, and custom
+views for individual columns and rows. To learn more about the table
+view delegate, see NSTableViewDelegate.
+
+Important
+It’s possible that your data source methods for populating the table
+view may be called before awakeFromNib is called if the data source is
+specified in Interface Builder. You should defend against this by
+having the data source’s numberOfRowsInTableView: method return 0 for
+the number of rows when the data source has not yet been
+configured. In awakeFromNib, when the data source is initialized you
+should always call reloadData on the table view.
+
+Subclassing
+Subclassing NSTableView is usually not necessary. Instead, you
+customize the table view using a delegate object (an object conforming
+to the NSTableViewDelegate protocol) and a data source object
+(conforming to the NSTableViewDataSource protocol), or by subclassing
+one of the following subcomponents: cells (when using NSCell-based
+table views), the row cell view or the row view (when using
+NSView-based table views), the table column class, or table column
+header classes.
+
+Enabling the Table View
+Use the enabled property to enable or disable the table view, which
+the view inherits from NSControl. This property affects the visual
+appearance of the table view differently depending on whether you use
+a view- or a cell-based table view. When you change the property’s
+value for a cell-based table view, the system manages the visual
+appearance of that table view’s rows, and updates them to a state that
+reflects the value. Because view-based table views permit complex
+items in their cells, it’s the developer’s responsibility to update
+each cell’s appearance as appropriate.
+
+see https://developer.apple.com/documentation/appkit/nstableview?language=objc
+see https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/TableView/TableViewOverview/TableViewOverview.html"))
+
+(defmethod init ((table ns-table-view)
+                 &key
+                   frame
+                   items
+                   (delegate :self)
+                 &allow-other-keys)
+  "Initialize `ns-table-view'. "
+  (declare (type ns-rect* frame)
+           (type list     items)
+           (type (or (eql :self) ns-object) delegate))
+  (invoke table "initWithFrame:" frame)
+  (dolist (item items)
+    (add-item table item))
+  (setf (delegate table) (if (eq delegate :self) table delegate)))
+
+(define-objc-enum ns-table-column-resizing-options
+  "These constants specify the resizing modes for a table column.
+The values are used to set the resizingMask property.
+see https://developer.apple.com/documentation/appkit/resizing-modes?language=objc"
+  (:no   0 "Prevents the table column from resizing.")
+  (:auto 1 "Allows the table column to resize automatically in response"
+         "to resizing the table view. The resizing behavior for the table view"
+         "is set using the NSTableView method columnAutoresizingStyle.")
+  (:user 2 "Allows the table column to be resized by the user."))
+
+(define-objc-class "NSTableColumn" ()
+  (("tableView"
+    :accessor view
+    :accessor table-view
+    :documentation
+    "The table view that contains the table column.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/tableview?language=objc")
+   ("width"
+    :accessor width
+    :before   as-double
+    :documentation
+    "The table column’s width, in points.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/width?language=objc")
+   ("minWidth"
+    :accessor min-width
+    :before   as-double
+    :documentation
+    "The table column’s minimum width, in points.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/minwidth?language=objc")
+   ("maxWidth"
+    :accessor max-width
+    :before   as-double
+    :documentation
+    "The table column’s maximum width, in points.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/maxwidth?language=objc")
+   ("resizingMask"
+    :accessor resizing-mask
+    :documentation
+    "The table column’s resizing mask.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/resizingmask?language=objc")
+   ("title"
+    :accessor title
+    :before   as-ns-string
+    :documentation
+    "The title of the table column’s header.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/title?language=objc")
+   ("identifier"
+    :accessor identifier
+    :documentation
+    "The identifier string for the table column.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/identifier?language=objc")
+   ("editable"
+    :accessor editablep
+    :before   as-boolean
+    :documentation
+    "Whether a cell-based table’s column cells are user editable.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/iseditable?language=objc")
+   ("hidden"
+    :accessor hiddenp
+    :before   as-boolean
+    :documentation
+    "Whether the table column is hidden.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/ishidden?language=objc")
+   ("headerToolTip"
+    :accessor tooltip
+    :before   as-ns-string
+    :documentation
+    "The string that’s displayed in a help tag over the table column header.
+see https://developer.apple.com/documentation/appkit/nstablecolumn/headertooltip?language=objc"))
+  (:documentation
+   "The display characteristics and identifier for a column in a table view.
+
+A table column object determines the width (including the maximum and
+minimum widths) of its column in the table view and specifies the
+column’s resizing and editing behavior. A table column stores two cell
+objects: the header cell, which is used to draw the column header, and
+the data cell, which is used to draw the values for each row. In a
+cell-based table, you can control the display of the column by
+specifying subclasses of NSCell to use and by setting the font and
+other display characteristics for these cells. For example, you can
+use an NSTextFieldCell to display string values or substitute an
+NSImageCell to display pictures.
+
+see https://developer.apple.com/documentation/appkit/nstablecolumn?language=objc"))
+
+(defmethod init ((column ns-table-column)
+                 &key
+                   width
+                   min-width
+                   max-width
+                   (resizing-mask '(:auto :user) resizing-mask?)
+                   (title      "" title?)
+                   identifier
+                   (editablep  nil editablep?)
+                   (hiddenp    nil hiddenp?)
+                   (tooltip    nil tooltip?)
+                 &allow-other-keys
+                 &aux (id (or identifier
+                              (gensym (symbol-name (class-name (class-of column)))))))
+  "Initialize `ns-table-column'.
+
+Parameters:
++ TITLE
+  The title of the table column’s header.
++ WIDTH
+  The table column’s width, in points.
++ MIN-WIDTH
+  The table column’s minimum width, in points.
++ MAX-WIDTH
+  The table column’s maximum width, in points.
++ RESIZING-MASK
+  The table column’s resizing mask.
++ TITLE
+  The title of the table column’s header.
++ IDENTIFIER
+  The identifier string for the table column.
++ EDITABLEP
+  Whether a cell-based table’s column cells are user editable.
++ HIDDENP
+  Whether the table column is hidden.
++ TOOLTIP
+  The string that’s displayed in a help tag over the table column header.
+"
+  (invoke column "initWithIdentifier:" (as-ns-string id))
+  (when width          (setf (width         column) width))
+  (when min-width      (setf (min-width     column) min-width))
+  (when max-width      (setf (max-width     column) max-width))
+  (when resizing-mask? (setf (resizing-mask column) resizing-mask))
+  (when title?         (setf (title         column) title))
+  (when editablep?     (setf (editablep     column) editablep))
+  (when hiddenp?       (setf (hiddenp       column) hiddenp))
+  (when tooltip?       (setf (tooltip       column) tooltip)))
+
+(defgeneric as-ns-table-column (item &key &allow-other-keys)
+  (:documentation "Turn ITEM as `ns-table-column'. ")
+  (:method ((item ns-table-column) &key) item)
+  (:method (title &rest keys &key)
+    (setf (getf keys :title) title)
+    (apply #'alloc-init 'ns-table-column keys)))
+
+(defmethod items ((table ns-table-view))
+  "Returns a list containing the current table column objects.
+see https://developer.apple.com/documentation/appkit/nstableview/tablecolumns?language=objc"
+  (ns-array-to-list (invoke table "tableColumns")))
+
+(defmethod add-item ((table ns-table-view) (item ns-table-column) &key)
+  "Adds the specified column as the last column of the table view."
+  (invoke table "addTableColumn:" item))
+
+(defmethod add-item ((table ns-table-view) item &key)
+  (add-item table (as-ns-table-column item)))
 
 (define-objc-class "NSTextView" ()
   ()
@@ -6434,13 +6986,104 @@ Parameters:
   ()
   (:documentation
    "An object that manages a collection of status items displayed within the system-wide menu bar.
+
+A status item (an instance of NSStatusItem) can be displayed with text
+or an icon, can provide a menu and a target-action message when
+clicked, or can be a fully customized view that you create. Use status
+items sparingly and only if the alternatives (such as a Dock menu,
+preference pane, or status window) are not suitable. Because there is
+limited space in which to display status items, status items are not
+guaranteed to be available at all times. For this reason, do not rely
+on them being available and always provide a user preference for
+hiding your application’s status items to free up space in the menu
+bar.
+
 see https://developer.apple.com/documentation/appkit/nsstatusbar?language=objc"))
 
+(defun ns-system-status-bar ()
+  "Returns the system-wide status bar located in the menu bar.
+
+The status bar begins at the right side of the menu bar (to the left
+of Menu Extras and the menu bar clock) and grows to the left as
+NSStatusItem objects are added to it.
+
+see https://developer.apple.com/documentation/appkit/nsstatusbar/system?language=objc"
+  (invoke 'ns-status-bar "systemStatusBar"))
+
+(define-objc-enum ns-status-item-behavior
+  "A set of optional status item behaviors.
+see https://developer.apple.com/documentation/appkit/nsstatusitem/behavior-swift.struct?language=objc"
+  (:removal-allowed        2 "A status item that allows interactive removal.")
+  (:termination-on-removal 4 "A status item that quits the application upon removal."))
+
 (define-objc-class "NSStatusItem" ()
-  ()
+  (("statusBar"
+    :reader status-bar
+    :documentation
+    "The status bar that displays the status item.
+see https://developer.apple.com/documentation/appkit/nsstatusitem/statusbar?language=objc")
+   ("behavior"
+    :accessor behavior
+    :before   as-ns-status-item-behavior
+    :after    decode-ns-status-item-behavior
+    :documentation
+    "The set of allowed behaviors for the status item.
+see https://developer.apple.com/documentation/appkit/nsstatusitem/behavior-swift.property?language=objc")
+   ("button"
+    :reader button
+    :documentation
+    "The button displayed in the status bar.
+
+The status item automatically creates this button by default.
+Use this property to customize the appearance and behavior of the
+button, such as its image, target, action, toolTip, and so on.
+
+see https://developer.apple.com/documentation/appkit/nsstatusitem/button?language=objc")
+   ("menu"
+    :accessor menu
+    :documentation
+    "The pull-down menu displayed when the user clicks the status item.
+
+When non-nil, the status item’s single click action behavior is not
+used. Setting the value of this property to nil removes the menu.
+
+see https://developer.apple.com/documentation/appkit/nsstatusitem/menu?language=objc")
+   ("visible"
+    :accessor visiblep
+    :before   as-boolean
+    :documentation
+    "If the menu bar currently displays the status item.
+see https://developer.apple.com/documentation/appkit/nsstatusitem/isvisible?language=objc")
+   ("length"
+    :reader len
+    :documentation
+    "The amount of space in the status bar that should be allocated to
+the status item.
+
+see https://developer.apple.com/documentation/appkit/nsstatusitem/length?language=objc"))
   (:documentation
    "An individual element displayed in the system menu bar.
-see https://developer.apple.com/documentation/appkit/nsstatusitem?language=objc"))
+
+The NSStatusBar method statusItemWithLength: creates instances of this
+class and automatically adds them to the menu bar. Use the button
+property to customize the appearance and behavior of the status item.
+
+see https://developer.apple.com/documentation/appkit/nsstatusitem?language=objc
+"))
+
+(defmethod icon ((item ns-status-item))
+  "Return the button icon image of ITEM. "
+  (image (button item)))
+
+(defmethod (setf icon) (image (item ns-status-item))
+  (setf (image (button item)) (as-ns-image image)))
+
+(defun ns-status-item (&key
+                         (bar  (ns-system-status-bar))
+                         (icon nil icon?)
+                       &allow-other-keys)
+  ""
+  )
 
 (define-objc-class "NSStatusBarButton" ()
   ()
@@ -8265,6 +8908,30 @@ see https://developer.apple.com/documentation/appkit/nstexttab?language=objc"))
   ()
   (:documentation
    "A section of text that forms a single list.
+
+The visible elements of the list, including list markers, appear in
+the text as they do for lists created by hand. The list object,
+however, allows the list to be recognized as such by the text
+system. This enables automatic creation of markers and spacing. Text
+lists are used in HTML import and export.
+
+Text lists appear as attributes on paragraphs, as part of the
+paragraph style. An NSParagraphStyle may have an array of text lists,
+representing the nested lists containing the paragraph, in order from
+outermost to innermost. For example, if list1 contains four
+paragraphs, the middle two of which are also in the inner list2, then
+the text lists array for the first and fourth paragraphs is (list1),
+while the text lists array for the second and third paragraphs is
+(list1, list2).
+
+The methods implementing this are textLists on NSParagraphStyle, and
+textLists on NSMutableParagraphStyle.
+
+In addition, NSAttributedString has convenience methods for lists,
+such as rangeOfTextList:atIndex:, which determines the range covered
+by a list, and itemNumberInTextList:atIndex:, which determines the
+ordinal position within a list of a particular item.
+
 see https://developer.apple.com/documentation/appkit/nstextlist?language=objc"))
 
 (define-objc-class "NSTextTable" ()
