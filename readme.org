@@ -139,13 +139,17 @@ contributions.
   those applications should only be experimental,
   not meant to be performance for actual productivity
   (just to proof that Coca could do so)
-  
+
   - [ ] Lem Coca Backend,
     expected to be under =application/lem= as =coca/lem= subsystem
   - [ ] Nyxt Coca Backend,
     expected to be under =application/nyxt= as =coca/nyxt= subsystem
   - [ ] CLIM Coca Backend,
-    expected to be under =application/clim= as =coca/clim= subsystem
+    +expected to be under =application/clim= as =coca/clim= subsystem+
+
+    [2026-03-22] Please refer to [[https://codeberg.org/li-yiyang/McCLIM/src/branch/backend-coca/Backends/coca][McCLIM-Coca]] (WIP) for a minial ObjC binding
+    and [[https://codeberg.org/McCLIM/McCLIM][McCLIM]] Cocoa backend implementation. You can see updates (screenshots,
+    videos of newest progress) at [[https://mastodon.social/@lucky_magick][@lucky_magick Mastodon.social]]. 
 
 ** How to Contribute
 *** ObjC frameworks
