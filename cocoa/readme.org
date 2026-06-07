@@ -1,0 +1,14 @@
+#+title: Coca.Cocoa
+#+subtitle: Layer of Cocoa AppKit and Foundation.
+#+author: 凉凉
+* Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.cocoa :results verbatim
+:END:
+
+* Dev Note
+** Thoughts
+*** 2026-06-08
++ use MCL's API design
++ simple-view
+  + CGContext -> view-context

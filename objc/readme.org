@@ -1,0 +1,491 @@
+#+title: Coca.ObjC
+#+subtitle: Minimal CFFI ObjC bindings
+#+author: 凉凉
+* Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.objc :results verbatim
+:END:
+
+** Invoke
+Invoke ObjC method with macro =invoke=:
+
+#+begin_src lisp
+(description (invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object))
+#+end_src
+
+#+RESULTS:
+: Hello World
+
+Or use the shortcut function:
+
+#+begin_src lisp :results silent
+(cffi:foreign-funcall "NSLog" :pointer (string-to-ns-string "Hello World"))
+#+end_src
+
+which should print out like:
+
+#+begin_example
+2026-03-10 20:42:23.575 sbcl[21728:11113876] Hello World
+#+end_example
+
+Note that ObjC errors are not handled by lisp, which just kills the lisp
+image. Be aware to call ObjC methods correctly or check before calling.
+
+** Typing
+The macro =invoke= is just a thin warpper on =cffi:foreign-funcall=.
+
+*** ObjC typing via alias
+For example:
+
+#+begin_src lisp :eval no
+(invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object)
+#+end_src
+
+would be expanded into
+
+#+begin_src lisp :eval no
+(foreign-funcall
+ "objc_msgSend"
+ :pointer (objc-class-ptr #<NSString 1F9E6A100>)
+ :pointer (sel-ptr #<sel stringWithUTF8String: 20890E8C0>)
+ :string "Hello World"
+ :pointer)
+#+end_src
+
+with typing alias:
+
+#+begin_src lisp :eval no
+(define-objc-typing :object
+  :alias :pointer)
+#+end_src
+
+*** Complex ObjC typing transforming rules
+For complex transforming rules:
+
+#+begin_src lisp :eval no
+(invoke ns-object "description" :ns-string)
+#+end_src
+
+would be expanded into
+
+#+begin_src lisp :eval no
+(ns-string-to-string
+ (foreign-funcall
+  "objc_msgSend"
+  :pointer (mcclim-coca.objc::objc-pointer ns-object)
+  :pointer (mcclim-coca.objc::sel-ptr #<sel description 208A1BFE0>)
+  :pointer))
+#+end_src
+
+with result and input args rules:
+
+#+begin_src lisp :eval no
+(define-objc-typing :ns-string
+  :result (:pointer ns-string-to-string)
+  :arg    ((str `(:pointer (string-to-ns-string ,str)))))
+#+end_src
+
+the =:arg= parameter can be a list of elements =(PATTERN EXPANSION-RULE)=
++ =PATTERN=: the pattern use [[https://github.com/m2ym/optima][=optima:match=]] to match patterns
++ =EXPANSION-RULE=: an expression evaluated
+
+  the return value(s) can be arg expansion and invoke rewrite
+  + arg expansion: should be like a list of =(:CFFI-TYPE EXPR ...)=
+  + invoke rewrite: wrap =invoke= like =`(,@rewrite (invoke ...))=
+
+*** Built-in ObjC typing
+McCLIM-Coca.ObjC provides some built-in ObjC typing:
+
+| ObjC typing | CFFI equivent                      | ~invoke~ as return value |
+|-------------+------------------------------------+--------------------------|
+| ~:class~    | ~:pointer~                         | ~coerce-to-objc-class~   |
+| ~:sel~      | ~:pointer~                         | ~coerce-to-selector~     |
+| ~:object~   | ~:pointer~                         |                          |
+| ~:ns-rect~  | ~(:struct ns-rect)~                |                          |
+| ~:ns-point~ | ~(:struct ns-point)~               |                          |
+| ~:ns-size~  | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
+| ~:ns-array~ | ~:pointer~ (not implemented yet)   | ~ns-array-to-list~       |
+
+Can use =define-objc-typing= macro to define a new ObjC typing.
+
+* API
+:PROPERTIES:
+:header-args:lisp: :package mcclim-coca.objc :results verbatim
+:END:
+
++ =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'invoke) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Invokes an ObjC method that returns RESULT CFFI type.
+
+  Syntax:
+
+      (invoke CLASS-OR-OBJECT METHOD
+              { OBJC-TYPE VAR }*
+              [ (RESULT :void) ])
+
+  Parameters:
+  + CLASS-OR-OBJECT: things can be converted via `objc-pointer'
+  + METHOD: a string naming the method to invoke
+  + OBJC-TYPE: extended CFFI type
+
+    Built-in ObjC typing:
+    + :object   expecting to be `objc-object'
+    + :class    expecting to be `objc-class'
+    + :sel      expecting to be `sel'
+    + :ns-rect  expecting to be (X Y W H)
+    + :ns-point expecting to be (X Y)
+    + :ns-size  expecting to be (W H)
+
+    Use `define-objc-typing' to define new ObjC typing.
+  + RESULT:
+
+    Built-in ObjC typing:
+    + :ns-rect  return values of X, Y, W, H
+    + :ns-point return values of X, Y
+    + :ns-size  return values of W, H
+
+    Use `define-objc-typing' to define new ObjC typing.
+
+    If not provided, by default as `:void'
+
+  #+end_example
++ =(invoke-super OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'invoke-super) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Invokes an ObjC method that returns RESULT CFFI type.
+
+  Syntax:
+
+      (invoke-super OBJECT METHOD
+                    { OBJC-TYPE VAR }*
+                    [ (RESULT :void) ])
+
+  Parameters:
+  + OBJECT: `objc-object'
+  + METHOD: a string naming the method to invoke
+  + OBJC-TYPE: extended CFFI type
+
+    Built-in ObjC typing:
+    + :object   expecting to be `objc-object'
+    + :class    expecting to be `objc-class'
+    + :sel      expecting to be `sel'
+    + :ns-rect  expecting to be (X Y W H)
+    + :ns-point expecting to be (X Y)
+    + :ns-size  expecting to be (W H)
+
+    Use `define-objc-typing' to define new ObjC typing.
+  + RESULT:
+
+    Built-in ObjC typing:
+    + :ns-rect  return values of X, Y, W, H
+    + :ns-point return values of X, Y
+    + :ns-size  return values of W, H
+
+    Use `define-objc-typing' to define new ObjC typing.
+
+    If not provided, by default as `:void'
+  #+end_example
++ =(with-autorelease-pool &body)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'with-autorelease-pool) t)
+  #+end_src
+
+  #+RESULTS:
+  : Wrap BODY within ObjC autorelease pool block.
+
++ =sel= [Struct]
++ =objc-class= [Struct]
++ =(coerce-to-selector sel)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'coerce-to-selector t)
+  #+end_src
+
+  #+RESULTS:
+  : Return cached `sel' for ObjC SEL.
++ =(coerce-to-objc-class class)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'coerce-to-objc-class t)
+  #+end_src
+
+  #+RESULTS:
+  : Return cached `objc-class' for ObjC Class.
++ =(define-objc-class class superclass &rest protocols)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-class) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC Class if needed.
+
+  This is equal to calling ObjC Code:
+
+  @interface CLASS : SUPERCLASS < PROTOCOLS... >
+  @end
+
+  + CLASS:
+    string of ObjC Class
+  + SUPERCLASS:
+    string of superclass of ObjC Class
+  + PROTOCOLS:
+    strings of ObjC Protocols
+  #+end_example
++ =(define-objc-method (class sel &key encoding callback) return-type lambda-list &body)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-method) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC instance method.
+
+  Syntax:
+
+      (define-objc-method (CLASS SEL &key ENCODING CALLBACK)
+           RETURN-TYPE
+           LAMBDA-LIST
+        &body
+        SELF...)
+
+  + CLASS:
+    literal string of ObjC class name
+  + SEL:
+    literal string of ObjC SEL name
+  + ENCODING:
+    method encoding type string
+    if not given, will use class_replaceMethod with types as NULL pointer;
+    if given, should be like a string starting with @:
+  + CALLBACK
+    custom CFFI callback symbol name
+  + RETURN-TYPE:
+    cffi return type with ObjC type enhanced
+    + `:object'  same as :pointer
+    + `:class'   return value will be wrapped as `objc-class-ptr'
+    + `:sel'     return value will be wrapped as `sel-ptr'
+    + otherwise see CFFI foreign types
+  + LAMBDA-LIST:
+    same as `cffi:defcallback'
+  + BODY
+    method body,
+    within the BODY, self is bound to foreign-pointer of ObjC object
+  #+end_example
++ =(ensure-objc-initialized)=  [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'ensure-objc-initialized t)
+  #+end_src
+
+  #+RESULTS:
+  : Restore ObjC environment after restore image.
++ =(define-objc-typing)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-typing) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC typing of NAME.
+
+  Syntax:
+  + NAME:  (recommanded to be) a keyword for ObjC typing name
+  + ALIAS:
+    + CFFI typing name
+    + another ObjC typing NAME
+  + RESULT:
+    + CFFI type as `invoke' result
+    + (CFFI-TYPE WRAP)
+      + WRAP as `invoke' result wrap function
+  + ARG:
+    + CFFI type name as argument type
+    + a list of (PATTERN EXPAND)
+
+      + see `optima:match' for rule of PATTERN,
+      + EXPAND will be evaluated to expand the result
+      + if not PATTERN is matched, throw error when `expand-invoke-arg'
+      + EXPAND can return two values (EXPAND REWRITE)
+        + REWRITE will be used to wrap invoke like:
+
+          (,@REWRITE (invoke ...))
+  #+end_example
+
++ =(with-fp-traps-masked &body)= [Macro, SBCL specific]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'with-fp-traps-masked) t)
+  #+end_src
+
+  #+RESULTS:
+  : Only for SBCL: ignore float traps (often trapped when doing CFFI on macOS).
+  : For other Lisp implementations, this will take no effects.
++ =(objc-symbol-value symbol type &optional library)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'objc-symbol-value t)
+  #+end_src
+
+  #+RESULTS:
+  : Lookup foreign ObjC SYMBOL value as TYPE.
+  :
+  : Possible TYPEs:
+  : + :object same as :pointer
+  : + :class  interned as `objc-class'
+  : + :sel    interned as `sel'
+  : + otherwise, CFFI foreign types
++ =(alloc class)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'alloc t)
+  #+end_src
+
+  #+RESULTS:
+  : Allocate instance of CLASS.
+  : Return foreign-pointer to instance of CLASS (not initialized).
++ =(init object)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'init t)
+  #+end_src
+
+  #+RESULTS:
+  : Init NS-OBJECT.
+  : Return foreign-pointer (same to) NS-OBJECT.
++ =(alloc-init class)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'alloc-init t)
+  #+end_src
+
+  #+RESULTS:
+  : Shortcuts of (init (alloc CLASS)).
+  : Return foreign-pointer to instance of CLASS.
++ =(description object)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'description t)
+  #+end_src
+
+  #+RESULTS:
+  : Return description string of NS-OBJECT.
++ =(release object)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'release t)
+  #+end_src
+
+  #+RESULTS:
+  : Release NS-OBJECT.
++ =(retain object)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'retain t)
+  #+end_src
+
+  #+RESULTS:
+  : Retain NS-OBJECT count.
+  : Return foreign-pointer (same to) NS-OBJECT.
++ =(autorelease object)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'autorelease t)
+  #+end_src
+
+  #+RESULTS:
+  : Autorelease NS-OBJECT.
+  : Return foreign-pointer (same to) NS-OBJECT.
++ =(ns-string-to-string ns-string)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'ns-string-to-string t)
+  #+end_src
+
+  #+RESULTS:
+  : Convert NSString object NS-STRING to lisp string.
+  : Return string of NS-STRING.
+
++ =(string-to-ns-string string)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'string-to-ns-string t)
+  #+end_src
+
+  #+RESULTS:
+  : Convert lisp STRING into NSString object.
+  : Return foreign-pointer of NSString for STRING.
++ =(pathname-to-ns-url pathname)=
+
+  #+begin_src lisp :exports results
+  (documentation #'pathname-to-ns-url t)
+  #+end_src
+
+  #+RESULTS:
+  : Convert PATHNAME into NSURL.
+  : Return foreign-pointer of NSPath for PATHNAME.
+
++ =(ns-array-to-list ns-array)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'ns-array-to-list t)
+  #+end_src
+
+  #+RESULTS:
+  : Convert NS-ARRAY into list.
+  : Return a list of foreign-pointer to NSObject.
+
++ =(ns-mutable-dictionary ...)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'ns-mutable-dictionary) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Make NSMutableDictionary from KEY-VALS.
+  Return foreign-pointer of NSMutableDictionary.
+
+  Syntax:
+
+      (ns-mutable-dictionary
+        {KEY VAL}*
+        ...)
+
+  Parameters:
+  KEY-VALS should be like {KEY VAL}... and would be evaluated
+  + KEY
+    + foreign-pointer to NSObject
+    + `nil':  converted into foreign-pointer to NSNull
+    + number: converted into foreign-pointer to NSNumber
+  + VAL
+    + foreign-pointer to NSObject
+    + string: (objc-symbol-value VAL :object)
+    + list: (TYPE VALUE)
+
+      TYPE:
+      + :ns-string => (string-to-ns-string VALUE)
+  #+end_example
+
++ =(ns-number number)=
+
+  #+begin_src lisp :exports results
+  (documentation #'ns-number t)
+  #+end_src
+
+  #+RESULTS:
+  : Convert VAL into NSNumber.
+  : Return foreign-pointer to NSNumber.
