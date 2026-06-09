@@ -31,17 +31,22 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
-  + :ns-rect  expecting to be (X Y W H)
-  + :ns-point expecting to be (X Y)
-  + :ns-size  expecting to be (W H)
+  + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
+  + :ns-point expecting to be #(X Y) or `ns-point'
+  + :ns-size  expecting to be #(W H) or `ns-size'
+
+  Extended in Coca.Cocoa:
+  + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
+    see `coca.cocoa:define-objc-block' for details
 
   Use `define-objc-typing' to define new ObjC typing.
 + RESULT:
 
   Built-in ObjC typing:
-  + :ns-rect  return values of X, Y, W, H
-  + :ns-point return values of X, Y
-  + :ns-size  return values of W, H
+  + :ns-rect  return `ns-rect'
+  + :ns-point return `ns-point'
+  + :ns-size  return `ns-size'
+  + :ns-array return `list' of `foreign-pointer'
 
   Use `define-objc-typing' to define new ObjC typing.
 
@@ -110,17 +115,22 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
-  + :ns-rect  expecting to be (X Y W H)
-  + :ns-point expecting to be (X Y)
-  + :ns-size  expecting to be (W H)
+  + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
+  + :ns-point expecting to be #(X Y) or `ns-point'
+  + :ns-size  expecting to be #(W H) or `ns-size'
+
+  Extended in Coca.Cocoa:
+  + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
+    see `coca.cocoa:define-objc-block' for details
 
   Use `define-objc-typing' to define new ObjC typing.
 + RESULT:
 
   Built-in ObjC typing:
-  + :ns-rect  return values of X, Y, W, H
-  + :ns-point return values of X, Y
-  + :ns-size  return values of W, H
+  + :ns-rect  return `ns-rect'
+  + :ns-point return `ns-point'
+  + :ns-size  return `ns-size'
+  + :ns-array return `list' of `foreign-pointer'
 
   Use `define-objc-typing' to define new ObjC typing.
 

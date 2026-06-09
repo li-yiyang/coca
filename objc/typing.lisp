@@ -391,12 +391,7 @@ Syntax:
 
 (define-objc-typing :ns-rect
   :result ((:struct %c-ns-rect))
-  :arg    (((list x y w h)
-            `(:double ,(%expr-as-double x)
-              :double ,(%expr-as-double y)
-              :double ,(%expr-as-double w)
-              :double ,(%expr-as-double h)))
-           ((vector x y w h)
+  :arg    (((vector x y w h)
             `(:double ,(%expr-as-double x)
               :double ,(%expr-as-double y)
               :double ,(%expr-as-double w)
@@ -411,10 +406,7 @@ Syntax:
 
 (define-objc-typing :ns-point
   :result ((:struct %c-ns-point))
-  :arg    (((list x y)
-            `(:double ,(%expr-as-double x)
-              :double ,(%expr-as-double y)))
-           ((vector x y)
+  :arg    (((vector x y)
             `(:double ,(%expr-as-double x)
               :double ,(%expr-as-double y)))
            (ns-point
@@ -425,10 +417,7 @@ Syntax:
 
 (define-objc-typing :ns-size
   :result ((:struct %c-ns-size))
-  :arg    (((list w h)
-            `(:double ,(%expr-as-double w)
-              :double ,(%expr-as-double h)))
-           ((vector w h)
+  :arg    (((vector w h)
             `(:double ,(%expr-as-double w)
               :double ,(%expr-as-double h)))
            (ns-size

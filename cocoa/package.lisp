@@ -9,6 +9,9 @@
    #:app
    #:coca-app-run
    #:coca-app-terminate)
+  ;; block.lisp
+  (:export
+   #:define-objc-block)
   (:documentation
    "Coca.Cocoa as layer of Cocoa AppKit and Foundation. "))
 
