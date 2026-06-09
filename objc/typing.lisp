@@ -401,8 +401,13 @@ Syntax:
               :double ,(%expr-as-double y)
               :double ,(%expr-as-double w)
               :double ,(%expr-as-double h)))
-           ((and (type symbol) ns-rect)
-            `((:struct %c-ns-rect) ,ns-rect))))
+           (ns-rect
+            (let ((frame (gensym "NS-RECT")))
+              (values `(:double (ns-rect-x ,frame)
+                        :double (ns-rect-y ,frame)
+                        :double (ns-rect-w ,frame)
+                        :double (ns-rect-h ,frame))
+                      `(let ((,frame ,ns-rect))))))))
 
 (define-objc-typing :ns-point
   :result ((:struct %c-ns-point))
@@ -412,8 +417,11 @@ Syntax:
            ((vector x y)
             `(:double ,(%expr-as-double x)
               :double ,(%expr-as-double y)))
-           ((and (type symbol) ns-point)
-            `((:struct %c-ns-point) ,ns-point))))
+           (ns-point
+            (let ((pos (gensym "NS-POINT")))
+              (values `(:double (ns-point-x ,pos)
+                        :double (ns-point-y ,pos))
+                      `(let ((,pos ,ns-point))))))))
 
 (define-objc-typing :ns-size
   :result ((:struct %c-ns-size))
@@ -423,8 +431,11 @@ Syntax:
            ((vector w h)
             `(:double ,(%expr-as-double w)
               :double ,(%expr-as-double h)))
-           ((and (type symbol) ns-size)
-            `((:struct %c-ns-size) ,ns-size))))
+           (ns-size
+            (let ((size (gensym "NS-SIZE")))
+              (values `(:double (ns-size-w ,size)
+                        :double (ns-size-h ,size))
+                      `(let ((,size ,ns-size))))))))
 
 (define-objc-typing :ns-string
   :result (:pointer ns-string-to-string)
