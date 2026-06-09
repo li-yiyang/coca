@@ -431,8 +431,9 @@ Parameters:
     (dealloc window)))
 
 (defmethod window-close ((window window))
-  (dispatch-main ()
-    (invoke (wptr window) "close:" :object (wptr window)))
-  (dealloc window))
+  (with-wptr window
+    (dealloc window)
+    (dispatch-main ()
+      (invoke wptr "close"))))
 
 ;;;; window.lisp ends here
