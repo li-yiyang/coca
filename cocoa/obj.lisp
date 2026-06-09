@@ -72,13 +72,26 @@ Dev Note:
   (:method ((obj objc-obj))
     (init (alloc (slot-value obj 'objc-class)))))
 
+(defgeneric dealloc (obj)
+  (:documentation "Called when dealloced from ObjC side.
+
+Dev Note:
++ this will remove PTR (:after) and remhash OBJ from `*objc-objects*'
++ implementation of `dealloc' method should remove other foreign-pointer
+  to binded with OBJ
+")
+  (:method ((obj objc-obj)) t)
+  (:method :after ((obj objc-obj))
+    (remhash (pointer-address (objc-ptr obj)) *objc-objects*)
+    (slot-makunbound obj 'ptr)))
+
 (defmacro with-ptr (objc-obj &body body)
   "Bind `objc-ptr' of OBJC-OBJ with local variable `ptr' within BODY.
 
 Dev Note:
-+ use only within `mcclim-coca.cocoa' package since `ptr'
++ use only within `coca.cocoa' package since `ptr'
   may not exported outside package
-+ use `with-ptr' within `mcclim-coca.coca' as much as possible
++ use `with-ptr' within `coca.coca' as much as possible
   to keep code clean
 "
   `(let ((ptr (objc-ptr ,objc-obj)))
