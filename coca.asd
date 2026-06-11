@@ -25,18 +25,18 @@
     :description "Thin Cocoa wrapper on ObjC"
     :components
     ((:file "package")
-     (:file "obj"     :depends-on ("package"))
-     (:file "app"     :depends-on ("obj"))
-     (:file "block"   :depends-on ("obj"))
-     (:file "view"    :depends-on ("obj"))
-     (:file "screen"  :depends-on ("obj"))
-     (:file "window"  :depends-on ("view" "screen"))
+     (:file "obj"         :depends-on ("package"))
+     (:file "app"         :depends-on ("obj"))
+     (:file "block"       :depends-on ("obj"))
+     (:file "view"        :depends-on ("obj"))
+     (:file "screen"      :depends-on ("obj"))
+     (:file "window"      :depends-on ("view" "screen"))
+     (:file "dialog-item" :depends-on ("view"))
      #+coca.todo (:file "color"       :depends-on ("obj"))
      #+coca.todo (:file "font"        :depends-on ("obj"))
      #+coca.todo (:file "menu"        :depends-on ("obj"))
      #+coca.todo (:file "windoid"     :depends-on ("view"))
-     #+coca.todo (:file "dialog"      :depends-on ("windows"))
-     #+coca.todo (:file "dialog-item" :depends-on ("view"))))))
+     #+coca.todo (:file "dialog"      :depends-on ("windows"))))))
 
 #+coca.todo
 (defsystem #:coca/app

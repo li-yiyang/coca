@@ -46,16 +46,16 @@ Dev Note:
     "The frame origin of NSView (bottom-left) in its container.
 
 Dev Note:
-+ use `position' to get upper-left coordinates
++ use `view-position' to get upper-left coordinates
 ")
    (%position
-    :type   ns-point
-    :reader view-position
+    :type    ns-point
+    :reader  view-position
     :documentation
     "Cache of `position'.
 
 Dev Note:
-+ this is updated after `origin' is updated
++ this is updated after `view-origin' is updated
 + this is used to reduce allocation of `ns-point'
 + never refer this slot unless you know what are you doing")
    (view-size
@@ -67,7 +67,7 @@ Dev Note:
     "The size of the view.
 
 Dev Note:
-+ setting `size' of view should keep `position'")
++ setting `size' of view should keep `view-position'")
    (view-nickname
     :initform nil
     :initarg  :view-nickname
@@ -170,14 +170,14 @@ Dev Note:
       (setf (view-position view) x)))
 
 (defmethod (setf view-position) ((pos ns-point) (view simple-view)
-                                 &aux (container (container view)))
+                                 &aux (container (view-container view)))
   (when container
-    (let* ((origin (flip-ns-point! view pos (origin view)))
+    (let* ((origin (flip-ns-point! view pos (view-origin view)))
            (frame  (ns-rect :size   (view-size view)
                             :origin origin)))
       (with-ptr view
         (dispatch-main ()
-                       (invoke ptr "setFrame:" :ns-rect frame)))))
+          (invoke ptr "setFrame:" :ns-rect frame)))))
   (copy-ns-point! pos (slot-value view '%position)))
 
 (declaim (inline set-view-size))
@@ -203,7 +203,7 @@ Dev Note:
                              &aux (container (view-container view)))
   (prog1 (copy-ns-size! size (view-size view))
     (when container
-      (setf (slot-value view 'origin)
+      (setf (slot-value view 'view-origin)
             (flip-ns-point! view (view-position view) (view-origin view)))
       (let ((frame (ns-rect :size   (view-size   view)
                             :origin (view-origin view))))
@@ -317,10 +317,11 @@ Parameters:
            (type (or null view) view-container))
   (unless view-size
     (setf (slot-value view 'view-size) (view-default-size view)))
-  (unless view-position
-    (setf (slot-value view '%position) (view-default-position view)))
-  ;; set view-container
+  (setf (slot-value view '%position)
+        (or view-position (view-default-position view)))
   (alloc-init view)
+  (when view-container
+    (set-view-container view view-container))
   (when help-spec
     (setf (view-get view :help-spec) help-spec)))
 
@@ -385,16 +386,24 @@ Parameters:
   (declare (ignore nothing))
   (alx:when-let ((old-container (view-container view)))
     ;; remove in ObjC side
-    (with-ptr view (invoke ptr "removeFromSuperview"))
+    (with-ptr view
+      (dispatch-main () (invoke ptr "removeFromSuperview")))
     ;; remove in lisp side
     (setf (slot-value old-container 'view-subviews)
           (delete view (view-subviews view) :test #'eq))
     (setf (slot-value view 'view-container) nil)))
 
 (defmethod (setf view-container) ((new-container view) (view simple-view))
-  (setf (view-container view) nil)
-  (invoke (objc-ptr view) "addSubview:" :object (objc-ptr new-container))
-  new-container)
+  (when (view-container view)
+    (setf (view-container view) nil))
+  (let ((container* (objc-ptr new-container))
+        (subview*   (objc-ptr view)))
+    (dispatch-main ()
+      (invoke container* "addSubview:" :object subview*)))
+  (prog1 (setf (slot-value view 'view-container) new-container)
+    ;; set position correctly
+    (set-view-position view (view-position view))
+    (vector-push view (slot-value new-container 'view-subviews))))
 
 (defmethod view-contains-p ((view view) contained-view)
   (loop :for container := (view-container contained-view)

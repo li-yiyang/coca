@@ -27,12 +27,15 @@
    #:ns-rect-y
    #:ns-rect-w
    #:ns-rect-h
+   #:copy-ns-rect
    #:ns-size
    #:ns-size-w
    #:ns-size-h
+   #:copy-ns-size
    #:ns-point
    #:ns-point-x
-   #:ns-point-y)
+   #:ns-point-y
+   #:copy-ns-point)
   ;; invoke.lisp
   (:export
    #:invoke

@@ -355,12 +355,11 @@ Side Effect:
                                         origin
                                         (view-size window)))))
 
-(defmethod view-default-position ((window window)
-                                  &aux (screen (window-screen window)))
-  *window-default-position*)
+(defmethod view-default-position ((window window))
+  (copy-ns-point *window-default-position*))
 
 (defmethod view-default-size ((window window))
-  *window-default-size*)
+  (copy-ns-size *window-default-size*))
 
 (defun %window-move-or-resize (window)
   (declare (type window window))
