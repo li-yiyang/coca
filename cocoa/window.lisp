@@ -316,8 +316,15 @@ Side Effect:
   p2)
 
 (defun %set-window-view-origin-and-size (window origin size)
-  (let ((frame (ns-rect :origin origin :size size)))
-    (with-wptr window
+  (declare (type window window)
+           (type ns-point origin)
+           (type ns-size size))
+  (with-wptr window
+    (let* ((content (ns-rect :origin origin :size size))
+           (frame   (invoke wptr
+                            "frameRectForContentRect:"
+                            :ns-rect content
+                            :ns-rect)))
       (dispatch-main ()
         (invoke wptr
                 "setFrame:display:animate:"
@@ -326,15 +333,17 @@ Side Effect:
                 :bool    *set-window-position-animated-p*)))))
 
 (defmethod (setf view-size) ((size ns-size) (window window))
-  (prog1 (copy-ns-point! size (view-size window))
-    (when (view-container window)
-      (let ((origin (view-origin window))
-            (screen (window-screen window)))
-        (flip-ns-point! window (view-position window) (screen-size screen))
-        (offset-ns-point! (screen-origin screen) origin)
-        (%set-window-view-origin-and-size window
-                                          origin
-                                          (view-size window))))))
+  (prog1 (copy-ns-size! size (view-size window))
+    (let ((origin (view-origin window))
+          (screen (window-screen window)))
+      (flip-ns-point! window
+                      (view-position window)
+                      (view-origin   window)
+                      (screen-size   screen))
+      (offset-ns-point! (screen-origin screen) origin)
+      (%set-window-view-origin-and-size window
+                                        origin
+                                        (view-size window)))))
 
 (defmethod (setf view-position) ((pos ns-point) (window window))
   (prog1 (copy-ns-point! pos (view-position window))
@@ -433,6 +442,12 @@ Side Effect:
         (invoke wptr "setStyleMask:" :unsigned-long style)))
     (setf (slot-value window 'window-style) (alx:ensure-list style))))
 
+(deftype window-level ()
+  '(or
+    (integer 0 2000)
+    (member :normal :floating :submenu :torn-off
+            :main-menu :status :modal-panel :screen-saver)))
+
 (defmethod window-level ((window window))
   (let ((level (invoke (wptr window) "level" :long)))
     (case level
@@ -447,6 +462,7 @@ Side Effect:
       (otherwise level))))
 
 (defmethod (setf window-level) (level (window window))
+  (declare (type window-level level))
   (let ((level (case level
                  (:normal 0)
                  (:floating 3)
@@ -458,7 +474,8 @@ Side Effect:
                  (:screen-saver 2000)
                  (otherwise (the integer level)))))
     (dispatch-main ()
-      (invoke (wptr window) "setLevel:" :long level))))
+      (invoke (wptr window) "setLevel:" :long level)))
+  level)
 
 ;; window-close
 

@@ -200,16 +200,15 @@ Dev Note:
       (setf (view-size view) w)))
 
 (defmethod (setf view-size) ((size ns-size) (view simple-view)
-                             &aux (container (container view)))
-  (copy-ns-point! size (view-size view))
-  (when container
-    (setf (slot-value view 'origin)
-          (flip-ns-point! view (view-position view) (view-origin view)))
-    (let ((frame (ns-rect :size   (size   view)
-                          :origin (origin view))))
-      (with-ptr view
-        (dispatch-main () (invoke ptr "setFrame:" :ns-rect frame)))))
-  (size view))
+                             &aux (container (view-container view)))
+  (prog1 (copy-ns-size! size (view-size view))
+    (when container
+      (setf (slot-value view 'origin)
+            (flip-ns-point! view (view-position view) (view-origin view)))
+      (let ((frame (ns-rect :size   (view-size   view)
+                            :origin (view-origin view))))
+        (with-ptr view
+          (dispatch-main () (invoke ptr "setFrame:" :ns-rect frame)))))))
 
 (defmethod view-default-size ((view simple-view))
   (ns-size :w 100 :h 100))
