@@ -99,10 +99,6 @@ Dev Note:
   (:documentation
    "Return `t' if WINDOW is visible, and `nil' if it's hidden. "))
 
-(defgeneric window-ensure-on-screen (window &optional default-position default-size))
-
-(defgeneric window-grow-rect (window))
-
 (defun windows (&key (class 'window) include-invisibles include-windoids)
   "Returns a list of existing windows that are instances of CLASS.
 The list is ordered from front to back. "
@@ -160,6 +156,13 @@ statisfies the arguments. "
    (objc-class
     :type       objc-class
     :initform   (coerce-to-objc-class "CocaWindowView"))
+   (window-screen
+    :type       screen
+    :initarg    :window-screen
+    :initform   (main-screen)
+    :reader     window-screen
+    :documentation
+    "The window is considered as a view contained in screen. ")
    (window-class
     :type       objc-class
     :reader     window-class
@@ -231,14 +234,18 @@ Possible values are:
 ;; initialize-instance
 
 (defmethod alloc-init ((window window))
-  (let* ((style (as-ns-window-style (window-style window)))
-         (win*  (alloc (window-class window)))
-         (view  (init (alloc (objc-class window)))))
+  (let* ((style  (as-ns-window-style (window-style window)))
+         (screen (window-screen window))
+         (origin (view-origin window))
+         (win*   (alloc (window-class window)))
+         (view   (init (alloc (objc-class window)))))
+    (flip-ns-point! window (view-position window) origin (screen-size screen))
+    (offset-ns-point! (screen-origin screen) origin)
     (dispatch-main ()
       (invoke win*
               "initWithContentRect:styleMask:backing:defer:"
-              :ns-rect       (ns-rect :origin (view-position window)
-                                      :size   (view-size     window))
+              :ns-rect       (ns-rect :origin origin
+                                      :size   (view-size window))
               :unsigned-long style
               :unsigned-long 2          ; buffered
               :bool          t
@@ -296,56 +303,91 @@ Parameters:
   ;; remove PTR and unbound it, see `dealloc' for `view'
   (call-next-method))
 
-;; position, size
+;; view-position, view-size
 
-(defmethod (setf view-size) ((size ns-size) (window window))
-  (with-wptr window
-    (dispatch-main () (invoke wptr "setContentSize:" :ns-size size))
-    (setf (slot-value window 'view-size) size)))
+(defun offset-ns-point! (p1 p2)
+  "Offset P2 by P1.
+Return modified P2.
 
-(defmethod (setf view-position) ((pos ns-point) (window window))
-  (with-wptr window
-    (let ((frame (invoke wptr
-                         "frameRectForContentRect:"
-                         :ns-rect (ns-rect :size   (view-size window)
-                                           :origin pos)
-                         :ns-rect)))
+Side Effect:
++ P2 is modified. "
+  (incf (ns-point-x p2) (ns-point-x p1))
+  (incf (ns-point-y p2) (ns-point-y p1))
+  p2)
+
+(defun %set-window-view-origin-and-size (window origin size)
+  (let ((frame (ns-rect :origin origin :size size)))
+    (with-wptr window
       (dispatch-main ()
         (invoke wptr
                 "setFrame:display:animate:"
                 :ns-rect frame
                 :bool    t
-                :bool    *set-window-position-animated-p*))
-      (setf (slot-value window 'view-position) pos))))
+                :bool    *set-window-position-animated-p*)))))
 
-(defmethod view-default-position ((window window))
+(defmethod (setf view-size) ((size ns-size) (window window))
+  (prog1 (copy-ns-point! size (view-size window))
+    (when (view-container window)
+      (let ((origin (view-origin window))
+            (screen (window-screen window)))
+        (flip-ns-point! window (view-position window) (screen-size screen))
+        (offset-ns-point! (screen-origin screen) origin)
+        (%set-window-view-origin-and-size window
+                                          origin
+                                          (view-size window))))))
+
+(defmethod (setf view-position) ((pos ns-point) (window window))
+  (prog1 (copy-ns-point! pos (view-position window))
+    (let ((origin (view-origin window))
+          (screen (window-screen window)))
+      (flip-ns-point! window pos origin (screen-size screen))
+      (offset-ns-point! (screen-origin screen) origin)
+      (%set-window-view-origin-and-size window
+                                        origin
+                                        (view-size window)))))
+
+(defmethod view-default-position ((window window)
+                                  &aux (screen (window-screen window)))
   *window-default-position*)
 
 (defmethod view-default-size ((window window))
   *window-default-size*)
 
+(defun %window-move-or-resize (window)
+  (declare (type window window))
+  (with-ptr window
+    (with-wptr window
+      (let* ((content (invoke ptr "bounds" :ns-rect))
+             (in-win  (invoke ptr
+                              "convertRect:toView:"
+                              :ns-rect content
+                              :pointer (null-pointer)
+                              :ns-rect))
+             (frame   (invoke wptr
+                              "convertRectToScreen:"
+                              :ns-rect in-win
+                              :ns-rect)))
+        (copy-ns-size!  (ns-rect-size   frame) (view-size   window))
+        (copy-ns-point! (ns-rect-origin frame) (view-origin window))
+        (flip-ns-point! window
+                        (view-origin   window)
+                        (view-position window)
+                        (screen-size   (window-screen window)))))))
+
 (define-objc-method ("CocaWindow" "windowDidMove:")
                     :void ((notification :object))
   (alx:when-let ((window (ns-notification-window notification)))
-    (let* ((content (invoke (objc-ptr window) "bounds" :ns-rect))
-           (in-win  (invoke (objc-ptr window)
-                            "convertRect:toView:"
-                            :ns-rect content
-                            :pointer (null-pointer)
-                            :ns-rect))
-           (frame   (invoke (wptr window)
-                            "convertRectToScreen:"
-                            :ns-rect in-win
-                            :ns-rect)))
-      (setf (slot-value window 'view-size)     (ns-rect-size   frame)
-            (slot-value window 'view-position) (ns-rect-origin frame)))))
+    (%window-move-or-resize window)))
 
-;; view-nickname
+(define-objc-method ("CocaWindow" "windowDidResize:")
+                    :void ((notification :object))
+  (alx:when-let ((window (ns-notification-window notification)))
+    (%window-move-or-resize window)))
 
-(defmethod (setf view-nickname) :after (nickname (window window))
-  "After setting nickname, update WINDOW's title. "
-  (let ((title (princ-to-string nickname)) ; pretty print?
-        (wptr  (wptr window)))
+;; view-title
+
+(defmethod (setf window-title) :after ((title string) (window window))
+  (with-wptr window
     (dispatch-main () (invoke wptr "setTitle:" :ns-string title))))
 
 ;; view-container

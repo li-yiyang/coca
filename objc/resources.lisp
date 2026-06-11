@@ -137,7 +137,7 @@ Syntax:
   + `:sel'     return value will be wrapped as `sel-ptr'
   + otherwise see CFFI foreign types
 + LAMBDA-LIST:
-  same as `cffi:defcallback'
+  same as `cffi:defcallback', or defined in `define-objc-typing'
 + BODY
   method body,
   within the BODY, self is bound to foreign-pointer of ObjC object

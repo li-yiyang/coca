@@ -5,127 +5,6 @@
 
 ;;;; View Protocol
 
-(defgeneric focus-view (view &optional font-view)
-  (:documentation
-   "Select current drawing context to VIEW. (Focus on VIEW)
-
-Parameters:
-+ VIEW: a view installed in a window, or `nil'
-  + if `nil', the current
-+ FONT-VIEW: A view of `nil'
-  + if `nil', the font is unchanged
-  + if non-`nil', the `view-font' of `font-view' are installed
-    after the rest of the focusing is completed.
-
-Dev Note:
-The `focus-view' function is not normally called directly.
-In general, `with-focused-view' should be used when drawing
-to views. "))
-
-(defmacro with-focused-view (view &body body &environment env)
-  "Executes BODY with the current CGContext set for drawing into VIEW.
-This involves setting the current CGContext and setting the origin
-and clip region so that drawing occurs in VIEW. When the BODY exit
-(normally or abnormally), the old view is restored. "
-  (let ((sym (if (and view (symbolp view)
-                      (eq view (macroexpand view env)))
-                 view
-                 (gensym)))
-        (fn  (gensym)))
-    `(flet ((,fn (,sym)
-              (declare (ignorable ,sym))
-              ,@body))
-       (declare (dynamic-extent ,fn))
-       (call-with-focused-view ,view ,fn))))
-
-(declaim (inline set-view-size))
-(defun set-view-size (view w &optional h)
-  "Set the size of VIEW.
-Return `ns-size' of updated size.
-
-Syntax:
-
-    (set-view-size VIEW W H)     ;; => (setf (view-size VIEW) (ns-size :w W :h H))
-    (set-view-size VIEW NS-SIZE) ;; => (setf (view-size VIEW) NS-SIZE)
-
-Dev Note:
-+ define method for (setf view-size)
-"
-  (if h
-      (setf (view-size view) (ns-size :w w :h h))
-      (setf (view-size view) w)))
-
-(declaim (inline set-view-position))
-(defun set-view-position (view x &optional y)
-  "Set the position of VIEW.
-Return `ns-point' of updated size.
-
-Syntax:
-
-    (set-view-position VIEW W H)     ;; => (setf (view-position VIEW) (ns-point :w W :h H))
-    (set-view-position VIEW NS-SIZE) ;; => (setf (view-position VIEW) NS-SIZE)
-
-Dev Note:
-+ implement method for (setf view-position)
-"
-  (if y
-      (setf (view-position view) (ns-point :x x :y y))
-      (setf (view-position view) x)))
-
-(defgeneric view-container (view)
-  (:documentation
-   "Returns the VIEW's containing view.
-
-Parameter:
-+ VIEW: a view or subview, but not a window.
-  Instances of `window' cannot have containers. "))
-
-(defmacro set-view-container (view new-container)
-  "Sets VIEW's containing view to NEW-CONTAINER.
-If VIEW's window is changed by giving it a new container,
-`remove-view-from-window' is called on VIEW and the the
-old window, and `install-view-in-window' is called on
-VIEW and the new window.
-
-Parameters:
-+ VIEW: a view or subview, but not window.
-  Instances of `window' cannot have containers.
-  If `set-view-container' is called on a window,
-  it signals an error.
-
-+ NEW-CONTAINER: the new container of the view
-
-Dev Note:
-+ implement method for (setf view-container)
-"
-  `(setf (view-container ,view) ,new-container))
-
-(defgeneric install-view-in-window (view window)
-  (:documentation
-   ""))
-
-(defgeneric remove-view-from-window (view)
-  (:documentation
-   ""))
-
-(defgeneric subviews (view &optional subview-type)
-  (:documentation
-   ""))
-
-(defgeneric view-subviews (view)
-  (:documentation
-   ""))
-
-(defgeneric map-subviews (view function &optional subview-type)
-  (:documentation
-   ""))
-
-(defgeneric view-named (name view)
-  (:documentation
-   "Return the first subview of VIEW whose nickname is NAME.
-The subviews are searched in the order in which they were
-added to VIEW. "))
-
 
 ;;;; CocaView
 
@@ -139,10 +18,6 @@ added to VIEW. "))
   ((ptr
     :documentation
     "The foreign-pointer to NSView. ")
-   (objc-class
-    :initform (objc-class "CocaView")
-    :documentation
-    "The ObjC class of NSView. ")
    (wptr
     :initarg  :wptr
     :initform nil
@@ -162,26 +37,37 @@ Dev Note:
     :type     (or null view)
     :reader   view-container
     :documentation
-    "A `view' as container of the view. ")
-   (view-position
+    "A container as parent of the view. ")
+   (view-origin
     :initform (ns-point :x 0 :y 0)
     :type     ns-point
-    :initarg  :view-position
-    :reader   view-position
+    :reader   view-origin
     :documentation
-    "The position of the view in its container.
+    "The frame origin of NSView (bottom-left) in its container.
 
-+ `set-view-position' sets the position of the view in its container.
-+ `view-default-position' get the default position,
-  used when initialize the view instance as default value
+Dev Note:
++ use `position' to get upper-left coordinates
 ")
+   (%position
+    :type   ns-point
+    :reader view-position
+    :documentation
+    "Cache of `position'.
+
+Dev Note:
++ this is updated after `origin' is updated
++ this is used to reduce allocation of `ns-point'
++ never refer this slot unless you know what are you doing")
    (view-size
     :initform (ns-size :w 100 :h 100)
     :type     ns-size
     :initarg  :view-size
     :reader   view-size
     :documentation
-    "The size of the view. ")
+    "The size of the view.
+
+Dev Note:
++ setting `size' of view should keep `position'")
    (view-nickname
     :initform nil
     :initarg  :view-nickname
@@ -216,23 +102,114 @@ on simple views. "))
                     (pointer-address (objc-ptr view))))
         (write-string "not init in ObjC" stream))))
 
-;; view-size, view-position
+;; view-size, view-position, view-origin
 
-(defmethod (setf view-size) ((size ns-size) (view simple-view))
-  (let ((frame (ns-rect :origin (view-position view)
-                        :size   size)))
-    (with-ptr view
-      (dispatch-main ()
-        (invoke ptr "setFrame:" :ns-rect frame)))
-    (setf (slot-value view 'view-size) size)))
+(defun flip-ns-point! (view p1 p2
+                       &optional (container-size (view-size (view-container view))))
+  "Flip `ns-point' of VIEW from P1 to P2.
+Return modified P2.
 
-(defmethod (setf view-position) ((pos ns-point) (view simple-view))
+Side Effects:
++ P2 will be modified"
+  (declare (type simple-view view)
+           (type ns-point p1 p2))
+  (setf (ns-point-x p2) (ns-point-x p1)
+        (ns-point-y p2) (- (ns-size-h  container-size)
+                           (ns-size-h  (view-size view))
+                           (ns-point-y p1)))
+  p2)
+
+(defun copy-ns-point! (p1 p2)
+  "Copy `ns-point' value from P1 to P2.
+Return modified P2.
+
+Side Effects:
++ P2 will be modified"
+  (declare (type ns-point p1 p2))
+  (setf (ns-point-x p2) (ns-point-x p1)
+        (ns-point-y p2) (ns-point-y p1))
+  p2)
+
+(defun copy-ns-size! (s1 s2)
+  "Copy `ns-size' value from S1 to S2.
+Return modified S2.
+
+Side Effects:
++ S2 will be modified"
+  (declare (type ns-size s1 s2))
+  (setf (ns-size-w s2) (ns-size-w s1)
+        (ns-size-h s2) (ns-size-h s1))
+  s2)
+
+(defmethod (setf view-origin) ((origin ns-point) (view simple-view))
   (let ((frame (ns-rect :size   (view-size view)
-                        :origin pos)))
+                        :origin origin)))
     (with-ptr view
-      (dispatch-main ()
-        (invoke ptr "setFrame:" :ns-rect frame)))
-    (setf (slot-value view 'view-position) pos)))
+      (dispatch-main () (invoke ptr "setFrame:" :ns-rect frame)))
+    (copy-ns-point! origin (view-origin view))
+    (setf (slot-value view '%position)
+          (flip-ns-point! view origin (slot-value view '%position)))))
+
+(declaim (inline set-view-position))
+(defun set-view-position (view x &optional y)
+  "Set the position of VIEW.
+Return `ns-point' of updated position.
+
+Syntax:
+
+    (set-view-position VIEW X Y)
+    ;; => (setf (view-position VIEW) (ns-point :x X :y Y))
+
+    (set-view-position VIEW POS)
+    ;; => (setf (view-position VIEW) POS)
+
+Dev Note:
++ see (setf view-position)"
+  (if y
+      (setf (view-position view) (ns-point :x x :y y))
+      (setf (view-position view) x)))
+
+(defmethod (setf view-position) ((pos ns-point) (view simple-view)
+                                 &aux (container (container view)))
+  (when container
+    (let* ((origin (flip-ns-point! view pos (origin view)))
+           (frame  (ns-rect :size   (view-size view)
+                            :origin origin)))
+      (with-ptr view
+        (dispatch-main ()
+                       (invoke ptr "setFrame:" :ns-rect frame)))))
+  (copy-ns-point! pos (slot-value view '%position)))
+
+(declaim (inline set-view-size))
+(defun set-view-size (view w &optional h)
+  "Set the size of VIEW.
+Return `ns-size' of updated size.
+
+Syntax:
+
+    (set-view-size VIEW W H)
+    ;; => (setf (view-size VIEW) (ns-size :w W :h H))
+
+    (set-view-position VIEW SIZE)
+    ;; => (setf (view-size VIEW) SIZE)
+
+Dev Note:
++ see (setf view-size)"
+  (if h
+      (setf (view-size view) (ns-size :w w :h h))
+      (setf (view-size view) w)))
+
+(defmethod (setf view-size) ((size ns-size) (view simple-view)
+                             &aux (container (container view)))
+  (copy-ns-point! size (view-size view))
+  (when container
+    (setf (slot-value view 'origin)
+          (flip-ns-point! view (view-position view) (view-origin view)))
+    (let ((frame (ns-rect :size   (size   view)
+                          :origin (origin view))))
+      (with-ptr view
+        (dispatch-main () (invoke ptr "setFrame:" :ns-rect frame)))))
+  (size view))
 
 (defmethod view-default-size ((view simple-view))
   (ns-size :w 100 :h 100))
@@ -286,7 +263,8 @@ and `view-position', and before other slot initialzation. "
   (invoke (setf (slot-value view 'ptr)
                 (alloc (objc-class view)))
           "initWithFrame:"
-          :ns-size (view-size view)
+          :ns-rect (ns-rect :origin (view-origin view)
+                            :size   (view-size   view))
           :object))
 
 (defmethod initialize-instance :after ((view simple-view)
@@ -337,16 +315,15 @@ Parameters:
 "
   (declare (type (or null ns-size) view-size)
            (type (or null ns-point) view-position)
-           (type (or null (and view (not window))) view-container))
+           (type (or null view) view-container))
   (unless view-size
     (setf (slot-value view 'view-size) (view-default-size view)))
   (unless view-position
-    (setf (slot-value view 'view-position) (view-default-position view)))
+    (setf (slot-value view '%position) (view-default-position view)))
+  ;; set view-container
   (alloc-init view)
   (when help-spec
-    (setf (view-get view :help-spec) help-spec))
-  (when view-container
-    (set-view-container view view-container)))
+    (setf (view-get view :help-spec) help-spec)))
 
 
 ;;;; view
@@ -363,6 +340,10 @@ Parameters:
   ((view-context
     :type   view-context
     :reader view-context)
+   (objc-class
+    :initform (coerce-to-objc-class "CocaView")
+    :documentation
+    "The ObjC class of NSView. ")
    (view-valid
     :initform nil
     :accessor view-valid
@@ -387,6 +368,18 @@ Parameters:
     (setf (view-container subview) view)))
 
 ;; view-container
+
+(defun set-view-container (view new-container)
+  "Sets VIEW's containing view to NEW-CONTAINER.
+This will always set `view-container' of VIEW to nil first,
+then set as NEW-CONTAINER.
+
+Parameters:
++ VIEW: a `simple-view'
++ NEW-CONTAINER: a `view' or `nil'"
+  (declare (type simple-view view)
+           (type (or null view) new-container))
+  (setf (view-container view) new-container))
 
 (defmethod (setf view-container) ((nothing null) (view simple-view))
   "Remove VIEW from previous container. "
