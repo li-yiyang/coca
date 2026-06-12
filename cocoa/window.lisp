@@ -33,10 +33,6 @@ or chooses Close from the File menu. "))
 
 See ObjC method for `windowWillClose:'. "))
 
-#+coca.todo
-(defgeneric window-size-parts (window)
-  )
-
 (defgeneric window-title (window)
   (:documentation
    "Get/Set the WINDOW title as string. "))
@@ -95,9 +91,38 @@ Dev Note:
   (:documentation
    "Make WINDOW invisible on the screen. "))
 
+(defgeneric window-select (window)
+  (:documentation
+   "Brings a window to the front, activates it, and shows it
+if it is hidden. The previously active window is deactivated."))
+
 (defgeneric window-shown-p (window)
   (:documentation
    "Return `t' if WINDOW is visible, and `nil' if it's hidden. "))
+
+(defgeneric window-update-cursor (window point)
+  (:documentation
+   "The generic function `window-update-cursor' is called by
+`update-cursor' whenever the cursor is over the window.
+
+When the mouse is over the front window or any floating window, the
+`window-update-cursor' method for the `window' class sets the variable
+`*mouse-view*' to the view containing the mouse, using
+`find-clicked-subview'.  The `window-null-event-handler' method for
+the `window' class calls `update-cursor', which calls
+`*cursorhook*'. The function that is the initial value of
+`*cursorhook*' calls `window-update-cursor', which sets the cursor
+using the value returned by `view-cursor'.
+
+The method for `window' simply sets the cursor to the result of
+calling the generic function `view-cursor' on the clicked subview of
+`window' if there is one; otherwise it sets the cursor to the result
+of calling `window-cursor' on the window.
+
+The `null' method sets the cursor to the value of `*arrow-cursor*'.
+
+The `window-update-cursor' function should be shadowed if the cursor
+must change according to what part of the window it is over."))
 
 (defun windows (&key (class 'window) include-invisibles include-windoids)
   "Returns a list of existing windows that are instances of CLASS.
@@ -251,6 +276,7 @@ Possible values are:
               :bool          t
               :object)
 
+      ;; ensure `window-update-cursor'
       (invoke win* "setAcceptsMouseMovedEvents:" :bool t)
       (invoke win* "setReleasedWhenClosed:"      :bool t)
       (invoke win* "setDelegate:" :object win*)
@@ -258,7 +284,9 @@ Possible values are:
       ;; replace contentView with `coca-view'
       (invoke view "setAutoresizingMask:"
               :unsigned-long (as-ns-autoresizing '(:width :height)))
-      (invoke win* "setContentView:" :object view))
+      (invoke win* "setContentView:" :object view)
+      ;; balance alloc
+      (autorelease view))
 
     (setf (slot-value window 'wptr) win*)
 
@@ -290,18 +318,13 @@ Parameters:
   (set-window-title window (slot-value window 'window-title))
   (when window-show (window-show window))
   (with-wptr window
-    (regist-objc-obj window wptr)
-    (tg:finalize window
-                 (lambda ()
-                   (alx:when-let ((window (find-objc-obj wptr)))
-                     (dealloc window))))))
+    (regist-objc-obj window wptr)))
 
 (defmethod dealloc ((window window))
   (with-wptr window
     (remhash (pointer-address wptr) *objc-objects*)
-    (setf (slot-value window 'wptr) nil))
-  ;; remove PTR and unbound it, see `dealloc' for `view'
-  (call-next-method))
+    (dispatch-main () (autorelease wptr))
+    (setf (slot-value window 'wptr) nil)))
 
 ;; view-position, view-size
 
@@ -390,7 +413,10 @@ Side Effect:
 (define-objc-method ("CocaWindow" "windowDidResize:")
                     :void ((notification :object))
   (alx:when-let ((window (ns-notification-window notification)))
-    (%window-move-or-resize window)))
+    (%window-move-or-resize window)
+    ;; fix subviews view-position after setting window
+    (loop :for subview :across (view-subviews window)
+          :do (setf (view-position subview) (view-position subview)))))
 
 ;; view-title
 
@@ -404,17 +430,22 @@ Side Effect:
   (unless (null container)
     (error "Container should always be `nil' for windows. ")))
 
-;; window-show, window-hide
+;; window-show, window-hide, window-select
 
 (defmethod window-show ((window window))
   (with-wptr window
     (dispatch-main ()
-      (invoke wptr "makeKeyAndOrderFront:" :object wptr))))
+      (invoke wptr "setIsVisible:" :bool t))))
 
 (defmethod window-hide ((window window))
   (with-wptr window
     (dispatch-main ()
       (invoke wptr "orderOut:" :object wptr))))
+
+(defmethod window-select ((window window))
+  (with-wptr window
+    (dispatch-main ()
+      (invoke wptr "makeKeyAndOrderFront:" :object wptr))))
 
 (defmethod window-shown-p ((window window))
   (with-wptr window
@@ -486,12 +517,27 @@ Side Effect:
 (define-objc-method ("CocaWindow" "dealloc")
                     :void ((ns-window :object))
   (alx:when-let ((window (find-objc-obj ns-window)))
-    (dealloc window)))
+    (dealloc window)
+    (invoke-super self "dealloc")))
 
 (defmethod window-close ((window window))
   (with-wptr window
     (dealloc window)
     (dispatch-main ()
       (invoke wptr "close"))))
+
+;; window-update-cursor
+
+(defun ns-event-pointer-location-in-window (event)
+  (declare (type foreign-pointer event))
+  (invoke event "locationInWindow" :ns-point))
+
+(defmethod window-update-cursor ((window window) (point ns-point))
+  (set-cursor (view-cursor window point)))
+
+(define-objc-method ("CocaWindow" "mouseMoved:")
+                    :void ((event :object))
+  (alx:when-let ((window (find-objc-obj self)))
+    (window-update-cursor window (ns-event-pointer-location-in-window event))))
 
 ;;;; window.lisp ends here

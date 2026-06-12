@@ -5,6 +5,42 @@
 
 ;;;; View Protocol
 
+(defgeneric view-position (view)
+  (:documentation
+   "Upper-left coordinates of VIEW position.
+Return `ns-point' for VIEW position. "))
+
+(defgeneric view-size (view)
+  (:documentation
+   "Size of VIEW.
+Return `ns-size' for VIEW size. "))
+
+(defgeneric view-default-size (view)
+  (:documentation
+   "Return the default value of the `:view-size' initarg of VIEW. "))
+
+(defgeneric view-default-position (view)
+  (:documentation
+   "Return the default value of the `:view-position' initarg of VIEW. "))
+
+(defgeneric view-cursor (view point)
+  (:documentation
+   "Returns the `cursor' to display when the mouse is at POINT,
+a `ns-point' in VIEW. It is called by `window-update-cursor'
+as part of the default `window-null-event-handler'.
+
+Specialize the `view-cursor' generic function to change your view's
+cursor to one of the following predefined cursors:
+
++ `*arrow-cursor*'
++ `*i-beam-cursor*'
++ `*pointing-hand-cursor*'
++ `*closed-hand-cursor*'
++ `*open-hand-cursor*'
++ `*cross-hair-cursor*'
+
+or to a user-defined cursor value that could be found by `find-cursor'."))
+
 
 ;;;; CocaView
 
@@ -323,7 +359,31 @@ Parameters:
   (when view-container
     (set-view-container view view-container))
   (when help-spec
-    (setf (view-get view :help-spec) help-spec)))
+    (setf (view-get view :help-spec) help-spec))
+  (with-ptr view
+    (tg:finalize view (lambda () (alx:when-let ((view (find-objc-obj ptr)))
+                                   (dealloc view))))))
+
+(defmethod dealloc ((view simple-view))
+  (release (objc-ptr view))
+  (setf (slot-value view 'wptr) nil))
+
+;; view-cursor
+
+(defmethod view-cursor ((view simple-view) (point ns-point))
+  (let ((container (view-container view)))
+    (if container
+        ;; TODO: should POINT be modified?
+        (view-cursor container (offset-ns-point! (view-position view) point))
+        *arrow-cursor*)))
+
+(defmethod view-mouse-enter-event-handler ((view simple-view))
+  "The method for `simple-view' do nothing. "
+  (declare (ignore view)))
+
+(defmethod view-mouse-leave-event-handler ((view simple-view))
+  "The method for `simple-view' do nothing. "
+  (declare (ignore view)))
 
 
 ;;;; view
@@ -367,6 +427,17 @@ Parameters:
   (dolist (subview view-subviews)
     (setf (view-container subview) view)))
 
+;; TODO: should subviews of VIEW be released when view is released?
+(defmethod dealloc :after ((view view))
+  (loop :for subview :across (view-subviews view)
+        :do (dealloc subview)))
+
+;; view-position fix for subview after setting view-size
+
+(defmethod (setf view-size) :after ((size ns-size) (view view))
+  (loop :for subview :across (view-subviews view)
+        :do (setf (view-position subview) (view-position subview))))
+
 ;; view-container
 
 (defun set-view-container (view new-container)
@@ -403,7 +474,7 @@ Parameters:
   (prog1 (setf (slot-value view 'view-container) new-container)
     ;; set position correctly
     (set-view-position view (view-position view))
-    (vector-push view (slot-value new-container 'view-subviews))))
+    (vector-push-extend view (slot-value new-container 'view-subviews))))
 
 (defmethod view-contains-p ((view view) contained-view)
   (loop :for container := (view-container contained-view)

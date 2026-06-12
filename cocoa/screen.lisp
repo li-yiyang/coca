@@ -61,7 +61,8 @@ Dev Note:
   screen)
 
 (defmethod initialize-instance :after ((screen screen) &key)
-  (%screen-update-infomation screen))
+  (%screen-update-infomation screen)
+  (regist-objc-obj screen))
 
 (defun coerce-to-screen (ptr)
   "Convert PTR to `screen'.

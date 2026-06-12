@@ -55,7 +55,6 @@ Dev Note:
 
   this ensures calling lisp code from ObjC side is safe
 + use `remove-objc-obj' to unregist from cache
-+ use `maybe-release' to release ObjC object
 "))
 
 (defgeneric alloc-init (obj)
