@@ -19,23 +19,9 @@
 the window moves with animation when `set-view-position' for `window';
 otherwise, it moves immediately. ")
 
-(defgeneric window-close (window)
-  (:documentation
-   "Closes the WINDOW.
-
-Dev Note:
-This is triggered when user clicks a window's close bottom,
-or chooses Close from the File menu. "))
-
-(defgeneric window-close-event-handler (window)
-  (:documentation
-   "Called from ObjC side whenever a window will be closed.
-
-See ObjC method for `windowWillClose:'. "))
-
 (defgeneric window-title (window)
   (:documentation
-   "Get/Set the WINDOW title as string. "))
+   "Returns the WINDOW's title as a string. "))
 
 (declaim (inline set-window-title))
 (defun set-window-title (window new-title)
@@ -50,19 +36,112 @@ Dev Note:
   (declare (type window window))
   (setf (window-title window) new-title))
 
+(defgeneric window-close (window)
+  (:documentation
+   "Closes the WINDOW.
+
+Dev Note:
+This is triggered when user clicks a window's close bottom,
+or chooses Close from the File menu. "))
+
+(defgeneric window-close-event-handler (window)
+  (:documentation
+   "Called from ObjC side whenever a window will be closed.
+
+See ObjC method for `windowWillClose:'. "))
+
+(defgeneric window-style (window)
+  (:documentation
+   "NSWindowStyleMask of NSWindow.
+Return a list of keywords as NSWindowStyleMask.
+
+Possible Values:
++ :borderless
++ :titled
++ :closable
++ :miniaturizable
++ :textured-background
++ :unified-title-and-toolbar
++ :full-screen
++ :full-size-content-view
++ :utility-window
++ :doc-modal-window
++ :nonactivating-panel
++ :hud-window"))
+
 (declaim (inline set-window-style))
-(defun set-window-style (window style)
-  "Set the WINDOW style to STYLE.
+(defun set-window-style (window new-style)
+  "Set the WINDOW style to NEW-STYLE.
 
 Parameter:
 + WINDOW:
-+ STYLE:
-window-close-event-handler
++ NEW-STYLE:
+
 Dev Note:
 + see (setf window-style)"
   (declare (type window window)
-           (type (or keyword (cons keyword t)) style))
-  (setf (window-style window) style))
+           (type (or keyword (cons keyword t)) new-style))
+  (setf (window-style window) new-style))
+
+(defgeneric window-show (window)
+  (:documentation
+   "Make WINDOW visible on the screen. "))
+
+(defgeneric window-hide (window)
+  (:documentation
+   "Make WINDOW invisible on the screen. "))
+
+(defgeneric window-shown-p (window)
+  (:documentation
+   "Return `t' if WINDOW is visible, and `nil' if it's hidden. "))
+
+(defgeneric window-ensure-on-screen (window &optional default-position default-size)
+  (:documentation
+   "Ensures that the WINDOW is entirely visible on one or more of
+the Macintosh screens. It may overlap two screens, but if it is not
+entirely visible, as determined by `window-on-screen-p', it is moved
+to the position `default-position'. If it is still not entirely visible,
+its size is changed to `default-size'.
+
+This function is useful when window position are saved and restored
+on Macintosh computers with different screen configurations.
+
+If you hold down the shift key while selecting a window from the
+Windows menu, `window-ensure-on-screen' is called on it.
+
+Parameters:
++ WINDOW: a `window'
++ DEFAULT-POSITION: the position to which the window is moved
+  if it needs to be. The default DEFAULT-POSITION is the value
+  of `*window-default-position*'.
++ DEFAULT-SIZE: the default size of the WINDOW.
+  The default DEFAULT-SIZE is the value of `*window-default-size*'. "))
+
+(defgeneric window-on-screen-p (window)
+  (:documentation
+   "Returns `t' if all of WINDOW is on the screen, `nil' otherwise. "))
+
+(defgeneric window-active-p (window)
+  (:documentation
+   "Returns `t' if WINDOW is the active window, `nil' otherwise.
+
+Except when Common Lisp is not the active application,
+it returns `t' for all floating windows and for the frontmost
+non-floating visible window. "))
+
+(defgeneric window-level (window)
+  (:documentation
+   "NSWindow level for WINDOW.
+
+Possible Value:
++ :normal
++ :floating
++ :submenu
++ :torn-off
++ :main-menu
++ :status
++ :modal-panel
++ :screen-saver"))
 
 (declaim (inline set-window-level))
 (defun set-window-level (window level)
@@ -83,22 +162,32 @@ Dev Note:
                  level))
   (setf (window-level window) level))
 
-(defgeneric window-show (window)
-  (:documentation
-   "Make WINDOW visible on the screen. "))
-
-(defgeneric window-hide (window)
-  (:documentation
-   "Make WINDOW invisible on the screen. "))
-
 (defgeneric window-select (window)
   (:documentation
    "Brings a window to the front, activates it, and shows it
 if it is hidden. The previously active window is deactivated."))
 
-(defgeneric window-shown-p (window)
+(defgeneric window-grow-rect (window)
   (:documentation
-   "Return `t' if WINDOW is visible, and `nil' if it's hidden. "))
+   "Return two values as minimum and maximum `ns-size' to which
+WINDOW can be resized with the mouse.
+
+The window can still assume other sizes when the user clicks
+the zoom box, and other sizes can be set with the function
+`set-view-size'. "))
+
+(defgeneric window-cursor (window)
+  (:documentation
+   "Returns the current cursor of WINDOW.
+The system-supplied `view-cursor' method for `window'
+calls `window-cursor' to determine the cursor of `window'. "))
+
+(declaim (inline window-object))
+(defun window-object (wptr)
+  "Returns the window object pointed at by WPTR.
+This is alias of `find-objc-obj'. "
+  (declare (type foreign-pointer wptr))
+  (the window (find-objc-obj wptr)))
 
 (defgeneric window-update-cursor (window point)
   (:documentation
@@ -126,7 +215,21 @@ must change according to what part of the window it is over."))
 
 (defun windows (&key (class 'window) include-invisibles include-windoids)
   "Returns a list of existing windows that are instances of CLASS.
-The list is ordered from front to back. "
+The list is ordered from front to back.
+
+Parameters:
++ CLASS: a class to filter output
+  Only windows that match the value of CLASS are included in
+  the returned list. The default is `window', which includes
+  all windows.
++ INCLUDE-INVISIBLES:
+  If `t', invisible windows are included in the list;
+  If `nil' (default), invisible windows are not included.
++ INCLUDE-WINDOIDS:
+  If `t', floating windows (the class `windoid') are included;
+  If `nil', floating windows are not included.
+  Floating windows are also included if the value of the
+  CLASS argument is `windoid'. "
   (declare (ignore include-windoids))
   (let ((windows (invoke (app) "orderedWindows" :ns-array)))
     (remove-if-not (lambda (w)
@@ -142,7 +245,21 @@ The list is ordered from front to back. "
 
 (defun front-window (&key (class 'window) include-invisibles include-windoids)
   "Returns the frontmost satisfying the arguments.
-If no windows satisfy the tests, `nil' is returned. "
+If no windows satisfy the tests, `nil' is returned.
+
+Parameters:
++ CLASS: a class to filter output
+  Only windows that match the value of CLASS are included in
+  the returned list. The default is `window', which includes
+  all windows.
++ INCLUDE-INVISIBLES:
+  If `t', invisible windows are included in the list;
+  If `nil' (default), invisible windows are not included.
++ INCLUDE-WINDOIDS:
+  If `t', floating windows (the class `windoid') are included;
+  If `nil', floating windows are not included.
+  Floating windows are also included if the value of the
+  CLASS argument is `windoid'. "
   (first (windows :class class
                   :include-invisibles include-invisibles
                   :include-windoids include-windoids)))
@@ -156,9 +273,58 @@ it is equivalent to (second (windows)). "
 (defun map-windows (function &key class include-invisibles include-windoids)
   "Calls FUNCTION, a function of one argument, on each window that
 statisfies the arguments. "
+  ;; TODO: optimize
   (map nil function (windows :class class
                              :include-invisibles include-invisibles
                              :include-windoids include-windoids)))
+
+(defun find-window (title &optional (class 'window))
+  "Returns the frontmost window of the CLASS for which a prefix of
+the window's title is `string-equal' to TITLE. If no window has
+TITLE as its title, `nil' is returned.
+
+Parameters:
++ TITLE: a string specifying the title of the window to search for
++ CLASS: a class used to filter the result.
+  The frontmost window that inherits from CLASS is returned.
+  The default is `window'. "
+  (declare (type string title))
+  (let ((str:*ignore-case* t))
+    (flet ((match (w)
+             (when (str:starts-with-p title (view-nickname w))
+               (return-from find-window w))))
+      (map-windows #'match :class class))))
+
+(defgeneric window-needs-saving-p (window)
+  (:documentation
+   "Determines whether the Save menu item in the File menu
+should be enabled for windows that have a definition of `window-save'.
+
+The Save menu item is enabled if the class of the active window
+as a method definition for `window-save', unless the window has
+a method definition for `window-needs-saving-p' and a call to
+`window-needs-saving-p' returns `nil'. If the window has a method
+definition for `window-needs-saving-p', then Save is enabled only
+if a call to `window-needs-saving-p' returns true. "))
+
+(defgeneric window-can-do-operation (window operation &optional menu-item)
+  (:documentation
+   "Returns a Boolean value indicating whether view can perform operation.
+If the value returned is `t', the menu item for operation is enabled;
+otherwise, it is disabled.
+
+Parameters:
++ WINDOW: a window
++ OPERATION: a symbol specifying one of the standard editing operations
+  + `cut'
+  + `clear'
+  + `copy'
+  + `paste'
+  + `select-all'
+  + `undo'
+  + `undo-more'
++ MENU-ITEM: the corresponding Edit menu item
+"))
 
 
 ;;;; CocaWindow, CocaWindowDelegate

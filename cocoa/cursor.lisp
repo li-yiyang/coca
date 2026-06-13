@@ -70,6 +70,6 @@ If the CURSOR cannot be found via `find-cursor',
 this does a no-op. "
   (setf (current-cursor) cursor))
 
-(define-symbol-macro *current-cursor* (current-cursor))
+;; (define-symbol-macro *current-cursor* (current-cursor))
 
 ;;;; cursor.lisp ends here

@@ -1,14 +1,1116 @@
+:PROPERTIES:
+:header-args:lisp: :package coca.cocoa :results verbatim :exports results
+:END:
 #+title: Coca.Cocoa
 #+subtitle: Layer of Cocoa AppKit and Foundation.
 #+author: 凉凉
 * Usage
-:PROPERTIES:
-:header-args:lisp: :package coca.cocoa :results verbatim
-:END:
+* API
+** Menus
+** Views
++ =simple-view= has no subviews
++ =view= has subviews
++ =view= defines graphics operations within other views
++ =window= defines screen operations
++ =dialog= is =window= with slightly different default values,
+  good for dialog boxes
++ =dialog-item= is =simple-view= since they have no subviews.
+  They may apper in any view or window. The class =dialog-item=
+  is never instantiated; only its subclasses have instances.
 
-* Dev Note
-** Thoughts
-*** 2026-06-08
-+ use MCL's API design
-+ simple-view
-  + CGContext -> view-context
+**API**
++ =simple-view= [Class]
+
+  #+begin_src lisp
+  (documentation (find-class 'simple-view) t)
+  #+end_src
+
+  #+RESULTS:
+  : The class `simple-view' is the basic class of views,
+  : from which all views inherit. A simple view does not have subviews
+  : and thus can be drawn more easily. Views and dialog items are built
+  : on simple views.
+
++ =view= [Class]
+
+  #+begin_src lisp
+  (documentation (find-class 'view) t)
+  #+end_src
+
+  #+RESULTS:
+  : The `view' class is the class of views that can include subviews.
+  : It is built on `simple-view'.
+
++ =*current-view*= [Variable]
+
+  #+begin_src lisp
+  (documentation '*current-view* 'variable)
+  #+end_src
+
+  #+RESULTS:
+  : The view where drawing currently occurs.
+  :
+  : See `focus-view' and `with-focused-view'.
+  :
+  : It is initially bounded to `nil'.
+
++ =*mouse-view*= [Variable]
+
+  #+begin_src lisp
+  (documentation '*mouse-view* 'variable)
+  #+end_src
+
+  #+RESULTS:
+  : The view that the mouse is over.
+  : This variable is updated by the `window-update-cursor'.
+  :
+  : The `*mouse-view*' view is one whose `view-cursor' method
+  : decides which cursor to select.
+  :
+  : It is initially bounded to `nil'.
+
++ TODO =(with-focused-view VIEW &body)= [Macro]
+
++ TODO =(focus-view VIEW &optional font-view)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'focus-view t)
+  #+end_src
+
+  #+RESULTS:
+  : Setup `view-context' as current CGContext
+  : and sets the clip region and origin so that drawing
+  : will occur in the coordinate system of `view'.
+  :
+  : The `focus-view' function is not normally called directly.
+  : In general, `with-focused-view' should be used when drawing
+  : to `view'.
+
++ TODO =(with-font-focused-view VIEW &body)= [Macro]
++ =(view-container view)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-container t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the VIEW's containing `view'.
+
++ =(set-view-container VIEW NEW-CONTAINER)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-view-container t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Sets VIEW's containing view to NEW-CONTAINER.
+  This will always set `view-container' of VIEW to nil first,
+  then set as NEW-CONTAINER.
+
+  Parameters:
+  + VIEW: a `simple-view'
+  + NEW-CONTAINER: a `view' or `nil'
+
+  Dev Note:
+  + implement (setf view-container)
+  #+end_example
+
++ TODO, maybe remove =(install-view-in-window VIEW WINDOW)= [Function]
+
++ TODO, maybe remove =(remove-view-from-window VIEW)= [Function]
+
++ =(subviews VIEW &optional SUBVIEW-TYPE)= [Function]
+
+  #+begin_src lisp
+  (documentation #'subviews t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns a list of subviews of VIEW.
+  : If SUBVIEW-TYPE is present, only subviews matching that type are returned.
+  :
+  : Parameters:
+  : + VIEW: a `view'
+  : + SUBVIEW-TYPE: a Common Lisp type specifier
+
++ =(do-subviews (SUBVIEW-VAR VIEW &optional SUBVIEW-TYPE) &body)= [Macro]
+
+  #+begin_src lisp
+  (documentation (macro-function 'do-subviews) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  For each subview of VIEW of the given SUBVIEW-TYPE,
+  the macro `do-subviews' executes BODY with SUBVIEW-VAR
+  bound to the subview.
+
+  Syntax:
+
+      (do-subviews (SUBVIEW-VAR VIEW [SUBVIEW-TYPE])
+        &body)
+
+  Parameters:
+  + SUBVIEW-VAR: a variable
+  + VIEW: a `view'
+  + SUBVIEW-TYPE: a Common Lisp type specifier
+  + FORM: Zero or more MCL forms
+  #+end_example
+
++ =(map-subviews view function &optional subview-type)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'map-subviews t)
+  #+end_src
+
+  #+RESULTS:
+  : For each subview of VIEW of the given SUBVIEW-TYPE,
+  : the generic function `map-subviews' calls function with subview
+  : as its single argument.
+  :
+  : Parameters:
+  : + VIEW: a `view'
+  : + FUNCTION: a function
+  : + SUBVIEW-TYPE: a Common Lisp type specifier
+
++ =(view-named name view)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-named t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the first subview of VIEW whose nickname is NAME.
+  : The subview are searched in the order in which they were added
+  : to VIEW.
+  :
+  : Parameters:
+  : + NAME: any object, but usually a symbol.
+  :   Nicknames are compared using `eq'
+  : + VIEW: a `view'
+
++ =(find-named-sibling VIEW NAME)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'find-named-sibling t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Performs a search in VIEW's container and
+  returns the first item in the container whose nickname is NAME.
+  For example, given a dialog item view, it performs a search in the
+  view that is VIEW's container to find another item with the nickname NAME.
+  The items are searched in the order in which they were added to VIEW's
+  container.
+
+  Parameters:
+  + VIEW: a `simple-view'
+  + NAME: any object, but usually a symbol
+    Nicknames are compared using `eq'.
+  #+end_example
+
++ =(add-subviews VIEW &rest SUBVIEWS)= [Generic Functions]
+
+  #+begin_src lisp
+  (documentation #'add-subviews t)
+  #+end_src
+
+  #+RESULTS:
+  : Sets the container of each of SUBVIEWS to VIEW.
+  : If any of the subviews are already owned by VIEW,
+  : `add-subviews' does nothing.
+  :
+  : Parameters:
+  : + VIEW: a `view'
+  : + SUBVIEWS: a `view' or `simple-view', but not a `window';
+  :   SUBVIEWS must be able to contained within VIEW
+
++ =(remove-subviews VIEW &rest SUBVIEWS)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'remove-subviews t)
+  #+end_src
+
+  #+RESULTS:
+  : Removes each of SUBVIEWS from VIEW.
+  : If subview is not in VIEW, an error is signaled.
+  :
+  : Parameters:
+  : + VIEW: a `view'
+  : + SUBVIEWS: a `view' or `simple-view', but not a `window';
+  :   SUBVIEWS must be able to be contained within VIEW.
+
++ TODO =(find-clicked-subview VIEW WHERE)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'find-clicked-subview t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns the subview of VIEW that contains the `ns-point' WHERE
+  in its click region. The method for `nil' searches all windows for
+  a subview containing WHERE in its click region.
+
+  This function is similar to `find-view-containing-point',
+  but `find-clicked-subview' calls `point-in-click-region-p',
+  and `find-view-containing-point' calls `view-contains-point-p'.
+  The default method of `point-in-click-region-p' for views or
+  simple views simply calls `view-contains-point-p', but users
+  can write methods to make views invisible to mouse clicks.
+
+  Parameters:
+  + VIEW: a view or subview
+  + WHERE: `ns-point' in the local coordinate system of the VIEW container
+  #+end_example
+
++ TODO, maybe remove =(view-corners VIEW)= [Generic Function]
+
++ TODO, maybe remove =(invalidate-corners VIEW TOPLEFT BOTTOMRIGHT &optional ERASE-P)= [Generic Function]
+
++ TODO, maybe remove =(invalidate-view VIEW &optional ERASE-P)= [Generic Function]
+
++ TODO, maybe remove =(invalidate-region VIEW REGION &optional ERASE-P)= [Generic Function]
+
++ TODO, maybe remove =(validate-corners VIEW TOPLEFT BOTTOMRIGHT)= [Generic Function]
+
++ TODO, maybe remove =(validate-view VIEW)= [Generic Function]
+
++ TODO, maybe remove =(validate-region VIEW REGION)= [Generic Function]
+
++ =(wptr VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'wptr t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the foreign-pointer to a NSWindow.
+  : Or `nil' if the VIEW is not contained in a `window'.
+  :
+  : All views contained in a given window have the same `wptr'.
+  :
+  : You can test if a VIEW's window has been closed by checking
+  : whether the value of its `wptr' slot is `nil'.
+
+  TODO: =window-close= should set =wptr= to =nil= recursively
+  of subviews
+
++ TODO =(view-window VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-window t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the `window' containing VIEW.
+  : Or `nil' if the VIEW is not contained in a `window'.
+  : If VIEW is a `window', `view-window' returns the window.
+
++ =(view-position VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-position t)
+  #+end_src
+
+  #+RESULTS:
+  : Upper-left coordinates of VIEW position.
+  : Return `ns-point' for VIEW position.
+
++ =(set-view-position VIEW H &optional V)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-view-position t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Set the position of VIEW.
+  Return `ns-point' of updated position.
+
+  Syntax:
+
+      (set-view-position VIEW X Y)
+      ;; => (setf (view-position VIEW) (ns-point :x X :y Y))
+
+      (set-view-position VIEW POS)
+      ;; => (setf (view-position VIEW) POS)
+
+  Dev Note:
+  + see (setf view-position)
+  #+end_example
+
++ =(view-default-position VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-default-position t)
+  #+end_src
+
+  #+RESULTS:
+  : Return the default value of the `:view-position' initarg of VIEW.
+
++ =(view-size VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-size t)
+  #+end_src
+
+  #+RESULTS:
+  : Size of VIEW.
+  : Return `ns-size' for VIEW size.
+
++ =(set-view-size VIEW H &optional V)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'set-view-size t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Set the size of VIEW.
+  Return `ns-size' of updated size.
+
+  Syntax:
+
+      (set-view-size VIEW W H)
+      ;; => (setf (view-size VIEW) (ns-size :w W :h H))
+
+      (set-view-size VIEW SIZE)
+      ;; => (setf (view-size VIEW) SIZE)
+
+  Dev Note:
+  + see (setf view-size)
+  #+end_example
+
++ =(view-default-size VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-default-size t)
+  #+end_src
+
+  #+RESULTS:
+  : Return the default value of the `:view-size' initarg of VIEW.
+
++ TODO =(view-scroll-position VIEW)= [Generic Function]
+
+  TODO: use NSScrollView?
+
++ TODO =(set-view-scroll-position VIEW H &optional V SCROLL-VISIBLY)= [Function]
+
++ =(view-nickname VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-nickname t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the nickname of the VIEW.
+  : The nickname is used in conjuection with `view-named'.
+
++ =(set-view-nickname VIEW)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-view-nickname t)
+  #+end_src
+
+  #+RESULTS:
+  : Sets the nickname of the VIEW to NEW-NAME and return NEW-NAME.
+  :
+  : Parameters:
+  : + VIEW: a view or simple view
+  : + NEW-NAME: a name, usually a symbol or string
+
++ TODO =(find-view-containing-point VIEW H &optional V direct-subviews-only)= [Function]
+
++ TODO =(point-in-click-region-p VIEW WHERE)=
+
++ TODO =(view-activate-event-handler VIEW)=
+
++ TODO =(view-deactivate-event-handler VIEW)=
+
++ TODO =(view-convert-coordinates-and-click VIEW WHERE CONTAINER)=
+
++ TODO =(view-focus-and-draw-contents VIEW &optional VISRGN CLIPRGN)=
+
++ TODO =(convert-coordinates POINT SOURCE-VIEW DESTINATION-VIEW)=
+
++ TODO =(view-font VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-font t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the font spec used for drawing text in the window.
+  : Due to an idiosyncrasy of the Macintosh computer, a
+  : font size of 0 points may appear as a font size of 12 points.
+
++ TODO =(view-default-font VIEW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-default-font t)
+  #+end_src
+
+  #+RESULTS:
+  : If a `:view-font' initialzation argument is not specified when
+  : a view is created, the generic function `view-default-font' is
+  : called to determine its font.
+
++ TODO =(set-view-font VIEW FONT-SPEC)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-view-font t)
+  #+end_src
+
+  #+RESULTS:
+  : Sets the font spec of VIEW to FONT-SPEC.
+  :
+  : Parameters:
+  : + VIEW
+  : + FONT-SPEC: a font specifier
+  :
+  : Dev Note:
+  : + implement method for (setf view-font)
+
++ TODO, maybe removed =(view-font-codes VIEW)= [Generic Function]
+
++ TODO, maybe removed =(set-view-font-codes VIEW ...)= [Function]
+
++ =(view-cursor VIEW POINT)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-cursor t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns the `cursor' to display when the mouse is at POINT,
+  a `ns-point' in VIEW. It is called by `window-update-cursor'
+  as part of the default `window-null-event-handler'.
+
+  Specialize the `view-cursor' generic function to change your view's
+  cursor to one of the following predefined cursors:
+
+  + `*arrow-cursor*'
+  + `*i-beam-cursor*'
+  + `*pointing-hand-cursor*'
+  + `*closed-hand-cursor*'
+  + `*open-hand-cursor*'
+  + `*cross-hair-cursor*'
+
+  or to a user-defined cursor value that could be found by `find-cursor'.
+  #+end_example
+
+** Window
++ =window= [Class]
+
+  #+begin_src lisp
+  (documentation (find-class 'window) t)
+  #+end_src
+
+  #+RESULTS:
+  : The class `window' is a wrapper of NSWindow.
+
++ =(windows &key CLASS INCLUDE-INVISIBLES INCLUDE-WINDOIDS)= [Function]
+
+  #+begin_src lisp
+  (documentation #'windows t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns a list of existing windows that are instances of CLASS.
+  The list is ordered from front to back.
+
+  Parameters:
+  + CLASS: a class to filter output
+    Only windows that match the value of CLASS are included in
+    the returned list. The default is `window', which includes
+    all windows.
+  + INCLUDE-INVISIBLES:
+    If `t', invisible windows are included in the list;
+    If `nil' (default), invisible windows are not included.
+  + INCLUDE-WINDOIDS:
+    If `t', floating windows (the class `windoid') are included;
+    If `nil', floating windows are not included.
+    Floating windows are also included if the value of the
+    CLASS argument is `windoid'.
+  #+end_example
+
+  TODO: =include-windoids=
+
++ =(front-window &key CLASS INCLUDE-INVISIBLES INCLUDE-WINDOIDS)= [Function]
+
+  #+begin_src lisp
+  (documentation #'front-window t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns the frontmost satisfying the arguments.
+  If no windows satisfy the tests, `nil' is returned.
+
+  Parameters:
+  + CLASS: a class to filter output
+    Only windows that match the value of CLASS are included in
+    the returned list. The default is `window', which includes
+    all windows.
+  + INCLUDE-INVISIBLES:
+    If `t', invisible windows are included in the list;
+    If `nil' (default), invisible windows are not included.
+  + INCLUDE-WINDOIDS:
+    If `t', floating windows (the class `windoid') are included;
+    If `nil', floating windows are not included.
+    Floating windows are also included if the value of the
+    CLASS argument is `windoid'.
+  #+end_example
+
++ =(target)= [Function]
+
+  #+begin_src lisp
+  (documentation #'target t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the second window on the list of windows;
+  : it is equivalent to (second (windows)).
+
++ =(map-windows FUNCTION &key CLASS INCLUDE-INVISIBLES INCLUDE-WINDOIDS)= [Function]
+
+  #+begin_src lisp
+  (documentation #'map-windows t)
+  #+end_src
+
+  #+RESULTS:
+  : Calls FUNCTION, a function of one argument, on each window that
+  : statisfies the arguments.
+
++ TODO =(find-window TITLE &optional CLASS)= [Function]
+
+  #+begin_src lisp
+  (documentation #'find-window t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the frontmost window of the CLASS for which a prefix of
+  : the window's title is `string-equal' to TITLE. If no window has
+  : TITLE as its title, `nil' is returned.
+  :
+  : Parameters:
+  : + TITLE: a string specifying the title of the window to search for
+  : + CLASS: a class used to filter the result.
+  :   The frontmost window that inherits from CLASS is returned.
+  :   The default is `window'.
+
+  TODO: better match
+
++ TODO =(setf view-position)=
+  + =:top=
+
+  + =:bottom=
+
+  + =:left=
+
+  + =:right=
+
++ TODO =(window-size-parts window)= [Generic Function]
+
++ =*window-default-position*= [Variable]
+
+  #+begin_src lisp
+  (documentation '*window-default-position* 'variable)
+  #+end_src
+
+  #+RESULTS:
+  : The default position of a newly opened window.
+
++ =*window-default-size*= [Variable]
+
+  #+begin_src lisp
+  (documentation '*window-default-size* 'variable)
+  #+end_src
+
++ =(window-title window)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-title t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the WINDOW's title as a string.
+
++ TODO =(set-window-title WINDOW NEW-TITLE)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-window-title t)
+  #+end_src
+
+  #+RESULTS:
+  : Sets the WINDOW title to NEW-TITLE.
+  :
+  : Parameter:
+  : + WINDOW:
+  : + NEW-TITLE:
+  :
+  : Dev Note:
+  : + see (setf window-title)
+
++ TODO, maybe removed =(part-color WINDOW PART)= [Generic Function]
+
++ TODO =(set-part-color WINDOW PART COLOR)= [Function]
+
++ TODO =(part-color-list WINDOW)= [Generic Function]
+
++ =(window-style WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-style t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  NSWindowStyleMask of NSWindow.
+  Return a list of keywords as NSWindowStyleMask.
+
+  Possible Values:
+  + :borderless
+  + :titled
+  + :closable
+  + :miniaturizable
+  + :textured-background
+  + :unified-title-and-toolbar
+  + :full-screen
+  + :full-size-content-view
+  + :utility-window
+  + :doc-modal-window
+  + :nonactivating-panel
+  + :hud-window
+  #+end_example
+
++ =(set-window-style WINDOW NEW-STYLE)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-window-style t)
+  #+end_src
+
+  #+RESULTS:
+  : Set the WINDOW style to NEW-STYLE.
+  :
+  : Parameter:
+  : + WINDOW:
+  : + NEW-STYLE:
+  :
+  : Dev Note:
+  : + see (setf window-style)
+
++ =(window-show WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-show t)
+  #+end_src
+
+  #+RESULTS:
+  : Make WINDOW visible on the screen.
+
++ =(window-hide WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-hide t)
+  #+end_src
+
+  #+RESULTS:
+  : Make WINDOW invisible on the screen.
+
++ =(window-shown-p WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-shown-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Return `t' if WINDOW is visible, and `nil' if it's hidden.
+
++ TODO =(window-ensure-on-screen WINDOW &optional DEFAULT-POSITION DEFAULT-SIZE)= [Generic Function]
+
++ TODO =(window-on-screen-p WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-on-screen-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns `t' if all of WINDOW is on the screen, `nil' otherwise.
+
++ TODO =(window-active-p WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-active-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns `t' if WINDOW is the active window, `nil' otherwise.
+  :
+  : Except when Common Lisp is not the active application,
+  : it returns `t' for all floating windows and for the frontmost
+  : non-floating visible window.
+
++ =(window-level WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-level t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  NSWindow level for WINDOW.
+
+  Possible Value:
+  + :normal
+  + :floating
+  + :submenu
+  + :torn-off
+  + :main-menu
+  + :status
+  + :modal-panel
+  + :screen-saver
+  #+end_example
+
++ =(set-window-level WINDOW LEVEL)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-window-level t)
+  #+end_src
+
+  #+RESULTS:
+  : Set the WINDOW level to LEVEL.
+  :
+  : Parameter:
+  : + WINDOW:
+  : + LEVEL:
+  :
+  : Dev Note:
+  : + see (setf window-level)
+
++ =(window-select WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-select t)
+  #+end_src
+
+  #+RESULTS:
+  : Brings a window to the front, activates it, and shows it
+  : if it is hidden. The previously active window is deactivated.
+
++ TODO, maybe removed =(window-zoom-position WINDOW)= [Generic Function]
+
++ TODO, maybe removed =(window-default-zoom-position WINDOW)= [Generic Function]
+
++ TODO, maybe removed =*window-default-zoom-position*= [Variable]
+
++ TODO, maybe removed =(set-window-zoom-position WINDOW H &optional V)= [Function]
+
++ TODO, maybe removed =(window-zoom-size WINDOW)= [Generic Function]
+
++ TODO, maybe removed =(window-default-zoom-size WINDOW)= [Generic Function]
+
++ TODO, maybe removed =*window-default-zoom-size*= [Variable]
+
++ TODO, maybe removed =(set-window-zoom-size WINDOW H &optional V)= [Generic Function]
+
++ TODO =(window-grow-rect WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-grow-rect t)
+  #+end_src
+
+  #+RESULTS:
+  : Return two values as minimum and maximum `ns-size' to which
+  : WINDOW can be resized with the mouse.
+  :
+  : The window can still assume other sizes when the user clicks
+  : the zoom box, and other sizes can be set with the function
+  : `set-view-size'.
+
+  TODO: change this to =window-min-size= and =window-max-size=?
+
++ TODO, maybe removed =(window-drag-rect WINDOW)= [Generic Function]
+
++ =(window-cursor WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-cursor t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the current cursor of WINDOW.
+  : The system-supplied `view-cursor' method for `window'
+  : calls `window-cursor' to determine the cursor of `window'.
+
++ =(window-object WPTR)= [Function]
+
+  #+begin_src lisp
+  (documentation #'window-object t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the window object pointed at by WPTR.
+  : This is alias of `find-objc-obj'.
+
+*** Supporting standard menu items
++ TODO =(window-needs-saving-p WINDOW)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-needs-saving-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Determines whether the Save menu item in the File menu
+  : should be enabled for windows that have a definition of `window-save'.
+  :
+  : The Save menu item is enabled if the class of the active window
+  : as a method definition for `window-save', unless the window has
+  : a method definition for `window-needs-saving-p' and a call to
+  : `window-needs-saving-p' returns `nil'. If the window has a method
+  : definition for `window-needs-saving-p', then Save is enabled only
+  : if a call to `window-needs-saving-p' returns true.
+
++ TODO =(window-can-do-operation WINDOW operation &optional MENU-ITEM)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'window-can-do-operation t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Returns a Boolean value indicating whether view can perform operation.
+  If the value returned is `t', the menu item for operation is enabled;
+  otherwise, it is disabled.
+
+  Parameters:
+  + WINDOW: a window
+  + OPERATION: a symbol specifying one of the standard editing operations
+    + `cut'
+    + `clear'
+    + `copy'
+    + `paste'
+    + `select-all'
+    + `undo'
+    + `undo-more'
+  + MENU-ITEM: the corresponding Edit menu item
+  #+end_example
+
+*** Floating windows
++ TODO =windoid= [Class]
+
++ TODO =*windoid-count*= [Variable]
+
+** Dialog Items
+*** Forms relating to dialog items
++ =dialog-item= [Class]
+
+  #+begin_src lisp
+  (documentation (find-class 'dialog-item) t)
+  #+end_src
+
+  #+RESULTS:
+  : The class `dialog-item' provides the basic functionality
+  : shared by all dialog items. It is built on `simple-view'.
+
++ TODO =dialog-items= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-items t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Return a list of the dialog items in VIEW.
+
+  Parameters:
+  + VIEW: a `view'
+  + ITEM-CLASS:
+    If the value of ITEM-CLASS is specified and non-nil, then
+    only dialog items matching ITEM-CLASS are returned.
+    The default value is `nil'.
+  + MUST-BE-ENABLED:
+    Ff `t', then only dialog items that are enabled are returned.
+    The default value is `nil'.
+  #+end_example
+
++ =(make-dialog-item CLASS SIZE TEXT &optional ACTION &rest ATTRIBUTES)= [Function]
+
+  #+begin_src lisp
+  (documentation #'make-dialog-item t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Creates a dialog item using `make-instance'.
+
+  Parameters:
+  + CLASS: the class of dialog item
+  + POSITION: the position of the dialog item with respect to its container
+  + SIZE: the size of the dialog item
+  + TEXT: the text included within the dialog item
+  + ACTION: the action associated within the dialog item
+  + ATTRIBUTES: one or more attributes belonging to the dialog item.
+    The number and nature of these depends on the type of dialog item.
+  #+end_example
+
++ TODO =(dialog-item-action ITEM)= [Generic Function]
+
++ =(dialog-item-action-function ITEM)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-item-action-function t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the value set by the `:dialog-item-action'
+  : initialization argument or the `set-dialog-item-action-function'
+  : function.
+  :
+  : Unless it is `nil', this function is called with a single argument, item,
+  : by the `dialog-item-action' method for `dialog-item'.
+  :
+  : This generic function is called by the `view-click-event-handler'
+  : method for `dialog-item' when the user clicks a dialog item.
+
++ =(set-dialog-item-action-function ITEM NEW-FUNCTION)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'set-dialog-item-action-function t)
+  #+end_src
+
+  #+RESULTS:
+  : Sets the value of `dialog-item-action-function' for ITEM as NEW-FUNCTION.
+  :
+  : Dev Note:
+  : + implement (setf dialog-item-action-function)
+
++ TODO =(view-click-event-handler ITEM WHERE)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'view-click-event-handler t)
+  #+end_src
+
+  #+RESULTS:
+  : Called by the event system when the user clicks the ITEM.
+  : The method for `dialog-item' calls ITEM's `dialog-item-action-function'
+  : with ITEM as the single argument. If ITEM's `dialog-item-action-function'
+  : is `nil', nothing is done.
+  :
+  : Parameters:
+  : + ITEM: a dialog item
+  : + WHERE: a cursor position, it is ignored.
+
+  TODO: maybe remove =where= argument?
+
++ =(dialog-item-text item)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-item-text t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns the string of text associated with the ITEM.
+
+  TODO: implement set =dialog-item-text=
++ =(set-dialog-item-text ITEM TEXT)= [Function]
+
+  #+begin_src lisp
+  (documentation #'set-dialog-item-text t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Sets the text associated with the dialog item to TEXT and returns TEXT.
+
+  The text of a dialog item has a different meaning for each class of
+  dialog item. It is the text of static-text and editable-dialog text
+  items. It is the label displayed inside buttons and to the right of
+  radio buttons and checkboxes.
+
+  If you prefer to put text in a different location, set the text to
+  the empty string and use a separate static-text item to place the
+  text where you would like it.
+
+  Dev Note:
+  + implement method for (setf dialog-item-text)
+  #+end_example
+
++ TODO =(dialog-item-enable ITEM)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-item-enable t)
+  #+end_src
+
+  #+RESULTS:
+  : Enables the dialog item.
+  : The item is not dimmed, and its action is run when the user clicks it.
+  : The function returns `nil'.
+
++ TODO =(dialog-item-disable ITEM)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-item-disable t)
+  #+end_src
+
+  #+RESULTS:
+  : Disable the dialog item.
+  : The dialog item is dimmed; clicks in the item are ignored,
+  : and the action of the item is never run.
+  : The function returns `nil'.
+
++ =(dialog-item-enabled-p ITEM)= [Generic Function]
+
+  #+begin_src lisp
+  (documentation #'dialog-item-enabled-p t)
+  #+end_src
+
+  #+RESULTS:
+  : Returns `t' if the dialog item is enabled;
+  : or `nil' if it is disabled.
+
+*** Specialized dialog items
+**** Buttons
++ =button-dialog-item= [Class]
+
++ =(press-button button)= [Generic Function]
+
+**** Static text
+
+**** Editable text
+
+**** Checkboxes
+
+**** Radio buttons
+
+**** Table dialog items
+
+**** Pop-up menu dialog items
+
+**** Scroll-bar dialog items
+
+**** User-defined dialog items
+
+** Dialogs
++ TODO =(y-or-n-dialog MESSAGE &key SIZE POSITION YES-TEXT NO-TEXT CANCEL-TEXT HELP-SPEC)= [Function]
+
++ TODO =(get-string-from-user MESSAGE &key SIZE POSITION INITIAL-STRING OK-TEXT CANCEL-TEXT MODELESS WINDOW-TITLE ACTION-FUNCTION ALLOW-EMPTY-STRINGS)= [Function]
+
++ TODO =(select-item-from-list LIST &key WINDOW-TITLE TABLE-PRINT-FUNCTION SELECTION-TYPE ACTION-FUNCTION MODELESS DEFAULT-BUTTON-TEXT)= [Function]
+
+*** Forms relating to dialogs
++ TODO =dialog= [Class]
+
++ TODO =(modal-dialog WINDOW &optional CLOSE-ON-EXIT EVENTHOOK)= [Generic Function]
+
++ TODO =(return-from-modal-dialog VALUES)= [Macro]
+
++ TODO =*modal-dialog-on-top*= [Variable]
+  
+** Color
+** Fonts

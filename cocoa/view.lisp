@@ -5,6 +5,186 @@
 
 ;;;; View Protocol
 
+(declaim (type (or null simple-view) *current-view*))
+(defvar *current-view* nil
+  "The view where drawing currently occurs.
+
+See `focus-view' and `with-focused-view'.
+
+It is initially bounded to `nil'. ")
+(pushnew '*current-view* *global-objc-objects-variables*)
+
+(declaim (type (or null simple-view) *mouse-view*))
+(defvar *mouse-view* nil
+  "The view that the mouse is over.
+This variable is updated by the `window-update-cursor'.
+
+The `*mouse-view*' view is one whose `view-cursor' method
+decides which cursor to select.
+
+It is initially bounded to `nil'. ")
+(pushnew '*mouse-view* *global-objc-objects-variables*)
+
+(defgeneric focus-view (view &optional font-view)
+  (:documentation
+   "Setup `view-context' as current CGContext
+and sets the clip region and origin so that drawing
+will occur in the coordinate system of `view'.
+
+The `focus-view' function is not normally called directly.
+In general, `with-focused-view' should be used when drawing
+to `view'. "))
+
+(defgeneric view-container (view)
+  (:documentation
+   "Returns the VIEW's containing `view'. "))
+
+(defgeneric view-subviews (view)
+  (:documentation
+   "Returns a vector containing all of the VIEW's subviews.
+This vector should never be changed directly. It is
+updated automatically by calls to `set-view-container'."))
+
+(defmacro do-subviews ((subview-var view
+                        &optional (subview-type nil stp))
+                       &body body)
+  "For each subview of VIEW of the given SUBVIEW-TYPE,
+the macro `do-subviews' executes BODY with SUBVIEW-VAR
+bound to the subview.
+
+Syntax:
+
+    (do-subviews (SUBVIEW-VAR VIEW [SUBVIEW-TYPE])
+      &body)
+
+Parameters:
++ SUBVIEW-VAR: a variable
++ VIEW: a `view'
++ SUBVIEW-TYPE: a Common Lisp type specifier
++ FORM: Zero or more MCL forms
+"
+  (declare (type symbol subview-var))
+  (if stp
+      `(loop :for ,subview-var :across (view-subviews ,view)
+             :if (typep ,subview-var ,subview-type)
+               :do (progn ,@body))
+      `(loop :for ,subview-var :across (view-subviews ,view)
+             :do (progn ,@body))))
+
+(defgeneric map-subviews (view function &optional subview-type)
+  (:documentation
+   "For each subview of VIEW of the given SUBVIEW-TYPE,
+the generic function `map-subviews' calls function with subview
+as its single argument.
+
+Parameters:
++ VIEW: a `view'
++ FUNCTION: a function
++ SUBVIEW-TYPE: a Common Lisp type specifier")
+  (:method ((view view) function &optional (subview-type nil stp))
+    (if stp
+        (do-subviews (subview view subview-type)
+          (funcall function subview))
+        (do-subviews (subview view)
+          (funcall function subview)))))
+
+(defgeneric view-named (name view)
+  (:documentation
+   "Returns the first subview of VIEW whose nickname is NAME.
+The subview are searched in the order in which they were added
+to VIEW.
+
+Parameters:
++ NAME: any object, but usually a symbol.
+  Nicknames are compared using `eq'
++ VIEW: a `view'")
+  (:method (name (view view))
+    (do-subviews (subview view)
+      (when (eq (view-nickname subview) name)
+        (return-from view-named subview)))))
+
+(defgeneric find-named-sibling (view name)
+  (:documentation
+   "Performs a search in VIEW's container and
+returns the first item in the container whose nickname is NAME.
+For example, given a dialog item view, it performs a search in the
+view that is VIEW's container to find another item with the nickname NAME.
+The items are searched in the order in which they were added to VIEW's
+container.
+
+Parameters:
++ VIEW: a `simple-view'
++ NAME: any object, but usually a symbol
+  Nicknames are compared using `eq'. ")
+  (:method ((view simple-view) name)
+    (let ((container (view-container view)))
+      (and container (view-named name container)))))
+
+(defgeneric add-subviews (view &rest subviews)
+  (:documentation
+   "Sets the container of each of SUBVIEWS to VIEW.
+If any of the subviews are already owned by VIEW,
+`add-subviews' does nothing.
+
+Parameters:
++ VIEW: a `view'
++ SUBVIEWS: a `view' or `simple-view', but not a `window';
+  SUBVIEWS must be able to contained within VIEW")
+  (:method ((view view) &rest subviews)
+    (dolist (subview subviews)
+      (set-view-container subview view))))
+
+(defgeneric remove-subviews (view &rest subviews)
+  (:documentation
+   "Removes each of SUBVIEWS from VIEW.
+If subview is not in VIEW, an error is signaled.
+
+Parameters:
++ VIEW: a `view'
++ SUBVIEWS: a `view' or `simple-view', but not a `window';
+  SUBVIEWS must be able to be contained within VIEW. ")
+  (:method ((view view) &rest subviews)
+    (dolist (subview subviews)
+      (cond ((typep subview 'window)
+             (error "SUBVIEW ~A should not be `window'" subview))
+            ((view-contains-p view subview)
+             (set-view-container subview nil))
+            (t
+             (error "SUBVIEW ~A is not in VIEW ~A" subview view))))))
+
+(defgeneric find-clicked-subview (view where)
+  (:documentation
+   "Returns the subview of VIEW that contains the `ns-point' WHERE
+in its click region. The method for `nil' searches all windows for
+a subview containing WHERE in its click region.
+
+This function is similar to `find-view-containing-point',
+but `find-clicked-subview' calls `point-in-click-region-p',
+and `find-view-containing-point' calls `view-contains-point-p'.
+The default method of `point-in-click-region-p' for views or
+simple views simply calls `view-contains-point-p', but users
+can write methods to make views invisible to mouse clicks.
+
+Parameters:
++ VIEW: a view or subview
++ WHERE: `ns-point' in the local coordinate system of the VIEW container"))
+
+(defgeneric wptr (view)
+  (:documentation
+   "Returns the foreign-pointer to a NSWindow.
+Or `nil' if the VIEW is not contained in a `window'.
+
+All views contained in a given window have the same `wptr'.
+
+You can test if a VIEW's window has been closed by checking
+whether the value of its `wptr' slot is `nil'. "))
+
+(defgeneric view-window (view)
+  (:documentation
+   "Returns the `window' containing VIEW.
+Or `nil' if the VIEW is not contained in a `window'.
+If VIEW is a `window', `view-window' returns the window. "))
+
 (defgeneric view-position (view)
   (:documentation
    "Upper-left coordinates of VIEW position.
@@ -22,6 +202,119 @@ Return `ns-size' for VIEW size. "))
 (defgeneric view-default-position (view)
   (:documentation
    "Return the default value of the `:view-position' initarg of VIEW. "))
+
+(defgeneric view-nickname (view)
+  (:documentation
+   "Returns the nickname of the VIEW.
+The nickname is used in conjuection with `view-named'. "))
+
+;; (defun find-view-containing-point (view point &optional direct-subviews-only))
+
+(defgeneric point-in-click-region-p (view where)
+  (:documentation
+   "Called by `view-click-event-handler' to determine whether WHERE
+is in VIEW. The default method calls `view-contains-point-p'.
+
+Parameters:
++ VIEW: a simple view or view
++ WHERE:
+  + for a view, the cursor position of the view in the local
+    coordinate system when the mouse is clicked
+  + for a simple view, the cursor position of the simple
+    view in the local coordinate system of the view's container
+    when the mouse is clicked"))
+
+(defgeneric view-activate-event-handler (view)
+  (:documentation
+   "Called by the event system when the window containing the
+VIEW is made active.
+
+The definition for `simple-view' does nothing.
+The definition for `view' calls `view-activate-event-handler'
+on each subview.
+
+Specialize this generic function if your view needs to indicate
+visually that it is active. "))
+
+(defgeneric view-deactivate-event-handler (view)
+  (:documentation
+   "Called by the event system to deactivate a VIEW.
+It is called when the window containing the view is
+active and a different window is made active.
+
+The definition for `simple-view' does nothing.
+The definition for `view' calls `view-deactivate-event-handler'
+on each subview.
+
+Specialize this generic function if your view needs to indicate
+visually that it has been deactivated. "))
+
+(defgeneric view-click-event-handler (view where)
+  (:documentation
+   "Called by the event system when a mouse click occurs.
+
+The `simple-view' method does nothing.
+The `view' method calls `view-convert-coordinates-and-click'
+on the first subview for which `point-in-click-region-p'
+returns `t'.
+
+The function `view-click-event-handler' scans subviews in
+the opposite order as does `view-draw-contents'.
+The first view added is the first one drawn but the last
+one to be queried during clicking.
+
+If you define any `view-click-event-handler' for window,
+they must call `call-next-method'.
+
+Parameters:
++ VIEW: a simple view or view
++ WHERE:
+  + for a `view', the mouse click position (the position
+    when the mouse is cliced) of the view in the local
+    coordinate system.
+  + for a simple view, the mouse click position of the
+    simple view in the local coordinate system of the
+    view's container
+"))
+
+(defgeneric view-convert-coordinates-and-click (view where container)
+  (:documentation
+   "Runs `view-click-event-handler' on the cursor position
+within the VIEW's CONTAINER. "))
+
+(defgeneric view-focus-and-draw-contents (view &optional visrgn cliprgn)
+  (:documentation
+   "Used whenever a view needs to be focused on before any portion
+of its contents is redrawn. The method for view focuses on the view,
+then calls `view-draw-contents' if the VISRGN and CLIPRGN region records
+overlap.
+
+The method for `simple-view' focuses on the view's container,
+then calls `view-draw-contents'."))
+
+(defgeneric view-font (view)
+  (:documentation
+   "Returns the font spec used for drawing text in the window.
+Due to an idiosyncrasy of the Macintosh computer, a
+font size of 0 points may appear as a font size of 12 points."))
+
+(declaim (inline set-view-font))
+(defun set-view-font (view font-spec)
+  "Sets the font spec of VIEW to FONT-SPEC.
+
+Parameters:
++ VIEW
++ FONT-SPEC: a font specifier
+
+Dev Note:
++ implement method for (setf view-font)"
+  (setf (view-font view) font-spec))
+
+(defgeneric view-default-font (view)
+  (:documentation
+   "If a `:view-font' initialzation argument is not specified when
+a view is created, the generic function `view-default-font' is
+called to determine its font. "))
 
 (defgeneric view-cursor (view point)
   (:documentation
@@ -75,7 +368,7 @@ Dev Note:
     :documentation
     "A container as parent of the view. ")
    (view-origin
-    :initform (ns-point :x 0 :y 0)
+    :initform (ns-point :x 0d0 :y 0d0)
     :type     ns-point
     :reader   view-origin
     :documentation
@@ -226,7 +519,7 @@ Syntax:
     (set-view-size VIEW W H)
     ;; => (setf (view-size VIEW) (ns-size :w W :h H))
 
-    (set-view-position VIEW SIZE)
+    (set-view-size VIEW SIZE)
     ;; => (setf (view-size VIEW) SIZE)
 
 Dev Note:
@@ -385,6 +678,18 @@ Parameters:
   "The method for `simple-view' do nothing. "
   (declare (ignore view)))
 
+;; view-nickname
+
+(declaim (inline set-view-nickname))
+(defun set-view-nickname (view new-name)
+  "Sets the nickname of the VIEW to NEW-NAME and return NEW-NAME.
+
+Parameters:
++ VIEW: a view or simple view
++ NEW-NAME: a name, usually a symbol or string"
+  (declare (type simple-view view))
+  (setf (view-nickname view) new-name))
+
 
 ;;;; view
 
@@ -412,15 +717,12 @@ Parameters:
     :initform (ns-point :x 0 :y 0)
     :initarg  :view-scroll-position
     :accessor view-scroll-position)
-   (view-origin
-    :initform (ns-point :x 0 :y 0)
-    :accessor view-origin-slot)
    (view-subviews
     :initform (make-array 1 :adjustable t :fill-pointer 0)
-    :reader view-subviews)
-   (view-clip-region
-    :initform nil
-    :accessor view-clip-region-slot)))
+    :reader   view-subviews))
+  (:documentation
+   "The `view' class is the class of views that can include subviews.
+It is built on `simple-view'. "))
 
 (defmethod initialize-instance :after ((view view) &key view-subviews)
   (declare (type list view-subviews))
@@ -447,7 +749,10 @@ then set as NEW-CONTAINER.
 
 Parameters:
 + VIEW: a `simple-view'
-+ NEW-CONTAINER: a `view' or `nil'"
++ NEW-CONTAINER: a `view' or `nil'
+
+Dev Note:
++ implemento (setf view-container)"
   (declare (type simple-view view)
            (type (or null view) new-container))
   (setf (view-container view) new-container))
@@ -486,6 +791,18 @@ Parameters:
 (defmethod view-contains-p ((view null) contained-view)
   (declare (ignore contained-view))
   nil)
+
+(defun subviews (view &optional (subview-type 'simple-view))
+  "Returns a list of subviews of VIEW.
+If SUBVIEW-TYPE is present, only subviews matching that type are returned.
+
+Parameters:
++ VIEW: a `view'
++ SUBVIEW-TYPE: a Common Lisp type specifier"
+  (declare (type view view))
+  (loop :for subview :across (view-subviews view)
+        :if (typep subview subview-type)
+          :collect subview))
 
 
 ;;;; Dev Tools
