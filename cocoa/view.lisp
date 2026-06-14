@@ -80,13 +80,7 @@ as its single argument.
 Parameters:
 + VIEW: a `view'
 + FUNCTION: a function
-+ SUBVIEW-TYPE: a Common Lisp type specifier")
-  (:method ((view view) function &optional (subview-type nil stp))
-    (if stp
-        (do-subviews (subview view subview-type)
-          (funcall function subview))
-        (do-subviews (subview view)
-          (funcall function subview)))))
++ SUBVIEW-TYPE: a Common Lisp type specifier"))
 
 (defgeneric view-named (name view)
   (:documentation
@@ -97,11 +91,7 @@ to VIEW.
 Parameters:
 + NAME: any object, but usually a symbol.
   Nicknames are compared using `eq'
-+ VIEW: a `view'")
-  (:method (name (view view))
-    (do-subviews (subview view)
-      (when (eq (view-nickname subview) name)
-        (return-from view-named subview)))))
++ VIEW: a `view'"))
 
 (defgeneric find-named-sibling (view name)
   (:documentation
@@ -115,10 +105,7 @@ container.
 Parameters:
 + VIEW: a `simple-view'
 + NAME: any object, but usually a symbol
-  Nicknames are compared using `eq'. ")
-  (:method ((view simple-view) name)
-    (let ((container (view-container view)))
-      (and container (view-named name container)))))
+  Nicknames are compared using `eq'. "))
 
 (defgeneric add-subviews (view &rest subviews)
   (:documentation
@@ -129,10 +116,7 @@ If any of the subviews are already owned by VIEW,
 Parameters:
 + VIEW: a `view'
 + SUBVIEWS: a `view' or `simple-view', but not a `window';
-  SUBVIEWS must be able to contained within VIEW")
-  (:method ((view view) &rest subviews)
-    (dolist (subview subviews)
-      (set-view-container subview view))))
+  SUBVIEWS must be able to contained within VIEW"))
 
 (defgeneric remove-subviews (view &rest subviews)
   (:documentation
@@ -142,15 +126,7 @@ If subview is not in VIEW, an error is signaled.
 Parameters:
 + VIEW: a `view'
 + SUBVIEWS: a `view' or `simple-view', but not a `window';
-  SUBVIEWS must be able to be contained within VIEW. ")
-  (:method ((view view) &rest subviews)
-    (dolist (subview subviews)
-      (cond ((typep subview 'window)
-             (error "SUBVIEW ~A should not be `window'" subview))
-            ((view-contains-p view subview)
-             (set-view-container subview nil))
-            (t
-             (error "SUBVIEW ~A is not in VIEW ~A" subview view))))))
+  SUBVIEWS must be able to be contained within VIEW. "))
 
 (defgeneric find-clicked-subview (view where)
   (:documentation
@@ -658,7 +634,8 @@ Parameters:
                                    (dealloc view))))))
 
 (defmethod dealloc ((view simple-view))
-  (release (objc-ptr view))
+  (with-ptr view
+    (release ptr))
   (setf (slot-value view 'wptr) nil))
 
 ;; view-cursor
@@ -691,7 +668,7 @@ Parameters:
   (setf (view-nickname view) new-name))
 
 
-;;;; view
+;;;; contexted-view-mixin
 
 (defstruct (view-context (:conc-name ctx-))
   (ptr      (null-pointer) :type foreign-pointer)
@@ -701,22 +678,38 @@ Parameters:
   ;; (bg-color (make-color)   :type color)
   )
 
-(defclass view (simple-view)
+(defclass context-view-mixin ()
   ((view-context
     :type   view-context
-    :reader view-context)
-   (objc-class
+    :reader view-context)))
+
+
+;;;; scroller-view-mixin
+
+(defclass scroller-view-mixin ()
+  ((scroller-view-ptr
+    :documentation
+    "The foreign-pointer to NSScrollerView. ")
+   (view-scroll-position
+    :initform (ns-point :x 0 :y 0)
+    :initarg  :view-scroll-position
+    :accessor view-scroll-position
+    :documentation
+    "Current position of NSScrollerView scroll position. ")))
+
+
+;;;; view
+
+(defclass view (simple-view)
+  ((objc-class
     :initform (coerce-to-objc-class "CocaView")
     :documentation
     "The ObjC class of NSView. ")
    (view-valid
     :initform nil
     :accessor view-valid
-    :documentation "For lazy clip-region updating. ")
-   (view-scroll-position
-    :initform (ns-point :x 0 :y 0)
-    :initarg  :view-scroll-position
-    :accessor view-scroll-position)
+    :documentation
+    "For lazy clip-region updating. ")
    (view-subviews
     :initform (make-array 1 :adjustable t :fill-pointer 0)
     :reader   view-subviews))
@@ -803,6 +796,35 @@ Parameters:
   (loop :for subview :across (view-subviews view)
         :if (typep subview subview-type)
           :collect subview))
+
+(defmethod map-subviews ((view view) function &optional (subview-type nil stp))
+  (if stp
+      (do-subviews (subview view subview-type)
+        (funcall function subview))
+      (do-subviews (subview view)
+        (funcall function subview))))
+
+(defmethod view-named (name (view view))
+  (do-subviews (subview view)
+    (when (eq (view-nickname subview) name)
+      (return-from view-named subview))))
+
+(defmethod find-named-sibling ((view simple-view) name)
+  (let ((container (view-container view)))
+    (and container (view-named name container))))
+
+(defmethod add-subviews ((view view) &rest subviews)
+  (dolist (subview subviews)
+    (set-view-container subview view)))
+
+(defmethod remove-subviews ((view view) &rest subviews)
+  (dolist (subview subviews)
+    (cond ((typep subview 'window)
+           (error "SUBVIEW ~A should not be `window'" subview))
+          ((view-contains-p view subview)
+           (set-view-container subview nil))
+          (t
+           (error "SUBVIEW ~A is not in VIEW ~A" subview view)))))
 
 
 ;;;; Dev Tools

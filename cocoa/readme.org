@@ -116,9 +116,32 @@
   + implement (setf view-container)
   #+end_example
 
-+ TODO, maybe remove =(install-view-in-window VIEW WINDOW)= [Function]
++ =(install-view-in-window VIEW WINDOW)= [Function]
 
-+ TODO, maybe remove =(remove-view-from-window VIEW)= [Function]
+  #+begin_src lisp :exports results
+  (documentation #'install-view-in-window t)
+  #+end_src
+
+  #+RESULTS:
+  : Installs VIEW in the WINDOW window.
+  :
+  : This function performs initialization tasks that require
+  : the containing window.
+  :
+  : Dev Note:
+  : + implement (setf view-container) for custom setup code
+
++ =(remove-view-from-window VIEW)= [Function]
+
+  #+begin_src lisp :exports results
+  (documentation #'remove-view-from-window t)
+  #+end_src
+
+  #+RESULTS:
+  : Removes view from its container.
+  :
+  : Dev Note:
+  : + implement (setf view-container) for custom setup code
 
 + =(subviews VIEW &optional SUBVIEW-TYPE)= [Function]
 
@@ -1041,7 +1064,7 @@
   + implement method for (setf dialog-item-text)
   #+end_example
 
-+ TODO =(dialog-item-enable ITEM)= [Generic Function]
++ =(dialog-item-enable ITEM)= [Function]
 
   #+begin_src lisp :exports results
   (documentation #'dialog-item-enable t)
@@ -1052,7 +1075,7 @@
   : The item is not dimmed, and its action is run when the user clicks it.
   : The function returns `nil'.
 
-+ TODO =(dialog-item-disable ITEM)= [Generic Function]
++ =(dialog-item-disable ITEM)= [Function]
 
   #+begin_src lisp :exports results
   (documentation #'dialog-item-disable t)

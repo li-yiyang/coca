@@ -110,18 +110,22 @@ Dev Note:
   (declare (type dialog-item item))
   (setf (dialog-item-text item) text))
 
-(defgeneric dialog-item-enable (item)
-  (:documentation
-   "Enables the dialog item.
+(declaim (inline dialog-item-enable))
+(defun dialog-item-enable (item)
+  "Enables the dialog item.
 The item is not dimmed, and its action is run when the user clicks it.
-The function returns `nil'. "))
+The function returns `nil'. "
+  (setf (dialog-item-enabled-p item) t)
+  nil)
 
-(defgeneric dialog-item-disable (item)
-  (:documentation
-   "Disable the dialog item.
+(declaim (inline dialog-item-disable))
+(defun dialog-item-disable (item)
+  "Disable the dialog item.
 The dialog item is dimmed; clicks in the item are ignored,
 and the action of the item is never run.
-The function returns `nil'. "))
+The function returns `nil'. "
+  (setf (dialog-item-enabled-p item) nil)
+  nil)
 
 (defgeneric dialog-item-enabled-p (item)
   (:documentation
@@ -141,47 +145,113 @@ or `nil' if it is disabled. "))
     (funcall fn item)))
 
 (defclass dialog-item (simple-view)
-  ((dialog-item-text
-    :initarg  :dialog-item-text
-    :initform ""
-    :reader   dialog-item-text)
-   (dialog-item-handle
-    :initarg  :dialog-item-text
-    :initform nil
+  ((dialog-item-handle
+    :initarg  :dialog-item-handle
+    :initform (init (alloc "CocaDialogItemController"))
+    :type     (or null foreign-pointer)
     :reader   dialog-item-handle)
    (dialog-item-enabled-p
     :initarg  :dialog-item-enabled-p
     :initform t
+    :type     boolean
     :reader   dialog-item-enabled-p)
    (dialog-item-action-function
     :initarg  :dialog-item-action
     :initform nil
-    :accessor dialog-item-action-function)
-   (%target
-    :initform (init (alloc "CocaDialogItemController"))))
+    :accessor dialog-item-action-function))
   (:documentation
    "The class `dialog-item' provides the basic functionality
 shared by all dialog items. It is built on `simple-view'. "))
 
+(defmethod (setf dialog-item-handle) (handle (dialog dialog-item))
+  (declare (type foreign-pointer handle))
+  (with-ptr dialog
+    (when (slot-value dialog 'dialog-item-handle)
+      (remhash (pointer-address (slot-value dialog 'dialog-item-handle)) *objc-objects*))
+    (dispatch-main ()
+      (invoke ptr "setTarget:" :object handle)
+      (invoke ptr "setAction:" :sel "handleCocaDialogTarget:"))
+    (regist-objc-obj dialog handle)
+    (setf (slot-value dialog 'dialog-item-handle) handle)))
+
 (defmethod initialize-instance :after ((item dialog-item)
                                        &key
-                                         dialog-item-text
-                                         ;; dialog-item-handle
-                                         dialog-item-enabled-p
-                                         dialog-item-action-function)
-  ;; (when dialog-item-text
-  ;;   (setf (dialog-item-text item) dialog-item-text))
-  ;; (when dialog-item-enabled-p
-  ;;   (setf (dialog-item-enabled-p item) dialog-item-enabled-p))
-  (with-ptr item
-    (let ((target* (slot-value item '%target)))
-      (dispatch-main ()
-        (invoke ptr "setTarget:" :object target*)
-        (invoke ptr "setAction:" :sel "handleCocaDialogTarget:")))))
+                                         dialog-item-action-function
+                                         dialog-item-text)
+  (setf (dialog-item-text      item) (or dialog-item-text
+                                         (dialog-item-text item)))
+  (setf (dialog-item-enabled-p item) (dialog-item-enabled-p item))
+  
+  ;; patch of (setf dialog-item-handle) to skip `remhash'
+  (let ((handle (dialog-item-handle item)))
+    (setf (slot-value item 'dialog-item-handle) nil)
+    (setf (dialog-item-handle item) handle)))
 
 (defmethod dealloc ((item dialog-item))
-  (release (slot-value item '%target))
+  (let ((handle (dialog-item-handle item)))
+    (remhash (pointer-address handle) *objc-objects*)
+    (release handle))
   (call-next-method))
+
+;; dialog-item-enabled-p
+
+(defmethod (setf dialog-item-enabled-p) (value (dialog dialog-item))
+  (with-ptr dialog
+    (cond (value
+           (dispatch-main () (invoke ptr "setEnabled:" :bool t))
+           (setf (slot-value dialog 'dialog-item-enabled-p) t))
+          (t
+           (dispatch-main () (invoke ptr "setEnabled:" :bool nil))
+           (setf (slot-value dialog 'dialog-item-enabled-p) nil)))))
+
+
+;;;; dialog-item-titled-mixin
+
+(defmethod dialog-item-text ((dialog dialog-item))
+  "")
+
+(defmethod (setf dialog-item-text) (text (dialog dialog-item))
+  (declare (ignore text dialog)))
+
+(defclass dialog-item-titled-mixin ()
+  ((dialog-item-text
+    :initarg  :dialog-item-text
+    :initform ""
+    :type     string
+    :reader   dialog-item-text))
+  (:documentation
+   "For NSControl with `title' SEL method. "))
+
+(defmethod (setf dialog-item-text)
+    ((text string) (dialog dialog-item-titled-mixin))
+  (with-ptr dialog
+    (dispatch-main () (invoke ptr "setTitle:" :ns-string text))
+    (setf (slot-value dialog 'dialog-item-text) text)))
+
+(defclass dialog-item-string-value-mixin () ()
+  (:documentation
+   "For NSControl with `stringValue' SEL method. "))
+
+(defmethod dialog-item-text ((dialog dialog-item-string-value-mixin))
+  (with-ptr dialog
+    (invoke ptr "stringValue" :ns-string)))
+
+(defmethod (setf dialog-item-text)
+    ((text string) (dialog dialog-item-string-value-mixin))
+  (with-ptr dialog
+    (dispatch-main () (invoke ptr "setStringValue:" :ns-string text))))
+
+(defclass dialog-item-string-mixin () ()
+  (:documentation
+   "For NSView with `string' SEL method. "))
+
+(defmethod dialog-item-text ((dialog dialog-item-string-mixin))
+  (with-ptr dialog (invoke ptr "string" :ns-string)))
+
+(defmethod (setf dialog-item-text)
+    ((text string) (dialog dialog-item-string-mixin))
+  (with-ptr dialog
+    (dispatch-main () (invoke ptr "setString:" :ns-string text))))
 
 
 ;;;; button
@@ -190,14 +260,50 @@ shared by all dialog items. It is built on `simple-view'. "))
   (:documentation
    ""))
 
-(defclass button (dialog-item)
+(defclass button-dialog-item (dialog-item
+                              dialog-item-titled-mixin)
   ((objc-class
     :initform (coerce-to-objc-class "NSButton")
-    :documentation "NSButton")))
+    :documentation "NSButton"))
+  (:default-initargs
+   :dialog-item-text "Button"))
 
-(defmethod (setf dialog-item-text) ((text string) (button button))
-  (with-ptr button
-    (dispatch-main () (invoke ptr "setTitle:" :ns-string text)))
-  (setf (slot-value button 'dialog-item-text) text))
+
+;;;; static-text-dialog-item
+
+(defclass static-text-dialog-item (dialog-item
+                                   dialog-item-string-value-mixin)
+  ((objc-class
+    :initform (coerce-to-objc-class "NSTextField")))
+  (:default-initargs
+   :dialog-item-text "")
+  (:documentation
+   "NSTextField as static-text-dialog-item. "))
+
+(defmethod initialize-instance :after ((dialog static-text-dialog-item) &key)
+  (with-ptr dialog
+    (dispatch-main ()
+      (invoke ptr "setEditable:"        :bool nil)
+      (invoke ptr "setSelectable:"      :bool nil)
+      (invoke ptr "setBordered:"        :bool nil)
+      (invoke ptr "setDrawsBackground:" :bool nil))))
+
+
+;;;; editable-text-dialog-item
+
+;; TODO: implement `cluffer-buffer-mixin'?
+(defclass editable-text-dialog-item (ns-text-view-dialog-item
+                                     dialog-item-string-mixin)
+  ((objc-class
+    :initform (coerce-to-objc-class "NSTextView")))
+  (:default-initargs
+   :dialog-item-text "")
+  (:documentation
+   "NSTextView as editable-text-dialog-item. "))
+
+(defmethod initialize-instance :after ((dialog editable-text-dialog-item) &key)
+  (with-ptr dialog
+    (dispatch-main ()
+      (invoke ptr "setEditable:" :bool t))))
 
 ;;;; dialog-item.lisp ends here

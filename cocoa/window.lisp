@@ -596,6 +596,28 @@ Side Effect:
   (unless (null container)
     (error "Container should always be `nil' for windows. ")))
 
+(declaim (inline install-view-in-window))
+(defun install-view-in-window (view window)
+  "Installs VIEW in the WINDOW window.
+
+This function performs initialization tasks that require
+the containing window.
+
+Dev Note:
++ implement (setf view-container) for custom setup code"
+  (declare (type simple-view view)
+           (type window window))
+  (setf (view-container view) window))
+
+(declaim (inline remove-view-from-window))
+(defun remove-view-from-window (view)
+  "Removes view from its container.
+
+Dev Note:
++ implement (setf view-container) for custom setup code"
+  (declare (type simple-view view))
+  (setf (view-container view) nil))
+
 ;; window-show, window-hide, window-select
 
 (defmethod window-show ((window window))
