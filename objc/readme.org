@@ -94,19 +94,47 @@ the =:arg= parameter can be a list of elements =(PATTERN EXPANSION-RULE)=
   + invoke rewrite: wrap =invoke= like =`(,@rewrite (invoke ...))=
 
 *** Built-in ObjC typing
-McCLIM-Coca.ObjC provides some built-in ObjC typing:
+Coca.ObjC provides some built-in ObjC typing:
 
-| ObjC typing | CFFI equivent                      | ~invoke~ as return value |
-|-------------+------------------------------------+--------------------------|
-| ~:class~    | ~:pointer~                         | ~coerce-to-objc-class~   |
-| ~:sel~      | ~:pointer~                         | ~coerce-to-selector~     |
-| ~:object~   | ~:pointer~                         |                          |
-| ~:ns-rect~  | ~(:struct ns-rect)~                |                          |
-| ~:ns-point~ | ~(:struct ns-point)~               |                          |
-| ~:ns-size~  | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
-| ~:ns-array~ | ~:pointer~ (not implemented yet)   | ~ns-array-to-list~       |
+| ObjC typing  | CFFI equivent                      | ~invoke~ as return value |
+|--------------+------------------------------------+--------------------------|
+| ~:class~     | ~:pointer~                         | ~coerce-to-objc-class~   |
+| ~:sel~       | ~:pointer~                         | ~coerce-to-selector~     |
+| ~:object~    | ~:pointer~                         |                          |
+| ~:ns-rect~   | ~(:struct ns-rect)~                |                          |
+| ~:ns-point~  | ~(:struct ns-point)~               |                          |
+| ~:ns-size~   | ~:pointer~                         | ~ns-size~                |
+| ~:ns-array~  | ~:pointer~ (not implemented yet)   | ~ns-array-to-list~       |
+| ~:ns-string~ | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
+| ~:block~     | ~:pointer~ (ObjC's block)          | (not implemented)        |
 
 Can use =define-objc-typing= macro to define a new ObjC typing.
+
+** Block
+Some ObjC functions expect blocks as arguments, which can be invoked
+like:
+
+#+begin_src lisp :eval no
+(invoke obj "methodWithBlock:" :block (BLOCK-TYPE (LAMBDA-LIST) &body ...))
+#+end_src
+
+Use =define-objc-block= to define your own =block-type=.
+
+** Image Dump
+Since Coca.ObjC is built on ObjC's runtime, every time you terminate
+the ObjC runtime, you have to re-initialize it.
+
+Use =define-objc-global-variable= to define a global variable access
+function like:
+
+#+begin_src lisp :eval no
+(define-objc-global-variable my-ns-string
+  (string-to-ns-string "My NSString")
+  "Just to demo it")
+#+end_src
+
+Use the function =my-ns-string= to access the global variable
+=*my-ns-string*= to ensure it would be correctly setted up.
 
 * API
 :PROPERTIES:
@@ -295,6 +323,15 @@ Can use =define-objc-typing= macro to define a new ObjC typing.
     method body,
     within the BODY, self is bound to foreign-pointer of ObjC object
   #+end_example
++ =(define-objc-global-variable reader initial-form &optional documentation)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-global-variable) t)
+  #+end_src
+
+  #+RESULTS:
+  : nil
+
 + =(ensure-objc-initialized)=  [Function]
 
   #+begin_src lisp :exports results
@@ -438,7 +475,7 @@ Can use =define-objc-typing= macro to define a new ObjC typing.
   #+RESULTS:
   : Convert lisp STRING into NSString object.
   : Return foreign-pointer of NSString for STRING.
-+ =(pathname-to-ns-url pathname)=
++ =(pathname-to-ns-url pathname)= [Function]
 
   #+begin_src lisp :exports results
   (documentation #'pathname-to-ns-url t)
@@ -490,7 +527,7 @@ Can use =define-objc-typing= macro to define a new ObjC typing.
       + :ns-string => (string-to-ns-string VALUE)
   #+end_example
 
-+ =(ns-number number)=
++ =(ns-number number)= [Function]
 
   #+begin_src lisp :exports results
   (documentation #'ns-number t)
@@ -499,3 +536,27 @@ Can use =define-objc-typing= macro to define a new ObjC typing.
   #+RESULTS:
   : Convert VAL into NSNumber.
   : Return foreign-pointer to NSNumber.
++ =(define-objc-block block-type lambda-list)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-block) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC Block of type BLOCK-TYPE.
+
+  Syntax:
+
+      (define-objc-block BLOCK-TYPE LAMBDA-LIST)
+
+  + BLOCK-TYPE: symbol of block type name
+  + LAMBDA-LIST: CFFI lambda list element as (VAR CFFI-TYPE)
+
+  Dev Note:
+  this will define:
+  + CFFI callback with name %objc-<BLOCK-TYPE>-block-callback
+  + a macro of name with-objc-<BLOCK-TYPE>-block,
+    within macro, use (BLOCK-TYPE lambda-list &body body)
+    as callback
+  #+end_example

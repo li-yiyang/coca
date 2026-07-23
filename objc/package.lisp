@@ -12,6 +12,7 @@
    #:coerce-to-selector
    #:coerce-to-objc-class
    #:define-objc-class
+   #:define-objc-global-variable
    #:define-objc-method
    #:ensure-objc-initialized
    #:with-fp-traps-masked
@@ -52,7 +53,10 @@
    #:description
    #:release
    #:retain
-   #:autorelease))
+   #:autorelease)
+  ;; block.lisp
+  (:export
+   #:define-objc-block))
 
 (in-package :coca.objc)
 

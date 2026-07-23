@@ -430,6 +430,10 @@ Syntax:
   :result (:pointer ns-string-to-string)
   :arg    ((str `(:pointer (string-to-ns-string ,str)))))
 
+(define-objc-typing :ns-number
+  :alias  :pointer
+  :arg    ((num `(:pointer (ns-number ,num)))) )
+
 (define-objc-typing :ns-array
   :result (:pointer ns-array-to-list)
   :arg    ((_ (error "(:ns-array) Not implemented yet... "))))

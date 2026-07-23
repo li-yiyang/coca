@@ -1,6 +1,6 @@
 ;;;; app.lisp
 
-(in-package :coca.cocoa)
+(in-package :coca.app)
 
 
 ;;; Coca App
@@ -14,7 +14,7 @@
 (defun app ()
   "Return the foreign-pointer to NSApp. "
   (the foreign-pointer (or *app* (coca-app-run))))
-(pushnew '*app* *global-objc-objects-variables*)
+(pushnew '*app* coca.objc::*global-objc-objects-variables*)
 
 ;; The `*app-lock*' and `*app-cvar*' is used when modifying NSApp
 (defvar *app-lock* (bt:make-lock "APP-LOCK"))
@@ -33,7 +33,10 @@
     (with-autorelease-pool ()
       (bt:with-lock-held (*app-lock*)
         (ensure-objc-initialized)
-        (clrhash *objc-objects*)
+
+        ;; TODO: add a trigger function?
+        ;; (clrhash *objc-objects*)
+
         (setf *app* (invoke "NSApplication" "sharedApplication" :object)
               *app-main-queue* (foreign-symbol-pointer "_dispatch_main_q"))
 
@@ -85,7 +88,7 @@ Please create issue at McCLIM-Coca backend. "))
 
 The foreign symbol pointer should be updated everytime when `coca-app-loop'
 starts -- this ensures CFFI environment correct after image restarts. ")
-(pushnew '*app-main-queue* *global-objc-objects-variables*)
+(pushnew '*app-main-queue* coca.objc::*global-objc-objects-variables*)
 
 (defun app-main-queue ()
   "Return the foreign-pointer of dispatch main queue. "

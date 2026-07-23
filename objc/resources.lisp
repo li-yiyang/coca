@@ -210,7 +210,29 @@ Syntax:
   ;; regist objc methods
   (alx:maphash-values
    (lambda (args) (apply #'%define-objc-method args))
-   *dynamic-objc-methods*))
+   *dynamic-objc-methods*)
+  ;; global objc variables
+  (dolist (var *global-objc-objects-variables*)
+    (setf (symbol-value var) nil)))
+
+;;; global objc variables
+
+(defvar *global-objc-objects-variables* ()
+  "A list of global ObjC object variables names.
+
+These should be cleared as `nil' everytime initialize.
+Use `define-objc-global-variable' to define global
+variable accessor function. ")
+
+(defmacro define-objc-global-variable (name initialize-form &optional documentation)
+  "Define ObjC global variable accessor function of NAME.
+The global variable is initialized with INITIALIZE-FORM. "
+  (let ((var (intern (str:concat "*" (string name) "*"))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (defvar ,var nil)
+       (pushnew ',var *global-objc-objects-variables*)
+       (defun ,name () ,documentation
+         (or ,var (setf ,var ,initialize-form))))))
 
 
 ;;; Memory Managment

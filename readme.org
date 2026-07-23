@@ -4,9 +4,12 @@
 This is a rewrite of [[https://codeberg.org/li-yiyang/McCLIM/src/commit/96af3f5eecf87671544c14bbd6baf50d4721e192][McCLIM-Coca]]'s packages
 =McCLIM-Coca.ObjC= and =McCLIM-Coca.Cocoa=.
 
-It is seperated and rewrited as a general macOS
-GUI library. The goal is to provide a MCL-like API
-for creating and managing widgets (dialog items) in
-Common Lisp.
++It is seperated and rewrited as a general macOS GUI library. The goal is to provide a MCL-like API for creating and managing widgets (dialog items) in Common Lisp.+
 
+Currently, this repo should act like a snippet collection.
+You can choose to load the whole library as =coca=.
+Or take subsystems with functionalities you want:
++ =coca/objc=: A thin wrapper of ObjC runtime
++ =coca/app=: A thin wrapper for NSApp
 
+Hope this might be a complete Cocoa GUI library in the future...

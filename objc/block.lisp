@@ -1,6 +1,6 @@
 ;;;; block.lisp ---- Implementation of ObjC block bindings
 
-(in-package :coca.cocoa)
+(in-package :coca.objc)
 
 
 ;;;; Block Descriptor
