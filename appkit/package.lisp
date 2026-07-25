@@ -11,18 +11,23 @@
    #:obj-ptr
    #:find-obj-mixin
    #:find-obj)
-  ;; titled.lisp
-  (:export
-   #:titled-mixin
-   #:title)
   ;; hierarchy.lisp
   (:export
    #:parent
    #:children)
+  ;; named.lisp
+  (:export
+   #:name
+   #:named-mixin)
+  ;; titled.lisp
+  (:export
+   #:titled-mixin
+   #:title)
   ;; framed.lisp
   (:export
    #:framed-mixin
    #:frame
+   #:visible-frame
    #:set-frame
    #:width
    #:height
@@ -35,10 +40,20 @@
    #:parent-origin
    #:location
    #:set-location
+   #:static-framed-mixin
    #:minmax-framed-mixin
    #:min-width
    #:max-width
    #:min-height
-   #:max-height))
+   #:max-height)
+  ;; screen.lisp
+  (:export
+   #:screen
+   #:screen-dpi
+   #:screen-dpi-x
+   #:screen-dpi-y
+   #:screen-backing-scale
+   #:main-screen
+   #:screen-list))
 
 ;;;; package.lisp ends here

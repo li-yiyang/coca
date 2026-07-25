@@ -7,7 +7,15 @@
                   static-framed-mixin
                   find-obj-mixin
                   named-mixin)
-  ()
+  ((dpi-x
+    :initarg :dpi-x
+    :reader  screen-dpi-x)
+   (dpi-y
+    :initarg :dpi-y
+    :reader  screen-dpi-y)
+   (backing-scale
+    :initarg :backing-scale
+    :reader  screen-backing-scale))
   (:documentation
    "A wrapper for NSScreen.
 
@@ -34,10 +42,22 @@ Use `screen-list' to get a list of avaliable screen. "))
 (defun wrap-screen-ptr (ptr)
   "Wrap NSScreen pointer PTR. "
   (ensure-find-obj ptr
-    (make-instance
-     'screen
-     :name (invoke ptr "localizedName" :ns-string)
-     :ptr  ptr)))
+    (let* ((des (invoke ptr "deviceDescription" :object))
+           (dpi (invoke des "objectForKey:"
+                        :object (objc-symbol-value
+                                 "NSDeviceResolution"
+                                 :object)
+                        :object))
+           (scale (invoke ptr "backingScaleFactor" :double)))
+      (multiple-value-bind (dpi-x dpi-y)
+          (invoke dpi "sizeValue" :ns-size)
+        (make-instance
+         'screen
+         :name  (invoke ptr "localizedName" :ns-string)
+         :ptr   ptr
+         :dpi-x dpi-x
+         :dpi-y dpi-y
+         :backing-scale scale)))))
 
 (defun screen-list ()
   "Return a list of `screen'. "
@@ -46,5 +66,12 @@ Use `screen-list' to get a list of avaliable screen. "))
 (defun main-screen ()
   "Return the main `screen'. "
   (wrap-screen-ptr (invoke "NSScreen" "mainScreen" :object)))
+
+(defgeneric screen-dpi (screen)
+  (:documentation
+   "Return values are screen DPI x and DPI y. ")
+  (:method ((screen screen))
+    (values (screen-dpi-x screen)
+            (screen-dpi-y screen))))
 
 ;;;; screen.lisp ends here
