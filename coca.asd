@@ -69,7 +69,9 @@
    (:file "typing"    :depends-on ("package"))
    (:file "obj"       :depends-on ("package"))
    (:file "hierarchy" :depends-on ("package"))
+   (:file "named"     :depends-on ("package"))
    (:file "titled"    :depends-on ("obj"))
-   (:file "framed"    :depends-on ("obj" "typing"))))
+   (:file "framed"    :depends-on ("obj" "typing"))
+   (:file "screen"    :depends-on ("obj" "framed" "named"))))
 
 ;;;; coca.asd ends here

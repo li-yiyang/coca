@@ -9,6 +9,11 @@
   (:documentation
    "A ObjC object pointer wrapper. "))
 
+(defmethod initialize-instance :after ((obj obj) &key ptr)
+  (when ptr
+    (setf (gethash :ptr (objc-ptrs obj))
+          (the foreign-pointer ptr))))
+
 (defgeneric objc-ptr (obj name)
   (:documentation
    "Return foreign-pointer to ObjC `obj'.
@@ -16,16 +21,15 @@
 Dev Note:
 + the subclass of `obj' should always define method
   `objc-ptr' with NAME as nil")
-  (:method ((obj obj) name)
-    (the foreign-pointer
-      (or (gethash name (objc-ptrs obj))
-          (error "Unknow ObjC pointer of ~S for ~A. " name obj)))))
+  (:method (obj name)
+    (or (gethash name (objc-ptrs obj))
+        (error "Unknow ObjC pointer of ~S for ~A. " name obj))))
 
 (defmethod (setf objc-ptr) (ptr (obj obj) name)
   (declare (type foreign-pointer ptr))
   (setf (gethash name (objc-ptrs obj)) ptr))
 
-(defun obj-ptr (obj &optional name)
+(defun obj-ptr (obj &optional (name :ptr))
   "Return foreign-pointer to ObjC OBJ of NAME. "
   (the foreign-pointer
     (objc-ptr obj name)))
@@ -119,5 +123,9 @@ Dev Note:
   "Find the `obj' of PTR or return nil. "
   (declare (type foreign-pointer ptr))
   (gethash (pointer-address ptr) *objs*))
+
+(defmacro ensure-find-obj (ptr &body body)
+  "Ensure `find-obj' with BODY result as missing value. "
+  `(alx:ensure-gethash (pointer-address ,ptr) *objs* (progn ,@body)))
 
 ;;;; obj.lisp ends here

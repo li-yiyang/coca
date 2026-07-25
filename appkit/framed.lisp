@@ -37,7 +37,7 @@ Dev Note:
 
 (defmethod objc-ptr ((framed framed-mixin) (name (eql :frame)))
   "By default `objc-ptr' of `framed-mixin' use default ObjC pointer. "
-  (objc-ptr framed nil))
+  (objc-ptr framed :ptr))
 
 (defgeneric frame (framed)
   (:documentation
@@ -45,6 +45,12 @@ Dev Note:
 Return values X, Y, W, H. ")
   (:method ((framed framed-mixin))
     (invoke (obj-ptr framed :frame) "frame" :ns-rect)))
+
+(defgeneric visible-frame (framed)
+  (:documentation
+   "Get the visible frame of FRAMED.
+Return values X, Y, W, H. ")
+  (:method (framed) (frame framed)))
 
 (defgeneric set-frame (framed x y w h)
   (:documentation
@@ -181,6 +187,27 @@ Return FRAMED. ")
       (multiple-value-bind (ox oy ow oh) (frame framed)
         (declare (ignore ox oy))
         (set-frame framed x (- ph y oh) ow oh)))))
+
+
+;;;; static-framed-mixin
+
+(defclass static-framed-mixin ()
+  ((static-frame
+    :initform nil))
+  (:documentation
+   "For those `frame' are not likely to change `obj',
+use `static-framed-mixin' to cache frame values. "))
+
+(defmethod frame :around ((framed static-framed-mixin))
+  (with-slots (static-frame) framed
+    (values-list
+     (or static-frame
+         (setf static-frame (multiple-value-list
+                             (call-next-method)))))))
+
+(defmethod set-frame :after ((framed static-framed-mixin) x y w h)
+  (with-slots (static-frame) framed
+    (setf static-frame nil)))
 
 
 ;;;; minmax-framed-mixin
