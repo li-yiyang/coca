@@ -2,7 +2,8 @@
 
 (uiop:define-package #:coca.appkit
   (:use :common-lisp :cffi :coca.objc :coca.app)
-  (:local-nicknames (:alx :alexandria))
+  (:local-nicknames (:alx :alexandria)
+                    (:m   :trivia))
   (:documentation
    "Coca.AppKit is a collection of mixin classes for AppKit. ")
   ;; obj.lisp
@@ -55,5 +56,7 @@
    #:screen-backing-scale
    #:main-screen
    #:screen-list))
+
+(in-package :coca.appkit)
 
 ;;;; package.lisp ends here

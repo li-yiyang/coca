@@ -76,7 +76,7 @@ Syntax:
            ,@body)))))
 
 
-;;;;
+;;;; find-obj-mixin
 
 (defvar *objs*
   (tg:make-weak-hash-table :weakness :value)
@@ -127,5 +127,52 @@ Dev Note:
 (defmacro ensure-find-obj (ptr &body body)
   "Ensure `find-obj' with BODY result as missing value. "
   `(alx:ensure-gethash (pointer-address ,ptr) *objs* (progn ,@body)))
+
+
+;;;; owned-mixin
+
+(defclass owned-mixin ()
+  ()
+  (:documentation
+   "The instance is owned by Lisp.
+
+If initialized by wrapping :ptr, the ObjC PTR wrapped
+is retained until lisp object is finalized.
+
+If initialized with no :ptr, the ObjC PTR is allocated
+with :objc-class and initialized using lisp process
+:init-function.
+
+Initialize Parameters:
++ PTR: foreign-pointer to ObjC pointer to be wrapped
+  if not given, the :ptr of obj will be initialized
+  like:
+
+      (funcall INIT-FUNCTION (alloc OBJC-CLASS))
+
++ OBJC-CLASS: if not given PTR, the ObjC pointer
+  is allocated with OBJC-CLASS
++ INIT-FUNCTION: by default to be `init'
+  should be a function given with allocated
+  ObjC pointer
+"))
+
+(defmethod initialize-instance ((obj owned-mixin)
+                                &key ptr
+                                  (objc-class "NSObject")
+                                  (init-function #'init)
+                                  init-in-main-p)
+  (call-next-method)
+  (let ((ptr (if ptr
+                 (retain ptr)
+                 (setf (gethash :ptr (objc-ptrs obj))
+                       (let ((ptr (alloc objc-class)))
+                         (if init-in-main-p
+                             (dispatch-main ()
+                               (funcall init-function ptr))
+                             (funcall init-function ptr))
+                         ptr)))))
+    (flet ((finalize () (release ptr)))
+      (tg:finalize obj #'finalize))))
 
 ;;;; obj.lisp ends here

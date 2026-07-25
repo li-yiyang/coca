@@ -228,6 +228,162 @@ Syntax:
                           (_ (error "Cannot expand ~A for ObjC typing ~S. "
                                     ,expr ',name)))))))))
 
+(defun literal-mask-flags (enc flags)
+  (loop :for flag :in flags
+        :if (or (keywordp flag)
+                (integerp flag))
+          :collect (funcall enc flag) :into literals
+        :else
+          :collect flag :into exprs
+        :finally (return
+                   (let ((literal (reduce #'logior literals)))
+                     (if exprs
+                         `(logior ,literal (,enc ,@exprs))
+                         literal)))))
+
+(defmacro define-objc-mask (typing* &body binding)
+  "Define ObjC mask typing.
+
+Syntax:
+
+    (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+      [DOCSTRING]
+      (KEYWORD FLAG-VALUE)
+      ...)
+
++ DOCSTRING: documentation string (optional)
++ KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+
+Like `define-objc-typing':
++ ALIAS: by default is :unsigned-long
++ RESULT: by default is parsed with DECODE-<TYPING>
++ ARG: additional matching pattern
+
+Two functions are created:
++ (AS-<TYPING> &rest FLAGS) to encode FLAGS as ObjC mask value
++ (DECODE-<TYPING> MASK) to decode MASK as flag(s)
+
+See also `define-objc-enum'. "
+  (destructuring-bind (typing &key
+                                (alias :unsigned-long)
+                                result
+                                wrap arg)
+      (alx:ensure-list typing*)
+    (let ((doc (pop binding))
+          (enc (symbol-concat "AS-"     typing))
+          (dec (symbol-concat "DECODE-" typing)))
+      (unless (stringp doc) (push doc binding))
+      `(progn
+         (defun ,enc (&rest flags)
+           ,@(when (stringp doc) (list doc))
+           (flet ((encode (flag)
+                    (etypecase flag
+                      (integer flag)
+                      (keyword (ecase flag ,@binding)))))
+             (reduce #'logior (mapcar #'encode flags))))
+         (defun ,dec (mask)
+           ,(format nil "Decode ObjC mask integer ~S.
+Return values are decoded flag(s) and original mask.
+
+See also `~A'. "
+                    typing enc)
+           (declare (type integer mask))
+           (let ((flags ()))
+             ,@(loop :with zero-flag := nil
+                     :for (name val) :in binding
+                     :if (zerop val)
+                       :do (setf zero-flag name)
+                     :else
+                       :collect `(when (logand ,val mask)
+                                   (push ,name flags))
+                         :into acc
+                     :finally (return
+                                (if zero-flag
+                                    `(,@acc
+                                      (when (null flags)
+                                        (return-from ,dec
+                                          (values ,zero-flag mask))))
+                                    acc)))
+             (if (null (cdr flags))
+                 (car flags)
+                 flags)))
+         (define-objc-typing ,typing
+           :alias ,alias
+           :arg   (((list* flags)
+                    (list ,alias (literal-mask-flags ',enc flags)))
+                   ((and (type integer) flag)
+                    (list ,alias flag))
+                   ((and (type keyword) flag)
+                    (list ,alias (,enc flag)))
+                   ,@arg
+                   (flag
+                    (list ,alias (list ',enc flag))))
+           :result ,(or result dec)
+           ,@(when wrap `(:wrap ,wrap)))))))
+
+(defmacro define-objc-enum (typing* &body binding)
+  "Define ObjC enum typing.
+
+Syntax:
+
+    (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+      [DOCSTRING]
+      (KEYWORD FLAG-VALUE)
+      ...)
+
++ DOCSTRING: documentation string (optional)
++ KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+
+Like `define-objc-typing':
++ ALIAS: by default is :unsigned-long
++ RESULT: by default is parsed with DECODE-<TYPING>
++ ARG: additional matching pattern
+
+Two functions are created:
++ (AS-<TYPING> FLAG) to encode FLAG as ObjC mask value
++ (DECODE-<TYPING> MASK) to decode MASK as flag
+
+See also `define-objc-mask'. "
+  (destructuring-bind (typing &key
+                                (alias :unsigned-long)
+                                result
+                                wrap arg)
+      (alx:ensure-list typing*)
+    (let ((doc (pop binding))
+          (enc (symbol-concat "AS-"     typing))
+          (dec (symbol-concat "DECODE-" typing)))
+      (unless (stringp doc) (push doc binding))
+      `(progn
+         (defun ,enc (flag)
+           ,@(when (stringp doc) (list doc))
+           (etypecase flag
+             (integer flag)
+             (keyword (ecase flag ,binding))))
+         (defun ,dec (enum)
+           ,(format nil "Decode ObjC ENUM integer ~S.
+Return values are decoded flag and original ENUM.
+
+See also `~A'. "
+                    typing enc)
+           (declare (type integer enum))
+           (values
+            (case mask
+              ,@(loop :for (enum val) :in binding
+                      :collect (list val enum))
+              (otherwise mask))
+            enum))
+         (define-objc-typing ,typing
+           :alias  ,alias
+           :arg    (((and (type keyword) enum)
+                     (list ,alias (,enc enum)))
+                    ((and (type integer) enum)
+                     (list ,alias enum))
+                    ,@arg
+                    (enum
+                     (list ,alias (list ',enc enum))))
+           :result ,(or result dec)
+           ,@(when wrap `(:wrap ,wrap)))))))
+
 
 ;;;; ObjC typing from resources.lisp
 

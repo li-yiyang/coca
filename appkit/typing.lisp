@@ -81,4 +81,23 @@
             `(:double ,(%expr-as-double w)
               :double ,(%expr-as-double h)))))
 
+
+;;;; NSWindow
+
+(define-objc-mask :ns-window-style
+  "Encode FLAGS as NSWindow style mask. "
+  (:borderless                0)
+  (:titled                    1)
+  (:closable                  2)
+  (:miniaturizable            4)
+  (:resizable                 8)
+  (:textured-background       256)
+  (:unified-title-and-toolbar 4096)
+  (:full-screen               16384)
+  (:full-size-content-view    32768)
+  (:utility-window            16)
+  (:doc-modal-window          64)
+  (:nonactivating-panel       128)
+  (:hud-window                8192))
+
 ;;;; typing.lisp ends here

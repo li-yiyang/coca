@@ -35,6 +35,55 @@ Dev Note:
   correct ObjC object pointer
 "))
 
+(defmethod initialize-instance :after
+    ((framed framed-mixin)
+     &key x y location width height size origin (frame nil frame?))
+  (unless (and frame? (null frame))
+    (multiple-value-bind (x* y* w* h*)
+        (default-frame framed)
+      (m:match frame
+        ((list x y w h)
+         (setf x* x
+               y* y
+               w* w
+               h* h))
+        ((vector x y w h)
+         (setf x* x
+               y* y
+               w* w
+               h* h)))
+      (m:match size
+        ((list w h)
+         (setf w* w
+               h* h))
+        ((vector w h)
+         (setf w* w
+               h* h))
+        ((and (type real) w)
+         (setf w* w
+               h* w)))
+      (m:match origin
+        ((list x y)
+         (setf x* x
+               y* y))
+        ((vector x y)
+         (setf x* x
+               y* y)))
+      (when width  (setf w* width))
+      (when height (setf h* height))
+      (when (parent framed)
+        (let ((ph (parent-height framed)))
+          (m:match location
+            ((list x y)
+             (setf x* x
+                   y* (- ph y h*)))
+            ((vector x y)
+             (setf x* x
+                   y* (- ph y h*))))
+          (when x (setf x* x))
+          (when y (setf y* (- ph y h*)))))
+      (set-frame framed x* y* w* h*))))
+
 (defmethod objc-ptr ((framed framed-mixin) (name (eql :frame)))
   "By default `objc-ptr' of `framed-mixin' use default ObjC pointer. "
   (objc-ptr framed :ptr))
@@ -46,12 +95,6 @@ Return values X, Y, W, H. ")
   (:method ((framed framed-mixin))
     (invoke (obj-ptr framed :frame) "frame" :ns-rect)))
 
-(defgeneric visible-frame (framed)
-  (:documentation
-   "Get the visible frame of FRAMED.
-Return values X, Y, W, H. ")
-  (:method (framed) (frame framed)))
-
 (defgeneric set-frame (framed x y w h)
   (:documentation
    "Set the frame of FRAMED.
@@ -60,7 +103,21 @@ Return `framed'. ")
     (declare (type framed-size w h))
     (with-ptr framed (ptr :frame)
       (dispatch-main ()
-        (invoke ptr "setFrame:" :ns-rect (x y w h))))))
+        (invoke ptr "setFrame:" :ns-rect (x y w h))))
+    framed))
+
+(defgeneric visible-frame (framed)
+  (:documentation
+   "Get the visible frame of FRAMED.
+Return values X, Y, W, H. ")
+  (:method (framed) (frame framed)))
+
+(defgeneric set-visible-frame (framed x y w h)
+  (:documentation
+   "Set the visible frame of FRAMED.
+Return `framed'. ")
+  (:method (framed x y w h)
+    (set-frame framed x y w h)))
 
 (defmethod width ((framed framed-mixin))
   (multiple-value-bind (x y w h) (frame framed)
@@ -144,6 +201,22 @@ Return values W, H. ")
       (declare (ignore x y))
       (values w h))))
 
+(defgeneric parent-width (framed)
+  (:documentation
+   "Get the `width' of FRAMED. ")
+  (:method (framed)
+    (multiple-value-bind (x y w h) (parent-frame framed)
+      (declare (ignore x y h))
+      w)))
+
+(defgeneric parent-height (framed)
+  (:documentation
+   "Get the `height' of FRAMED. ")
+  (:method (framed)
+    (multiple-value-bind (x y w h) (parent-frame framed)
+      (declare (ignore x y w))
+      h)))
+
 (defgeneric parent-origin (framed)
   (:documentation
    "Get origin of FRAMED parent.
@@ -188,12 +261,20 @@ Return FRAMED. ")
         (declare (ignore ox oy))
         (set-frame framed x (- ph y oh) ow oh)))))
 
+(defgeneric default-frame (framed)
+  (:documentation
+   "Return default frame configuration. ")
+  (:method ((framed framed-mixin))
+    (values 0d0 0d0 100d0 100d0)))
+
 
 ;;;; static-framed-mixin
 
 (defclass static-framed-mixin ()
   ((static-frame
     :initform nil))
+  (:default-initargs
+   :frame nil)
   (:documentation
    "For those `frame' are not likely to change `obj',
 use `static-framed-mixin' to cache frame values. "))

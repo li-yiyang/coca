@@ -22,7 +22,9 @@
    #:with-autorelease-pool)
   ;; typing.lisp
   (:export
-   #:define-objc-typing)
+   #:define-objc-typing
+   #:define-objc-mask
+   #:define-objc-enum)
   ;; invoke.lisp
   (:export
    #:invoke

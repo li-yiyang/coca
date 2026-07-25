@@ -62,7 +62,9 @@
   :depends-on (#:coca/objc
                #:coca/app
                ;; return struct as values
-               #:cffi-libffi)
+               #:cffi-libffi
+               ;; owned-mixin
+               #:trivial-garbage)
   :pathname "appkit"
   :components
   ((:file "package")
@@ -70,8 +72,10 @@
    (:file "obj"       :depends-on ("package"))
    (:file "hierarchy" :depends-on ("package"))
    (:file "named"     :depends-on ("package"))
+   (:file "visible"   :depends-on ("package"))
    (:file "titled"    :depends-on ("obj"))
    (:file "framed"    :depends-on ("obj" "typing"))
-   (:file "screen"    :depends-on ("obj" "framed" "named"))))
+   (:file "screen"    :depends-on ("obj" "framed" "named"))
+   (:file "window"    :depends-on ("screen" "visible"))))
 
 ;;;; coca.asd ends here
