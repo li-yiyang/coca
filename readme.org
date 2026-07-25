@@ -16,8 +16,37 @@ Or take subsystems with functionalities you want:
 
   Make sure to invoke =coca.objc:ensure-objc-initialized=
   to restore the ObjC runtime for lisp image if you saved
-  your lisp image and want to restore it. 
+  your lisp image and want to restore it.
+
 + =coca/objc/block=: Support ObjC's block
+
+  Currently, the ObjC's block is registed and looked up
+  in a vector table. The real C callback evaluates the
+  lisp callback by looking up the vector table.
+
 + =coca/app=: A thin wrapper for NSApp
+
+  You can only use =coca/app= subsystem to create your
+  own NSApplication with raw ObjC pointer manipulation.
+
+  Since Cocoa limits GUI manipulations within main thread,
+  you should use =dispatch-main= macro often.
+
++ =coca/appkit=: Wraps Cocoa AppKit
+
+  The =coca/appkit= is to group the manipulation codes
+  into CLOS model. For example, a =NSWindow= and =NSView=
+  can both follow the =isVisible= method. So =coca/appkit=
+  will wrap the =visible= generic function using =visible-mixin=.
+
+  For the ownership of ObjC objects and Lisp objects,
+  the =owned-mixin= holds reference to ObjC objects and
+  release them when fianlized by lisp (assuming that
+  ObjC runtime will correctly clean up). Other =obj=
+  without =owned-mixin= could just be considered as
+  =weak= reference to ObjC objects (assuming that they
+  would not be released when lisp objects refers them).
+
+  The API design should follows AppKit's API.
 
 Hope this might be a complete Cocoa GUI library in the future...

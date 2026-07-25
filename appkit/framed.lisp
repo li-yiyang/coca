@@ -14,7 +14,8 @@
    "Titled mixin for classes support frame and setFrame: method.
 
 Use `frame' to get the frame (`ns-rect');
-Use `set-frame' to set the frame size.
+Use `set-frame' to set the frame size;
+The default frame size is `default-frame'.
 
 ObjC use coordinates where lower-left is origin:
 
@@ -27,6 +28,25 @@ ObjC use coordinates where lower-left is origin:
     | +-------+--
     *-------------> X
    (0, 0)
+
+Initialize Parameters:
++ FRAME: if set to be `nil' will skip frame initalize
+  otherwise, should be like:
+  + a list of (X Y W H)
+  + a vector of #(X Y W H)
++ SIZE: should be like:
+  + a list of (WIDTH HEIGHT)
+  + a vector of #(WIDTH HEIGHT)
+  + a number setting both WIDTH and HEIGHT
++ WIDTH
++ HEIGHT
++ ORIGIN: should be like:
+  + a list of (X Y)
+  + a vector of #(X Y)
+
+Only avaliable if `obj' has `parent':
++ LOCATION:
++ X, Y: `location'
 
 Dev Note:
 + subclass of `framed-mixin' should define their

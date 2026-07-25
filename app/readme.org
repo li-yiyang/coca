@@ -10,7 +10,7 @@
 :header-args:lisp: :package coca.app :results verbatim
 :END:
 
-+ =(coca-app-run)=
++ =(coca-app-run)= [Function]
 
   #+begin_src lisp
   (documentation #'coca-app-run t)
@@ -20,7 +20,7 @@
   : Start NSApp run loop.
   : Return foreign-pointer to NSApp.
 
-+ =(coca-app-terminate)=
++ =(coca-app-terminate)= [Function]
 
   #+begin_src lisp
   (documentation #'coca-app-terminate t)
@@ -30,7 +30,7 @@
   : Terminate NSApp.
   : Note that this will also terminate lisp image.
 
-+ =(dispatch-main () &body)=
++ =(dispatch-main () &body)= [Macro]
 
   #+begin_src lisp
   (documentation (macro-function 'dispatch-main) t)

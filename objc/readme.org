@@ -388,7 +388,7 @@ Use the function =my-ns-string= to access the global variable
 
   4. call hooks in `*on-objc-initialization*'
   #+end_example
-+ =(define-objc-typing)= [Macro]
++ =(define-objc-typing name &key alias result arg)= [Macro]
 
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-typing) t)
@@ -399,6 +399,12 @@ Use the function =my-ns-string= to access the global variable
   Define ObjC typing of NAME.
 
   Syntax:
+
+      (define-objc-typing NAME
+        :alias  ALIAS
+        :result RESULT
+        :arg    ARG)
+
   + NAME:  (recommanded to be) a keyword for ObjC typing name
   + ALIAS:
     + CFFI typing name
@@ -418,6 +424,70 @@ Use the function =my-ns-string= to access the global variable
         + REWRITE will be used to wrap invoke like:
 
           (,@REWRITE (invoke ...))
+  #+end_example
+
++ =(define-objc-mask typing* &body binding)= [Macro]
+
+  #+begin_src lisp :exports results
+  (documentation (macro-function 'define-objc-mask) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC mask typing.
+
+  Syntax:
+
+      (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+        [DOCSTRING]
+        (KEYWORD FLAG-VALUE)
+        ...)
+
+  + DOCSTRING: documentation string (optional)
+  + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+
+  Like `define-objc-typing':
+  + ALIAS: by default is :unsigned-long
+  + RESULT: by default is parsed with DECODE-<TYPING>
+  + ARG: additional matching pattern
+
+  Two functions are created:
+  + (AS-<TYPING> &rest FLAGS) to encode FLAGS as ObjC mask value
+  + (DECODE-<TYPING> MASK) to decode MASK as flag(s)
+
+  See also `define-objc-enum'.
+  #+end_example
+
++ =(define-objc-enum typing* &body binding)= [Macro]
+
+  #+begin_src lisp
+  (documentation (macro-function 'define-objc-enum) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Define ObjC enum typing.
+
+  Syntax:
+
+      (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+        [DOCSTRING]
+        (KEYWORD FLAG-VALUE)
+        ...)
+
+  + DOCSTRING: documentation string (optional)
+  + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+
+  Like `define-objc-typing':
+  + ALIAS: by default is :unsigned-long
+  + RESULT: by default is parsed with DECODE-<TYPING>
+  + ARG: additional matching pattern
+
+  Two functions are created:
+  + (AS-<TYPING> FLAG) to encode FLAG as ObjC mask value
+  + (DECODE-<TYPING> MASK) to decode MASK as flag
+
+  See also `define-objc-mask'.
   #+end_example
 
 + =(with-fp-traps-masked &body)= [Macro, SBCL specific]

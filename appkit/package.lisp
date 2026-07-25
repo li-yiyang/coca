@@ -20,6 +20,10 @@
   (:export
    #:name
    #:named-mixin)
+  ;; visible.lisp
+  (:export
+   #:visible
+   #:visible-mixin)
   ;; titled.lisp
   (:export
    #:titled-mixin
@@ -38,9 +42,12 @@
    #:set-origin
    #:parent-frame
    #:parent-size
+   #:parent-width
+   #:parent-height
    #:parent-origin
    #:location
    #:set-location
+   #:default-frame
    #:static-framed-mixin
    #:minmax-framed-mixin
    #:min-width
@@ -55,7 +62,11 @@
    #:screen-dpi-y
    #:screen-backing-scale
    #:main-screen
-   #:screen-list))
+   #:screen-list)
+  ;; window.lisp
+  (:export
+   #:window
+   #:screen))
 
 (in-package :coca.appkit)
 

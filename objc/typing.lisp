@@ -192,6 +192,12 @@ Rule:
   "Define ObjC typing of NAME.
 
 Syntax:
+
+    (define-objc-typing NAME
+      :alias  ALIAS
+      :result RESULT
+      :arg    ARG)
+
 + NAME:  (recommanded to be) a keyword for ObjC typing name
 + ALIAS:
   + CFFI typing name
