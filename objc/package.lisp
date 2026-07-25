@@ -7,6 +7,8 @@
   (:documentation "Coca.ObjC is a minimum ObjC runtime binding")
   ;; resources.lisp
   (:export
+   #:*objc-libraries*
+   #:*on-objc-initialization*
    #:sel
    #:objc-class
    #:coerce-to-selector
@@ -20,23 +22,7 @@
    #:with-autorelease-pool)
   ;; typing.lisp
   (:export
-   #:define-objc-typing
-   #:ns-rect
-   #:ns-rect-origin
-   #:ns-rect-size
-   #:ns-rect-x
-   #:ns-rect-y
-   #:ns-rect-w
-   #:ns-rect-h
-   #:copy-ns-rect
-   #:ns-size
-   #:ns-size-w
-   #:ns-size-h
-   #:copy-ns-size
-   #:ns-point
-   #:ns-point-x
-   #:ns-point-y
-   #:copy-ns-point)
+   #:define-objc-typing)
   ;; invoke.lisp
   (:export
    #:invoke
@@ -59,5 +45,16 @@
    #:define-objc-block))
 
 (in-package :coca.objc)
+
+;;;; utils
+
+(defun symbol-concat (&rest things)
+  (intern (with-output-to-string (sym)
+            (dolist (thing things)
+              (typecase thing
+                (symbol    (write-string (string thing) sym))
+                (string    (write-string thing sym))
+                (character (write-char   thing sym))
+                (t (format sym "~A" thing)))))))
 
 ;;;; package.lisp

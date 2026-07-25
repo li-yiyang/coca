@@ -31,21 +31,20 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
-  + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
-  + :ns-point expecting to be #(X Y) or `ns-point'
-  + :ns-size  expecting to be #(W H) or `ns-size'
 
-  Extended in Coca.Cocoa:
+  Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
-    see `coca.cocoa:define-objc-block' for details
+    see `define-objc-block' for details
+
+  Built-in ObjC typing in `coca/appkit' subsystem:
+  + :ns-rect  expecting (X Y W H) inline value passing
+  + :ns-point expecting (X Y) inline value passing
+  + :ns-size  expecting (W H) inline value passing
 
   Use `define-objc-typing' to define new ObjC typing.
 + RESULT:
 
   Built-in ObjC typing:
-  + :ns-rect  return `ns-rect'
-  + :ns-point return `ns-point'
-  + :ns-size  return `ns-size'
   + :ns-array return `list' of `foreign-pointer'
 
   Use `define-objc-typing' to define new ObjC typing.
@@ -115,21 +114,20 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
-  + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
-  + :ns-point expecting to be #(X Y) or `ns-point'
-  + :ns-size  expecting to be #(W H) or `ns-size'
 
-  Extended in Coca.Cocoa:
+  Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
-    see `coca.cocoa:define-objc-block' for details
+    see `define-objc-block' for details
+
+  Built-in ObjC typing in `coca/appkit' subsystem:
+  + :ns-rect  expecting (X Y W H) inline value passing
+  + :ns-point expecting (X Y) inline value passing
+  + :ns-size  expecting (W H) inline value passing
 
   Use `define-objc-typing' to define new ObjC typing.
 + RESULT:
 
   Built-in ObjC typing:
-  + :ns-rect  return `ns-rect'
-  + :ns-point return `ns-point'
-  + :ns-size  return `ns-size'
   + :ns-array return `list' of `foreign-pointer'
 
   Use `define-objc-typing' to define new ObjC typing.

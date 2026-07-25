@@ -101,9 +101,6 @@ Coca.ObjC provides some built-in ObjC typing:
 | ~:class~     | ~:pointer~                         | ~coerce-to-objc-class~   |
 | ~:sel~       | ~:pointer~                         | ~coerce-to-selector~     |
 | ~:object~    | ~:pointer~                         |                          |
-| ~:ns-rect~   | ~(:struct ns-rect)~                |                          |
-| ~:ns-point~  | ~(:struct ns-point)~               |                          |
-| ~:ns-size~   | ~:pointer~                         | ~ns-size~                |
 | ~:ns-array~  | ~:pointer~ (not implemented yet)   | ~ns-array-to-list~       |
 | ~:ns-string~ | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
 | ~:block~     | ~:pointer~ (ObjC's block)          | (not implemented)        |
@@ -141,6 +138,15 @@ Use the function =my-ns-string= to access the global variable
 :header-args:lisp: :package coca.objc :results verbatim
 :END:
 
++ =*objc-libraries*= [Variable]
+
+  #+begin_src lisp :exports results
+  (documentation '*objc-libraries* 'variable)
+  #+end_src
+
+  #+RESULTS:
+  : A list of foreign libraries names.
+
 + =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= [Macro]
 
   #+begin_src lisp :exports results
@@ -166,21 +172,20 @@ Use the function =my-ns-string= to access the global variable
     + :object   expecting to be `objc-object'
     + :class    expecting to be `objc-class'
     + :sel      expecting to be `sel'
-    + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
-    + :ns-point expecting to be #(X Y) or `ns-point'
-    + :ns-size  expecting to be #(W H) or `ns-size'
 
-    Extended in Coca.Cocoa:
+    Built-in ObjC typing in `coca/objc/block' subsystem:
     + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
-      see `coca.cocoa:define-objc-block' for details
+      see `define-objc-block' for details
+
+    Built-in ObjC typing in `coca/appkit' subsystem:
+    + :ns-rect  expecting (X Y W H) inline value passing
+    + :ns-point expecting (X Y) inline value passing
+    + :ns-size  expecting (W H) inline value passing
 
     Use `define-objc-typing' to define new ObjC typing.
   + RESULT:
 
     Built-in ObjC typing:
-    + :ns-rect  return `ns-rect'
-    + :ns-point return `ns-point'
-    + :ns-size  return `ns-size'
     + :ns-array return `list' of `foreign-pointer'
 
     Use `define-objc-typing' to define new ObjC typing.
@@ -213,21 +218,20 @@ Use the function =my-ns-string= to access the global variable
     + :object   expecting to be `objc-object'
     + :class    expecting to be `objc-class'
     + :sel      expecting to be `sel'
-    + :ns-rect  expecting to be #(X Y W H) or `ns-rect'
-    + :ns-point expecting to be #(X Y) or `ns-point'
-    + :ns-size  expecting to be #(W H) or `ns-size'
 
-    Extended in Coca.Cocoa:
+    Built-in ObjC typing in `coca/objc/block' subsystem:
     + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
-      see `coca.cocoa:define-objc-block' for details
+      see `define-objc-block' for details
+
+    Built-in ObjC typing in `coca/appkit' subsystem:
+    + :ns-rect  expecting (X Y W H) inline value passing
+    + :ns-point expecting (X Y) inline value passing
+    + :ns-size  expecting (W H) inline value passing
 
     Use `define-objc-typing' to define new ObjC typing.
   + RESULT:
 
     Built-in ObjC typing:
-    + :ns-rect  return `ns-rect'
-    + :ns-point return `ns-point'
-    + :ns-size  return `ns-size'
     + :ns-array return `list' of `foreign-pointer'
 
     Use `define-objc-typing' to define new ObjC typing.
@@ -332,6 +336,20 @@ Use the function =my-ns-string= to access the global variable
   #+RESULTS:
   : nil
 
++ =*on-objc-initialization*= [Variable]
+
+  #+begin_src lisp :exports results
+  (documentation '*on-objc-initialization* 'variable)
+  #+end_src
+
+  #+RESULTS:
+  : A list of ObjC initialize callbacks.
+  :
+  : The element should be callback function symbol
+  : or function to call after `ensure-objc-initialized'.
+  :
+  : The function will be called with no argument.
+
 + =(ensure-objc-initialized)=  [Function]
 
   #+begin_src lisp :exports results
@@ -339,7 +357,31 @@ Use the function =my-ns-string= to access the global variable
   #+end_src
 
   #+RESULTS:
-  : Restore ObjC environment after restore image.
+  #+begin_example
+  Restore ObjC environment after restore image.
+
+  Dev Note:
+  1. the ObjC libraries will be reloaded first
+
+     Example: add custom ObjC library
+
+     (define-foreign-library OBJC-LIB
+       (:darwin (:framework \"ObjCLibrary\"))
+     (pushnew 'OBJC-LIB *objc-libraries*)
+
+  2. the SEL and Class pointer will be rebinded,
+     and for thoese dynamic created ObjC class,
+     they will be registed at this stage
+
+     it is strongly not recommanded to directly
+     store foreign-pointer of `sel' or `objc-class'
+
+  3. the global ObjC variables defined by
+     `define-objc-global-variable' will be re-initialized
+     using their INITIALIZE-FORM
+
+  4. call hooks in `*on-objc-initialization*'
+  #+end_example
 + =(define-objc-typing)= [Macro]
 
   #+begin_src lisp :exports results
@@ -536,6 +578,8 @@ Use the function =my-ns-string= to access the global variable
   #+RESULTS:
   : Convert VAL into NSNumber.
   : Return foreign-pointer to NSNumber.
+
+Load =coca/objc/block= to have Block supports setted up:
 + =(define-objc-block block-type lambda-list)= [Macro]
 
   #+begin_src lisp :exports results

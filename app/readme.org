@@ -1,0 +1,51 @@
+#+title: Coca.App
+#+subtitle: Manages NSApp
+* Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.app :results verbatim
+:END:
+
+* API
+:PROPERTIES:
+:header-args:lisp: :package coca.app :results verbatim
+:END:
+
++ =(coca-app-run)=
+
+  #+begin_src lisp
+  (documentation #'coca-app-run t)
+  #+end_src
+
+  #+RESULTS:
+  : Start NSApp run loop.
+  : Return foreign-pointer to NSApp.
+
++ =(coca-app-terminate)=
+
+  #+begin_src lisp
+  (documentation #'coca-app-terminate t)
+  #+end_src
+
+  #+RESULTS:
+  : Terminate NSApp.
+  : Note that this will also terminate lisp image.
+
++ =(dispatch-main () &body)=
+
+  #+begin_src lisp
+  (documentation (macro-function 'dispatch-main) t)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  Invoke BODY within NSApp main thread.
+
+  Syntax:
+
+     (dispatch-main (&key THROW-TO-TOPLEVEL ...)
+       &body)
+
+  + THROW-TO-TOPLEVEL: if BODY generates some error,
+    the error would be captured and throwed within calling thread.
+    This may lost error calling stack infomation.
+  #+end_example

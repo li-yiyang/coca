@@ -10,17 +10,13 @@
 
 (in-package :coca.objc)
 
+(defvar *objc-libraries* ()
+  "A list of foreign libraries names. ")
+
 (define-foreign-library foundation
   (:darwin (:framework "Foundation")))
 (load-foreign-library 'foundation)
-
-(define-foreign-library appkit
-  (:darwin (:framework "AppKit")))
-(load-foreign-library 'appkit)
-
-(define-foreign-library core-graphics
-  (:darwin (:framework "CoreGraphics")))
-(load-foreign-library 'core-graphics)
+(pushnew 'foundation *objc-libraries*)
 
 
 ;;; Define ObjC class
@@ -196,8 +192,41 @@ Syntax:
 
 ;;; Image Dump
 
+(declaim (type (or null (cons (or function symbol) list))
+               *on-objc-initialization*))
+(defvar *on-objc-initialization* ()
+  "A list of ObjC initialize callbacks.
+
+The element should be callback function symbol
+or function to call after `ensure-objc-initialized'.
+
+The function will be called with no argument. ")
+
 (defun ensure-objc-initialized ()
-  "Restore ObjC environment after restore image. "
+  "Restore ObjC environment after restore image.
+
+Dev Note:
+1. the ObjC libraries will be reloaded first
+
+   Example: add custom ObjC library
+
+   (define-foreign-library OBJC-LIB
+     (:darwin (:framework \"ObjCLibrary\"))
+   (pushnew 'OBJC-LIB *objc-libraries*)
+
+2. the SEL and Class pointer will be rebinded,
+   and for thoese dynamic created ObjC class,
+   they will be registed at this stage
+
+   it is strongly not recommanded to directly
+   store foreign-pointer of `sel' or `objc-class'
+
+3. the global ObjC variables defined by
+   `define-objc-global-variable' will be re-initialized
+   using their INITIALIZE-FORM
+
+4. call hooks in `*on-objc-initialization*'"
+  (mapcar #'load-foreign-library *objc-libraries*)
   (maphash (lambda (name sel)
              (setf (sel-ptr sel) (sel_registerName name)))
            *sels*)
@@ -213,7 +242,10 @@ Syntax:
    *dynamic-objc-methods*)
   ;; global objc variables
   (dolist (var *global-objc-objects-variables*)
-    (setf (symbol-value var) nil)))
+    (setf (symbol-value var) nil))
+  ;; callback trigger
+  (mapcar #'funcall *on-objc-initialization*)
+  t)
 
 ;;; global objc variables
 
@@ -227,7 +259,7 @@ variable accessor function. ")
 (defmacro define-objc-global-variable (name initialize-form &optional documentation)
   "Define ObjC global variable accessor function of NAME.
 The global variable is initialized with INITIALIZE-FORM. "
-  (let ((var (intern (str:concat "*" (string name) "*"))))
+  (let ((var (symbol-concat "*" name "*")))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (defvar ,var nil)
        (pushnew ',var *global-objc-objects-variables*)

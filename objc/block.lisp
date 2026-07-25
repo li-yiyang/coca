@@ -94,10 +94,10 @@ Conditions:
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (defun gen-with-block (block-type)
-    (intern (str:concat "WITH-OBJC-" (string block-type) "-BLOCK")))
+    (symbol-concat "WITH-OBJC-" block-type "-BLOCK"))
 
   (defun gen-block-callback (block-type)
-    (intern (str:concat "%OBJC-" (string block-type) "-BLOCK-CALLBACK")))
+    (symbol-concat "%OBJC-" block-type "-BLOCK-CALLBACK"))
 
   (defun gen-with-block-expand (block-type ptr lambda-list body)
     `(with-foreign-object (,ptr '(:struct block-layout))

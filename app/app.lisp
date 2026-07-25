@@ -54,18 +54,19 @@
 
 (defun coca-app-run ()
   "Start NSApp run loop.
-Return foreign-pointer to NSApp. "
+Return foreign-pointer to NSApp."
   (when (tmt:main-thread-p)
     (warn "`coca-app-run' should not run in main thread.
 If you are not triggering it, it's an error.
-Please create issue at McCLIM-Coca backend. "))
+Please create issue at Coca. "))
   (bt:with-lock-held (*app-lock*)
     (tmt:swap-main-thread #'coca-app-loop)
     (bt:condition-wait *app-cvar* *app-lock*))
   *app*)
 
 (defun coca-app-terminate ()
-  "Terminate NSApp. "
+  "Terminate NSApp.
+Note that this will also terminate lisp image. "
   (alx:when-let ((app *app*))
     (invoke app "terminate:" :object app)))
 
@@ -149,5 +150,23 @@ stack infomation.
         (setf *app-dispatch*        nil
               *app-dispatch-error*  nil
               *app-dispatch-result* nil)))))
+
+(defmacro dispatch-main ((&rest keys &key throw-to-toplevel &allow-other-keys) &body body)
+  "Invoke BODY within NSApp main thread.
+
+Syntax:
+
+   (dispatch-main (&key THROW-TO-TOPLEVEL ...)
+     &body)
+
++ THROW-TO-TOPLEVEL: if BODY generates some error,
+  the error would be captured and throwed within calling thread.
+  This may lost error calling stack infomation.
+"
+  (alx:with-gensyms (fn-in-main)
+    `(flet ((,fn-in-main () ,@body))
+       (if (tmt:main-thread-p)
+           (,fn-in-main)
+           (coca-app-dispatch (function ,fn-in-main) ,@keys)))))
 
 ;;;; app.lisp ends here

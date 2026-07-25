@@ -10,6 +10,14 @@ Currently, this repo should act like a snippet collection.
 You can choose to load the whole library as =coca=.
 Or take subsystems with functionalities you want:
 + =coca/objc=: A thin wrapper of ObjC runtime
+
+  If you just want to communicate with ObjC runtime,
+  you can only load =coca/objc= system.
+
+  Make sure to invoke =coca.objc:ensure-objc-initialized=
+  to restore the ObjC runtime for lisp image if you saved
+  your lisp image and want to restore it. 
++ =coca/objc/block=: Support ObjC's block
 + =coca/app=: A thin wrapper for NSApp
 
 Hope this might be a complete Cocoa GUI library in the future...
