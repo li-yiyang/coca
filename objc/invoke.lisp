@@ -31,6 +31,9 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
+  + :ns-uint  alias as :unsigned-long
+  + :ns-int   alias as :long
+  + :cg-float alias as :double
 
   Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
@@ -114,6 +117,9 @@ Parameters:
   + :object   expecting to be `objc-object'
   + :class    expecting to be `objc-class'
   + :sel      expecting to be `sel'
+  + :ns-uint  alias as :unsigned-long
+  + :ns-int   alias as :long
+  + :cg-float alias as :double
 
   Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)

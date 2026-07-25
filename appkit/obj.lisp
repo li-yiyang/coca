@@ -5,16 +5,30 @@
 (defclass obj ()
   ((ptrs
     :initform (make-hash-table :test 'eq)
-    :reader   obj-ptrs))
+    :reader   objc-ptrs))
   (:documentation
    "A ObjC object pointer wrapper. "))
 
-(defgeneric obj-ptr (obj &optional name)
+(defgeneric objc-ptr (obj name)
   (:documentation
    "Return foreign-pointer to ObjC `obj'.
 
 Dev Note:
-+ the subclass of `obj' should define optional NAME"))
++ the subclass of `obj' should always define method
+  `objc-ptr' with NAME as nil")
+  (:method ((obj obj) name)
+    (the foreign-pointer
+      (or (gethash name (objc-ptrs obj))
+          (error "Unknow ObjC pointer of ~S for ~A. " name obj)))))
+
+(defmethod (setf objc-ptr) (ptr (obj obj) name)
+  (declare (type foreign-pointer ptr))
+  (setf (gethash name (objc-ptrs obj)) ptr))
+
+(defun obj-ptr (obj &optional name)
+  "Return foreign-pointer to ObjC OBJ of NAME. "
+  (the foreign-pointer
+    (objc-ptr obj name)))
 
 (flet ((expand (obj ptr*)
          (destructuring-bind (ptr &optional name)
@@ -56,5 +70,54 @@ Syntax:
       `(let ((,obj* ,obj))
          (let (,(mapcar (alx:curry #'expand obj*) ptrs))
            ,@body)))))
+
+
+;;;;
+
+(defvar *objs*
+  (tg:make-weak-hash-table :weakness :value)
+  "A lookup table for foreign ObjC pointer to find ObjC object.
+
+Use `find-obj' to get the corresponding `obj' in lisp side.
+
+Key: ObjC foreign-pointer address
+Val: lisp `obj'
+
+Dev Note:
++ use `find-obj-mixin' in your `obj' class")
+
+(defun clear-objs () (clrhash *objs*))
+(pushnew 'clear-objs *on-objc-initialization*)
+
+(defclass find-obj-mixin () ()
+  (:documentation
+   "Mixin class for `obj' that can be find via `find-obj'.
+
+Dev Note:
++ the instance of `find-obj-mixin' is not persistent,
+  so you cannot expect your ObjC object restored
+  automatically
++ you can use `define-global-objc-variable' if you
+  want some persistence global variables
++ or you can register your own restore functions
+  in `*on-objc-initialization*'
+"))
+
+(defun regist-obj-ptr (obj ptr)
+  (declare (type find-obj-mixin obj)
+           (type foreign-pointer ptr))
+  (setf (gethash (pointer-address ptr) *objs*) obj))
+
+(defmethod initialize-instance :after ((obj find-obj-mixin) &key)
+  (alx:maphash-values (alx:curry #'regist-obj-ptr obj)
+                      (objc-ptrs obj)))
+
+(defmethod (setf objc-ptr) :after (ptr (obj find-obj-mixin) name)
+  (regist-obj-ptr obj ptr))
+
+(defun find-obj (ptr)
+  "Find the `obj' of PTR or return nil. "
+  (declare (type foreign-pointer ptr))
+  (gethash (pointer-address ptr) *objs*))
 
 ;;;; obj.lisp ends here

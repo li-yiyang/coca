@@ -27,8 +27,8 @@
 
 (defsystem #:coca/objc/block
   :author ("凉凉")
-  :license "GPL"
-  :version "0"
+  :license "LGPL"
+  :version "0.0.2"
   :description "ObjC Block support"
   :depends-on (#:coca/objc
                #:bordeaux-threads)
@@ -56,7 +56,7 @@
 
 (defsystem #:coca/appkit
   :author ("凉凉")
-  :license "GPL"
+  :license "LGPL"
   :version "0"
   :description "Mixins to manipulate AppKit"
   :depends-on (#:coca/objc
@@ -66,9 +66,10 @@
   :pathname "appkit"
   :components
   ((:file "package")
-   (:file "typing"   :depends-on ("package"))
-   (:file "obj"      :depends-on ("package"))
-   (:file "titled"   :depends-on ("obj"))
-   (:file "framed"   :depends-on ("obj" "typing"))))
+   (:file "typing"    :depends-on ("package"))
+   (:file "obj"       :depends-on ("package"))
+   (:file "hierarchy" :depends-on ("package"))
+   (:file "titled"    :depends-on ("obj"))
+   (:file "framed"    :depends-on ("obj" "typing"))))
 
 ;;;; coca.asd ends here

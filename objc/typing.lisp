@@ -252,6 +252,12 @@ Syntax:
   :result (:pointer ns-string-to-string)
   :arg    ((str `(:pointer (string-to-ns-string ,str)))))
 
+(define-objc-typing :ns-uint
+  :alias :unsigned-long)
+
+(define-objc-typing :ns-int
+  :alias :long)
+
 (define-objc-typing :ns-number
   :alias  :pointer
   :arg    ((num `(:pointer (ns-number ,num)))) )
