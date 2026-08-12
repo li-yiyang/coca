@@ -14,6 +14,13 @@
     (setf (gethash :ptr (objc-ptrs obj))
           (the foreign-pointer ptr))))
 
+(defmethod print-object ((obj obj) stream)
+  (print-unreadable-object (obj stream :type t)
+    (let ((ptr (gethash :ptr (objc-ptrs obj))))
+      (if ptr
+          (format stream "#x~X" (pointer-address ptr))
+          (format stream "destroyed")))))
+
 (defgeneric objc-ptr (obj name)
   (:documentation
    "Return foreign-pointer to ObjC `obj'.
@@ -141,18 +148,18 @@ is retained until lisp object is finalized.
 
 If initialized with no :ptr, the ObjC PTR is allocated
 with :objc-class and initialized using lisp process
-:init-function.
+:objc-init.
 
 Initialize Parameters:
 + PTR: foreign-pointer to ObjC pointer to be wrapped
   if not given, the :ptr of obj will be initialized
   like:
 
-      (funcall INIT-FUNCTION (alloc OBJC-CLASS))
+      (funcall OBJC-INIT (alloc OBJC-CLASS))
 
 + OBJC-CLASS: if not given PTR, the ObjC pointer
   is allocated with OBJC-CLASS
-+ INIT-FUNCTION: by default to be `init'
++ OBJC-INIT: by default to be `init'
   should be a function given with allocated
   ObjC pointer
 "))
@@ -160,7 +167,7 @@ Initialize Parameters:
 (defmethod initialize-instance ((obj owned-mixin)
                                 &key ptr
                                   (objc-class "NSObject")
-                                  (init-function #'init)
+                                  (objc-init #'init)
                                   init-in-main-p)
   (call-next-method)
   (let ((ptr (if ptr
@@ -169,10 +176,22 @@ Initialize Parameters:
                        (let ((ptr (alloc objc-class)))
                          (if init-in-main-p
                              (dispatch-main ()
-                               (funcall init-function ptr))
-                             (funcall init-function ptr))
+                               (funcall objc-init ptr))
+                             (funcall objc-init ptr))
                          ptr)))))
     (flet ((finalize () (release ptr)))
       (tg:finalize obj #'finalize))))
+
+(defgeneric destroy (obj)
+  (:documentation
+   "Destory OBJ, deowned in lisp. ")
+  (:method (obj) ())
+  (:method ((obj owned-mixin))
+    (alx:maphash-keys (lambda (ptr)
+                        (remhash (pointer-address ptr) *objs*))
+                      (objc-ptrs obj))
+    (tg:cancel-finalization obj)
+    (release (objc-ptr obj :ptr))
+    (clrhash (objc-ptrs obj))))
 
 ;;;; obj.lisp ends here

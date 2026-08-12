@@ -54,6 +54,9 @@
    #:max-width
    #:min-height
    #:max-height)
+  ;; menu.lisp
+  (:export
+   #:menu)
   ;; screen.lisp
   (:export
    #:screen

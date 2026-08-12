@@ -2,6 +2,9 @@
 
 (in-package :coca.appkit)
 
+(define-objc-global-variable window-list ()
+  "A list of all the `window' instance. ")
+
 (define-objc-class "CocaWindowDelegate" "NSObject"
   "NSWindowDelegate")
 
@@ -22,7 +25,7 @@
     :reader   parent))
   (:default-initargs
    :objc-class     "NSWindow"
-   :init-function  'init-window
+   :objc-init      'init-window
    :init-in-main-p t
    :visible        t
    :frame          #(0 0 100 100))
@@ -46,8 +49,14 @@ Dev Note:
                             :resizable
                             :miniaturizable)
           :unsigned-long   2
-          :bool            t
-          :object))
+          :bool            t)
+  (invoke ptr "setReleasedWhenClosed:" :bool nil))
+
+(defmethod initialize-instance :after ((window window) &key)
+  (with-ptr window ptr
+    (dispatch-main ()
+      (invoke ptr "setDelegate:" :object (window-delegate))))
+  (pushnew window *window-list* :test #'eq))
 
 (defmethod objc-ptr ((window window) (name (eql :delegate)))
   (window-delegate))
@@ -59,5 +68,8 @@ Dev Note:
       (invoke ptr "setFrame:display:"
               :ns-rect (x y w h)
               :bool    nil))))
+
+(defmethod destroy :after ((window window))
+  (setf *window-list* (delete window *window-list* :test #'eq)))
 
 ;;;; window.lisp ends here

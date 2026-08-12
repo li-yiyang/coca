@@ -100,4 +100,19 @@
   (:nonactivating-panel       128)
   (:hud-window                8192))
 
+
+;;;; NSEventModifierMask
+
+(define-objc-mask :ns-event-modifier
+  "Flags that represent key states in an event object. "
+  (:caps-lock          #x00010000)
+  (:shift              #x00020000)
+  (:control            #x00040000)
+  (:option             #x00080000)
+  (:command            #x00100000)
+  (:numeric-pad        #x00200000)
+  (:help               #x00400000)
+  (:function           #x00800000)
+  (:device-independent #xFFFF0000))
+
 ;;;; typing.lisp ends here

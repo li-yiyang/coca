@@ -6,7 +6,11 @@
   (:documentation
    "Title mixin for classes support title and setTitle: method.
 
-Use `title' to get/set the title of the object's title. "))
+Use `title' to get/set the title of the object's title.
+
+Initialize Parameter:
++ TITLE: set the title of obj
+"))
 
 (defmethod initialize-instance :after ((titled titled-mixin)
                                        &key (title "" title?))
