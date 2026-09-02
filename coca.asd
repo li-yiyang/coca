@@ -54,6 +54,16 @@
   ((:file "package")
    (:file "app" :depends-on ("package"))))
 
+(defsystem #:coca/core-graphics
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.0"
+  :description "Introduce CoreGraphics"
+  :depends-on (#:coca/objc)
+  :pathname "core-graphics"
+  :components
+  ((:file "package")))
+
 (defsystem #:coca/appkit
   :author ("凉凉")
   :license "LGPL"
@@ -61,6 +71,7 @@
   :description "Mixins to manipulate AppKit"
   :depends-on (#:coca/objc
                #:coca/app
+               #:coca/core-graphics
                ;; return struct as values
                #:cffi-libffi
                ;; owned-mixin
@@ -77,5 +88,28 @@
    (:file "framed"    :depends-on ("obj" "typing"))
    (:file "screen"    :depends-on ("obj" "framed" "named"))
    (:file "window"    :depends-on ("screen" "visible"))))
+
+(defsystem #:coca/metal
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.1"
+  :description "Metal API"
+  :depends-on (#:cffi-libffi
+               #:coca/objc
+               ;; In macOS, in order for the system to provide
+               ;; a default Metal device object, you need to link
+               ;; to the Core Graphics framework.
+               ;;
+               ;; You usually need to do this explicitly if you’re
+               ;; writing apps that don’t use graphics by default,
+               ;; such as command line tools.
+               #:coca/core-graphics)
+  :pathname "metal"
+  :components
+  ((:file "package")
+   (:file "device"    :depends-on ("package"))
+   (:file "resources" :depends-on ("device"))
+   (:file "command"   :depends-on ("device"))
+   (:file "pipeline"  :depends-on ("device" "command"))))
 
 ;;;; coca.asd ends here

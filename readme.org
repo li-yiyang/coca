@@ -49,4 +49,11 @@ Or take subsystems with functionalities you want:
 
   The API design should follows AppKit's API.
 
++ =coca/metal=: Wraps Metal API
+
+  The =coca/metal= provide interface to invoke with
+  Metal API. It is not meant to be a powerful acceleration
+  framework or a graphics rendering framework. It is
+  just a lowlevel interface to Metal API.
+
 Hope this might be a complete Cocoa GUI library in the future...

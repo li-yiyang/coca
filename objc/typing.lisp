@@ -235,17 +235,21 @@ Syntax:
                                     ,expr ',name)))))))))
 
 (defun literal-mask-flags (enc flags)
-  (loop :for flag :in flags
-        :if (or (keywordp flag)
-                (integerp flag))
-          :collect (funcall enc flag) :into literals
-        :else
-          :collect flag :into exprs
-        :finally (return
-                   (let ((literal (reduce #'logior literals)))
-                     (if exprs
-                         `(logior ,literal (,enc ,@exprs))
-                         literal)))))
+  (if (listp flags)
+      (loop :for flag :in flags
+            :if (or (keywordp flag)
+                    (integerp flag))
+              :collect (funcall enc flag) :into literals
+            :else
+              :collect flag :into exprs
+            :finally (return
+                       (let ((literal (reduce #'logior literals)))
+                         (if exprs
+                             (if (zerop literal)
+                                 `(,enc ,@exprs)
+                                 `(logior ,literal (,enc ,@exprs)))
+                             literal))))
+      `(,enc ,flags)))
 
 (defmacro define-objc-mask (typing* &body binding)
   "Define ObjC mask typing.
@@ -279,7 +283,7 @@ See also `define-objc-enum'. "
           (enc (symbol-concat "AS-"     typing))
           (dec (symbol-concat "DECODE-" typing)))
       (unless (stringp doc) (push doc binding))
-      `(progn
+      `(eval-when (:compile-toplevel :execute :load-toplevel)
          (defun ,enc (&rest flags)
            ,@(when (stringp doc) (list doc))
            (flet ((encode (flag)
@@ -324,7 +328,7 @@ See also `~A'. "
                    ,@arg
                    (flag
                     (list ,alias (list ',enc flag))))
-           :result ,(or result dec)
+           :result (,alias ,(or result dec))
            ,@(when wrap `(:wrap ,wrap)))))))
 
 (defmacro define-objc-enum (typing* &body binding)
@@ -359,12 +363,12 @@ See also `define-objc-mask'. "
           (enc (symbol-concat "AS-"     typing))
           (dec (symbol-concat "DECODE-" typing)))
       (unless (stringp doc) (push doc binding))
-      `(progn
+      `(eval-when (:compile-toplevel :execute :load-toplevel)
          (defun ,enc (flag)
            ,@(when (stringp doc) (list doc))
            (etypecase flag
              (integer flag)
-             (keyword (ecase flag ,binding))))
+             (keyword (ecase flag ,@binding))))
          (defun ,dec (enum)
            ,(format nil "Decode ObjC ENUM integer ~S.
 Return values are decoded flag and original ENUM.
@@ -373,10 +377,10 @@ See also `~A'. "
                     typing enc)
            (declare (type integer enum))
            (values
-            (case mask
+            (case enum
               ,@(loop :for (enum val) :in binding
                       :collect (list val enum))
-              (otherwise mask))
+              (otherwise enum))
             enum))
          (define-objc-typing ,typing
            :alias  ,alias
@@ -387,7 +391,7 @@ See also `~A'. "
                     ,@arg
                     (enum
                      (list ,alias (list ',enc enum))))
-           :result ,(or result dec)
+           :result (,alias ,(or result dec))
            ,@(when wrap `(:wrap ,wrap)))))))
 
 
@@ -413,6 +417,10 @@ See also `~A'. "
 (define-objc-typing :ns-string
   :result (:pointer ns-string-to-string)
   :arg    ((str `(:pointer (string-to-ns-string ,str)))))
+
+(define-objc-typing :ns-url
+  :result (:pointer ns-url-to-pathname)
+  :arg    ((str `(:pointer (pathname-to-ns-url ,str)))))
 
 (define-objc-typing :ns-uint
   :alias :unsigned-long)

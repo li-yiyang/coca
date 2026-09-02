@@ -198,6 +198,15 @@ Return foreign-pointer of NSPath for PATHNAME. "
     (the foreign-pointer
       (invoke "NSURL" "URLWithString:" :object url :object))))
 
+(defun ns-url-to-pathname (ns-url)
+  "Convert NS-URL to pathname.
+Return a `pathname' instance. "
+  (declare (type foreign-pointer ns-url))
+  (the pathname
+    (pathname
+     (ns-string-to-string
+      (invoke ns-url "absoluteString" :object)))))
+
 (defun ns-array-to-list (ns-array)
   "Convert NS-ARRAY into list.
 Return a list of foreign-pointer to NSObject. "
