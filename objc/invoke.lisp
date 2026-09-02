@@ -196,7 +196,7 @@ Return foreign-pointer of NSPath for PATHNAME. "
   (declare (type (or string pathname) pathname))
   (let ((url (string-to-ns-string (uiop:native-namestring pathname))))
     (the foreign-pointer
-      (invoke "NSURL" "URLWithString:" :object url :object))))
+      (invoke "NSURL" "fileURLWithPath:" :object url :object))))
 
 (defun ns-url-to-pathname (ns-url)
   "Convert NS-URL to pathname.

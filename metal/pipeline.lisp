@@ -44,12 +44,14 @@ violate the IEEE 754 standard."
          (type (invoke ptr "type" :mtl-library-type))
          (func (when (eq type :executable)
                  (mapcar #'ns-string-to-string
-                         (invoke ptr "functionNames" :ns-array)))))
-    (%make-library :ptr       ptr
-                   :device    device
-                   :name      name
-                   :type      type
-                   :functions func)))
+                         (invoke ptr "functionNames" :ns-array))))
+         (lib  (%make-library :ptr       ptr
+                              :device    device
+                              :name      name
+                              :type      type
+                              :functions func)))
+    (tg:finalize lib (lambda () (release ptr)))
+    lib))
 
 (defun make-library-with-file (device pathname)
   "Load .metallib file at PATHNAME.
@@ -173,16 +175,6 @@ Parameters:
                (description (mem-ref err :pointer))))
       pipeline)))
 
-(defstruct mtl-size
-  (width  1 :type (unsigned-byte 64))
-  (height 1 :type (unsigned-byte 64))
-  (depth  1 :type (unsigned-byte 64)))
-
-(defcstruct (%c-mtl-size :class c-mtl-size)
-  (width  :unsigned-long)
-  (height :unsigned-long)
-  (depth  :unsigned-long))
-
 (defun %execute-compute-pipeline
     (queue pipeline buffers grid-size group-size)
   (declare (type command-queue queue)
@@ -202,12 +194,8 @@ Parameters:
               :ns-uint 0
               :ns-uint (incf idx)))
     (invoke enc "dispatchThreads:threadsPerThreadgroup:"
-            :unsigned-long (mtl-size-width  grid-size)
-            :unsigned-long (mtl-size-height grid-size)
-            :unsigned-long (mtl-size-depth  grid-size)
-            :unsigned-long (mtl-size-width  group-size)
-            :unsigned-long (mtl-size-height group-size)
-            :unsigned-long (mtl-size-depth  group-size))
+            :mtl-size grid-size
+            :mtl-size group-size)
     (invoke enc "endEncoding")
     (invoke cmd "commit")
     (invoke cmd "waitUntilCompleted")))

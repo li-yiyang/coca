@@ -7,11 +7,11 @@
   (:cpu-cache-default         #x000)
   (:cpu-cache-write-combined  #x001)
   (:hazard-tracking-default   #x000)
-  (:hazard-tracking-tracked   #x100)
-  (:hazard-tracking-untracked #x200)
+  (:hazard-tracking-tracked   #x200)
+  (:hazard-tracking-untracked #x100)
   (:shared                    #x000)
-  (:private                   #x010)
-  (:memoryless                #x020))
+  (:private                   #x020)
+  (:memoryless                #x030))
 
 (deftype msl-dtype ()
   '(member
@@ -106,7 +106,7 @@ Parameters:
                (invoke (device-ptr device)
                        "newBufferWithBytesNoCopy:length:options:deallocator:"
                        :pointer data
-                       :ns-uint len
+                       :ns-uint (* len (msl-dtype-size type))
                        :mtl-resource-options options
                        :pointer (null-pointer)
                        :object)
@@ -123,7 +123,7 @@ Parameters:
         ((and (type array) array)
          (let* ((length  (reduce #'* (array-dimensions array)))
                 (buffer  (allocate length))
-                (content (invoke buffer "content" :pointer)))
+                (content (invoke buffer "contents" :pointer)))
            (ecase type
              ((:uint8 :uint16 :uint32 :uint64
                :int8  :int16  :int32  :int64

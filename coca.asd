@@ -107,9 +107,10 @@
   :pathname "metal"
   :components
   ((:file "package")
+   (:file "typing"    :depends-on ("package"))
    (:file "device"    :depends-on ("package"))
    (:file "resources" :depends-on ("device"))
    (:file "command"   :depends-on ("device"))
-   (:file "pipeline"  :depends-on ("device" "command"))))
+   (:file "pipeline"  :depends-on ("device" "command" "typing"))))
 
 ;;;; coca.asd ends here
