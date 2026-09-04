@@ -3,6 +3,19 @@
 (in-package :coca.metal)
 
 (defstruct (library (:constructor %make-library))
+  "Wrapper of MTLLibrary.
+
+A collection of Metal shader functions.
+
+Slot Values:
++ PTR: foreign-pointer to MTLLibrary
++ TYPE:
+  + `:executable'
+  + `:dynamic'
++ NAME: optional MTLLibrary name
++ DEVICE: the `device' the library is in
++ FUNCTIONS: a list of functions names
+"
   (ptr (null-pointer)
    :type foreign-pointer
    :read-only t)
@@ -152,52 +165,182 @@ Parameters:
                (make-library device lib)))
         (release option)))))
 
-(defun library-compute-pipeline (library name)
-  "Return foreign-pointer to MTLFunction. "
+(define-objc-mask :mtl-pipline-option
+  "Options that determine how Metal prepares the pipeline. "
+  (:none                        0)
+  (:buffer-type-info            1)
+  (:fail-on-binary-archive-miss 2)
+  (:binding-info                4))
+
+(define-objc-enum :mtl-binding-type
+  "Types of MTLBinding. "
+  (:buffer                           0)
+  (:threadgroup-memory               1)
+  (:texture                          2)
+  (:sampler                          3)
+  (:imageblock                       4)
+  (:imageblock-data                  5)
+  (:instance-acceleration-structure	 6)
+  (:primitive-acceleration-structure 7)
+  (:intersection-function-table      8)
+  (:visible-function-table           9)
+  (:object-payload                   10)
+  (:tensor                           11))
+
+(defun command-queue-make-command-buffer-encoder (queue type)
+  (declare (type command-queue queue)
+           (type (member :render :compute :blit :parallel-render)
+                 type))
+  (let* ((cmd (invoke (command-queue-ptr queue)
+                      "commandBuffer"
+                      :object))
+         ;; TODO: maybe fix this
+         (enc (ecase type
+                (:render
+                 (invoke cmd "renderCommandEncoder"  :object))
+                (:compute
+                 (invoke cmd "computeCommandEncoder" :object))
+                (:blit
+                 (invoke cmd "blitCommandEncoder"    :object))
+                (:parallel-render
+                 (invoke cmd "parallelRenderCommandEncoder" :object)))))
+    (values cmd enc)))
+
+(defun command-buffer-commit-and-wait (command-buffer encoder)
+  (declare (type foreign-pointer command-buffer encoder))
+  (invoke encoder "endEncoding")
+  (invoke command-buffer "commit")
+  (invoke command-buffer "waitUntilCompleted"))
+
+(defun encoder-set-compute-pipeline-state (encoder pipeline)
+  (declare (type foreign-pointer encoder pipeline))
+  (invoke encoder "setComputePipelineState:" :object pipeline))
+
+(defun encoder-set-buffer (encoder buffer &key (offset 0) (index 0))
+  (declare (type foreign-pointer encoder buffer)
+           (type fixnum offset index))
+  (invoke encoder "setBuffer:offset:atIndex:"
+          :object  buffer
+          :ns-uint offset
+          :ns-uint index))
+
+(defun encoder-set-grid-size-group-size (encoder grid-size group-size)
+  (declare (type foreign-pointer encoder)
+           (type mtl-size grid-size group-size))
+  (invoke encoder "dispatchThreads:threadsPerThreadgroup:"
+          :mtl-size grid-size
+          :mtl-size group-size))
+
+(defmacro with-command-buffer
+    (command-queue
+     (type encoder &optional (command-buffer (gensym "COMMAND-BUFFER")))
+     &body body)
+  "Create and encode the command buffer.
+
+Syntax:
+
+    (with-command-buffer COMMAND-QUEUE
+        (TYPE ENCODER &optional COMMAND-BUFFER)
+      &body
+      [:return ...])
+
++ TYPE:
+  + `:render'
+  + `:compute'
+  + `:blit'
+  + `:parallel-render'
++ ENCODER: variable binded with MTLCommandEncoder
++ COMMAND-BUFFER: variable binded with MTLCommandBuffer
++ RETURN:
+"
+  (alx:with-gensyms (successp result)
+    (let* ((return-pos (position :return body))
+           (returns    (when return-pos
+                         (subseq body return-pos)))
+           (body       (subseq body 0 return-pos)))
+      `(let ((,successp t)
+             ,result)
+         (multiple-value-bind (,command-buffer ,encoder)
+             (command-queue-make-command-buffer-encoder ,command-queue ,type)
+           (unwind-protect
+                (handler-case
+                    (progn
+                      ,@body
+                      (command-buffer-commit-and-wait ,command-buffer ,encoder))
+                  (error (err)
+                    (setf ,successp nil)
+                    (error err)))
+             (when ,successp
+               (setf ,result (progn ,@returns)))
+             (release ,encoder)
+             (release ,command-buffer)))
+         (when ,successp
+           ,result)))))
+
+(defun %library-compute-pipeline (library name)
+  "Return values are foreign-pointer to MTLFunction, a list of (VAR INDEX). "
   (declare (type library library)
            (type string name))
   (unless (eq (library-type library) :executable)
     (error "~A is not a executable MTLLibrary. " library))
   (unless (find name (library-functions library) :test #'string=)
     (error "~A is not external MTLFunction for ~A. " name library))
-  (with-foreign-object (err :pointer)
-    (let* ((function (invoke (library-ptr library)
-                             "newFunctionWithName:"
-                             :ns-string name
-                             :object))
-           (pipeline (invoke (device-ptr (library-device library))
-                             "newComputePipelineStateWithFunction:error:"
-                             :object  function
-                             :pointer err
-                             :object)))
-      (unless (null-pointer-p (mem-ref err :pointer))
-        (error "Failed to get compute pipeline. ~%~A"
-               (description (mem-ref err :pointer))))
-      pipeline)))
+  (with-autorelease-pool
+    (with-foreign-objects ((err        :pointer)
+                           (reflection :pointer))
+      (let* ((function (invoke (library-ptr library)
+                               "newFunctionWithName:"
+                               :ns-string name
+                               :object))
+             (pipeline (invoke (device-ptr (library-device library))
+                               "newComputePipelineStateWithFunction:options:reflection:error:"
+                               :object             function
+                               :mtl-pipline-option :binding-info
+                               :pointer            reflection
+                               :pointer            err
+                               :object)))
+        (unless (null-pointer-p (mem-ref err :pointer))
+          (error "Failed to get compute pipeline. ~%~A"
+                 (description (mem-ref err :pointer))))
+        (values pipeline
+                (loop :for binding :in (invoke (mem-ref reflection :pointer)
+                                               "bindings"
+                                               :ns-array)
+                      :for type := (invoke binding "type" :mtl-binding-type)
+                      :if (eq type :buffer)
+                        :collect (let ((name (invoke binding "name"  :ns-string))
+                                       (idx  (invoke binding "index" :ns-uint)))
+                                   (list (intern (string-upcase name))
+                                         idx))))))))
 
-(defun %execute-compute-pipeline
-    (queue pipeline buffers grid-size group-size)
-  (declare (type command-queue queue)
-           (type foreign-pointer pipeline)
-           (type list buffers)
-           (type mtl-size grid-size group-size))
-  (let* ((cmd (invoke (command-queue-ptr queue)
-                      "commandBuffer"
-                      :object))
-         (enc (invoke cmd "computeCommandEncoder" :object))
-         (idx -1))
-    (invoke enc "setComputePipelineState:" :object pipeline)
-    (dolist (buffer buffers)
-      (declare (type foreign-pointer buffer))
-      (invoke enc "setBuffer:offset:atIndex:"
-              :object  buffer
-              :ns-uint 0
-              :ns-uint (incf idx)))
-    (invoke enc "dispatchThreads:threadsPerThreadgroup:"
-            :mtl-size grid-size
-            :mtl-size group-size)
-    (invoke enc "endEncoding")
-    (invoke cmd "commit")
-    (invoke cmd "waitUntilCompleted")))
+(defun library-compute-pipeline (library name &key debug)
+  "Get the callable function in LIBRARY of NAME.
+Return a function with lambda list like
+
+    (lambda (BUFFER... &key COMMAND-QUEUE GRID-SIZE GROUP-SIZE))
+
+Parameters:
++ LIBRARY: a `library'
++ NAME: a string for the library compute MTLFunction
++ DEBUG: if non-nil, print the function lambda expression in `*debug-io*'
+"
+  (declare (type library library)
+           (type string  name))
+  (multiple-value-bind (pipeline args)
+      (%library-compute-pipeline library name)
+    (let* ((expr `(lambda (,@(mapcar #'first args)
+                           &key
+                             (command-queue (default-command-queue))
+                             (grid-size     (mtl-size 8 1 1))
+                             (group-size    (mtl-size 8 1 1)))
+                    (with-command-buffer command-queue (:compute encoder)
+                      (encoder-set-compute-pipeline-state encoder ,pipeline)
+                      ,@(loop :for (name idx) :in args
+                              :collect `(encoder-set-buffer encoder ,name :index ,idx))
+                      (encoder-set-grid-size-group-size encoder grid-size group-size))))
+           (fn   (eval expr)))
+      (when debug (print expr *debug-io*))
+      (tg:finalize fn (lambda () (release pipeline)))
+      (the function fn))))
 
 ;;;; pipeline.lisp ends here

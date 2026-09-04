@@ -2,7 +2,7 @@
 
 (in-package :coca.metal)
 
-(defstruct mtl-size
+(defstruct (mtl-size (:constructor mtl-size (width height depth)))
   (width  1 :type (unsigned-byte 64))
   (height 1 :type (unsigned-byte 64))
   (depth  1 :type (unsigned-byte 64)))
@@ -49,6 +49,8 @@
            ((list   width height depth)
             `((:struct %c-mtl-size) #(,width ,height ,depth)))
            (size
-            `((:struct %c-mtl-size) (the mtl-size ,size)))))
+            `((:struct %c-mtl-size)
+              (the (or mtl-size (vector * 3))
+                ,size)))))
 
 ;;;; typing.lisp ends here

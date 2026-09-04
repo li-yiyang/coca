@@ -2,5 +2,259 @@
 #+subtitle: Metal API for Common Lisp
 #+author: 凉凉
 * Usage
++ [[file:~/common-lisp/coca/examples/metal/performing-calculation-on-a-gpu.org][Performing calculations on a GPU]]
 
 * API
+:PROPERTIES:
+:header-args:lisp: :package :coca.metal :exports results :results verbatim
+:END:
+*NOTE*: the API may change in the future. [fn:api-design]
+
+** Device
++ =device= *[Struct]*
+
+  #+name: doc:device
+  #+begin_src lisp
+  (documentation 'device 'type)
+  #+end_src
+
+  #+RESULTS: doc:device
+  #+begin_example
+  Wrapper of MTLDevice.
+
+  The main Metal interface to a GPU that apps use to draw
+  graphics and run computations in parallel.
+
+  Slot Values:
+  + PTR:  foreign-pointer to MTLDevice
+  + ID:   device's registry identifier
+  + NAME: full name of the GPU device
+  + ARCHITECTURE: architectural details of the GPU device.
+  #+end_example
+
+*** Device Allocation
+Normally you only need [[doc:default-device][=default-device=]] to get your M-series's
+GPU on chips. And currently only M-series macOS is supported
+(I don't have Intel-based macOS platform to test, sorry).
+
++ =(make-device ptr)= *[Function]*
+
+  #+name: doc:make-device
+  #+begin_src lisp
+  (documentation #'make-device t)
+  #+end_src
+
+  #+RESULTS: doc:make-device
+  : Make Metal `device' from MTLDevice POINTER.
+  : Return a `device' object.
+  :
+  : Parameter:
+  : + POINTER: `foreign-pointer' to MTLDevice
+  :
+  :   NOTE: make sure it is a MTLDevice pointer
+
++ =(default-device)= *[Function]*
+
+  #+name: doc:default-device
+  #+begin_src lisp
+  (documentation #'default-device t)
+  #+end_src
+
+  #+RESULTS: doc:default-device
+  : The `device' instance Metal selects as the default.
+
+*** Device Attributes
++ =(device-id device)= *[Function]*
++ =(device-name device)= *[Function]*
++ =(device-architecture device)= *[Function]*
++ =(device-supports-family-p device family)= *[Function]*
+
+  #+name: doc:device-supports-family-p
+  #+begin_src lisp
+  (documentation #'device-supports-family-p t)
+  #+end_src
+
+  #+RESULTS: doc:device-supports-family-p
+  #+begin_example
+  Test if DEVICE supports MTLGPUFamily FAMILY.
+
+  Parameters:
+  + DEVICE: a `device'
+  + FAMILY: one of
+
+    Represents the Metal features
+    + `:metal4'
+    + `:metal3'
+
+    Represents the Apple family X GPU features
+    + `:apple9' correspond to the M3, and M4 GPUs.
+    + `:apple8' correspond to the M2 GPUs.
+    + `:apple7' correspond to the M1 GPUs.
+  #+end_example
+
++ =(device-current-allocated-size device)= *[Function]*
+
+  #+name: doc:device-current-allocated-size
+  #+begin_src lisp
+  (documentation #'device-current-allocated-size t)
+  #+end_src
+
+  #+RESULTS: doc:device-current-allocated-size
+  : The total amount of memory DEVICE is using.
+  : Return size in bytes.
+  :
+  : Parameter:
+  : + DEVICE: the `device' instance
+
+** Resources
+
+
++ =(make-buffer type data-or-length &key device no-copy options)= *[Function]*
+
+  #+name: doc:make-buffer
+  #+begin_src lisp
+  (documentation #'make-buffer t)
+  #+end_src
+
+  #+RESULTS: doc:make-buffer
+  #+begin_example
+  Make a MTLBuffer.
+  Return a foreign-pointer to MTLBuffer.
+
+  Parameters:
+  + TYPE: MTLBuffer data type (`msl-dtype')
+    + `:uint8',  `:int8'
+    + `:uint16', `:int16'
+    + `:uint32', `:int32'
+    + `:uint64', `:int64' (MSL 2.2+)
+    + `:bool'
+    + `:float' (single-float)
+    + `:size'
+
+    TODO:
+    + `:half', `:half2', `:half4'
+    + `:float2', `:float3', `:float4'
+    + `:int3', `:uint3'
+    + `:packed-float3'
+  + DATA-OR-LENGTH
+    + LENGTH: length of allocated MTLBuffer size
+    + DATA:
+      + array (row major indexed) copied to MTLBuffer
+      + (cons LENGTH foreign-pointer-to-array)
+        or (cons foreign-pointer-to-array LENGTH)
+  + NO-COPY: if non-nil, the data is manimuplate with no copy
+
+    NOTE: only effective when DATA-OR-LENGTH is like (cons ptr len)
+  + DEVICE:
+    the `device' to allocate the MTLBuffer
+    Note: invoke `release' after finish using MTLBuffer
+  + OPTIONS:
+    can be a keyword below or a list of keywords below:
+
+    Storage Mode:
+    + `:shared'
+    + `:private'
+    + `:memoryless'
+
+    CPU Cache Mode:
+    + `:cpu-cache-default'
+    + `:cpu-cache-write-combined'
+
+    Hazard Tracking Mode:
+    + `:hazard-tracking-default'
+    + `:hazard-tracking-tracked'
+    + `:hazard-tracking-untracked'
+  #+end_example
+
++ =msl-dtype= *[Type]*
+
+  #+name: doc:msl-dtype
+  #+begin_src lisp
+  (documentation 'msl-dtype 'type)
+  #+end_src
+
+  #+RESULTS: doc:msl-dtype
+  #+begin_example
+  MSL data types.
+
+  Currently supported types:
+  + `:uint8'
+  + `:uint16'
+  + `:uint32'
+  + `:uint64'
+  + `:uint8'
+  + `:uint16'
+  + `:uint32'
+  + `:uint64'
+  + `:bool'
+  + `:float'
+  + `:size'
+
+  TODO:
+  + `:half'
+  + `:half2'
+  + `:half4'
+  + `:float2'
+  + `:float3'
+  + `:int3'
+  + `:uint3'
+  + `:packed-float3'
+  #+end_example
+
++ =(msl-dtype-size type)= *[Function]*
+
+  #+name: doc:msl-dtype-size
+  #+begin_src lisp
+  (documentation #'msl-dtype-size t)
+  #+end_src
+
+  #+RESULTS: doc:msl-dtype-size
+  : Return size of `msl-dtype' TYPE.
+
+** Pipeline
++ =library= *[Struct]*
+
+  #+name: doc:library
+  #+begin_src lisp
+  (documentation 'library 'type)
+  #+end_src
+
+  #+RESULTS: doc:library
+  #+begin_example
+  Wrapper of MTLLibrary.
+
+  A collection of Metal shader functions.
+
+  Slot Values:
+  + PTR: foreign-pointer to MTLLibrary
+  + TYPE:
+    + `:executable'
+    + `:dynamic'
+  + NAME: optional MTLLibrary name
+  + DEVICE: the `device' the library is in
+  + FUNCTIONS: a list of functions names
+  #+end_example
+
+*** Library Creation
++ =(make-library-with-source source)= *[Function]*
++ =(make-library-with-file pathname)= *[Function]*
+
+*** Library Attributes
++ =(library-name library)= *[Function]*
++ =(library-type library)= *[Function]*
++ =(library-device library)= *[Function]*
+
+** Command
++ =command-queue=
+
+*** Command Queue Allocation
++ =make-command-queue=
++ =default-command-queue=
+
+* Footnotes
+
+[fn:api-design] Currently, the API is designed for accelerating
+computation. Since I'm learning to write Metal GPU code on my
+mac, I don't know how to design a good GPU API. So the API may
+be changed in the future for more lispy GPU codes. If you have
+some advices, please create an issue or PR.

@@ -14,10 +14,35 @@
   (:memoryless                #x030))
 
 (deftype msl-dtype ()
+  "MSL data types.
+
+Currently supported types:
++ `:uint8'
++ `:uint16'
++ `:uint32'
++ `:uint64'
++ `:uint8'
++ `:uint16'
++ `:uint32'
++ `:uint64'
++ `:bool'
++ `:float'
++ `:size'
+
+TODO:
++ `:half'
++ `:half2'
++ `:half4'
++ `:float2'
++ `:float3'
++ `:int3'
++ `:uint3'
++ `:packed-float3'
+"
   '(member
     :uint8 :uint16 :uint32 :uint64
     :int8  :int16  :int32  :int64
-    :bool :float :size
+    :bool  :float  :size
 
     ;; TODO
     ;; :half :half2 :half4
@@ -27,6 +52,7 @@
     ))
 
 (defun msl-dtype-size (type)
+  "Return size of `msl-dtype' TYPE. "
   (declare (type msl-dtype type))
   (ecase type
     ((:uint8 :uint16 :uint32 :uint64
@@ -113,7 +139,7 @@ Parameters:
                (invoke (device-ptr device)
                        "newBufferWithBytes:length:options:"
                        :pointer data
-                       :ns-uint len
+                       :ns-uint (* len (msl-dtype-size type))
                        :mtl-resource-options options
                        :object))))
     (the foreign-pointer

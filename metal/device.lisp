@@ -3,6 +3,17 @@
 (in-package :coca.metal)
 
 (defstruct (device (:constructor %make-device))
+  "Wrapper of MTLDevice.
+
+The main Metal interface to a GPU that apps use to draw
+graphics and run computations in parallel.
+
+Slot Values:
++ PTR:  foreign-pointer to MTLDevice
++ ID:   device's registry identifier
++ NAME: full name of the GPU device
++ ARCHITECTURE: architectural details of the GPU device.
+"
   (ptr          (null-pointer) :type foreign-pointer    :read-only t)
   (id           0              :type (unsigned-byte 64) :read-only t)
   (name         ""             :type string             :read-only t)

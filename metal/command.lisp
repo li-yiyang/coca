@@ -22,6 +22,18 @@
 ;; learning tasks.
 
 (defstruct (command-queue (:constructor %make-command-queue))
+  "Wrapper of MTLCommandQueue.
+
+An instance you use to create, submit, and schedule
+command buffers to a specific GPU device to run the
+commands within those buffers.
+
+Slot Values:
++ PTR: foreign-pointer to MTLCommandQueue
++ DEVICE: the `device' command queue is attached;
++ MAX-BUFFER: maximum number of uncompleted command buffers
+  the queue can allow.
+"
   (ptr        (null-pointer)   :type foreign-pointer :read-only t)
   (device     (default-device) :type device          :read-only t)
   (max-buffer 64               :type fixnum          :read-only t))
@@ -40,15 +52,17 @@ Parameters:
   (declare (type device device)
            (type fixnum max-buffer))
   (assert (<= 1 max-buffer))
-  (let ((ptr (invoke (device-ptr device)
-                     "newCommandQueueWithMaxCommandBufferCount:"
-                     :ns-uint max-buffer
-                     :object)))
-    (if (null-pointer-p ptr)
-        (error "Failed to create a `command-queue'. ")
-        (%make-command-queue :ptr        ptr
-                             :device     device
-                             :max-buffer max-buffer))))
+  (let* ((ptr   (invoke (device-ptr device)
+                        "newCommandQueueWithMaxCommandBufferCount:"
+                        :ns-uint max-buffer
+                        :object))
+         (queue (if (null-pointer-p ptr)
+                    (error "Failed to create a `command-queue'. ")
+                    (%make-command-queue :ptr        ptr
+                                         :device     device
+                                         :max-buffer max-buffer))))
+    (tg:finalize queue (lambda () (release ptr)))
+    queue))
 
 (define-objc-global-variable default-command-queue
     (make-command-queue)
