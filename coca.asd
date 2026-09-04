@@ -103,7 +103,8 @@
                ;; You usually need to do this explicitly if you’re
                ;; writing apps that don’t use graphics by default,
                ;; such as command line tools.
-               #:coca/core-graphics)
+               #:coca/core-graphics
+               #:trivial-garbage)
   :pathname "metal"
   :components
   ((:file "package")

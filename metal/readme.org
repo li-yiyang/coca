@@ -2,11 +2,160 @@
 #+subtitle: Metal API for Common Lisp
 #+author: 凉凉
 * Usage
+=Coca.Metal= provide some lowlevel interface to Apple's [[https://developer.apple.com/documentation/metal?language=objc][Metal]] API.
+
+To use =Coca.Metal=, you need to first attach to the GPU [[doc:device][=device=]].
+Typically on M-series macOS, it should be the [[doc:default-device][=(default-device)=]],
+which is the internal GPU of your mac.
+
+After getting the GPU [[doc:device][=device=]], a [[doc:command-queue][=command-queue=]] should be created
+to send command to the device ([[doc:make-command-queue][=make-command-queue=]]). To make it
+easier for [[doc:default-device][=default-device=]], there is [[doc:default-command-queue][=(default-command-queue)=]].
+
+The [[doc:command-queue][=command-queue=]] is like a tube sending [[Operations][operations]] to device.
+The operations act like functions in common lisp. All the input
+arguments should be converted into GPU memory first
+(see [[Memory and Resource Management]]).
+
+** Memory and Resource Management
+Metal use [[https://developer.apple.com/documentation/metal/mtlresource?language=objc][MTLResource]] to manage GPU memory allocation.
+There're two common MTLResource:
++ [[https://developer.apple.com/documentation/metal/mtlbuffer?language=objc][MTLBuffer]]
++ [[https://developer.apple.com/documentation/metal/mtltexture?language=objc][MTLTexture]]
+
+*** Buffer
+Use [[doc:make-buffer][=(make-buffer type data-or-length)=]] to convert lisp array
+into GPU memory or alloc a GPU memory of the given length.
+
+To improve performance and reduce copy, it is adviced to use
+foreign array (CFFI alloc a chunk of memory) and set =:no-copy=
+parameter to non-nil to reduce memory coping. Specifically
+on SBCL, it is adviced to use =with-pointer-to-vector-data=
+to directly expose lisp array to GPU without copying:
+
+#+name: example:sbcl-make-buffer-with-pointer-to-vector-data
+#+begin_src lisp :eval no :exports code
+(with-pointer-to-vector-data (arr* arr)
+  (let ((buff (make-buffer :float (cons arr* (length arr)) :no-copy t)))
+    ;; this way, no need for
+    ;; (foreign-array-to-lisp (invoke buff "contents" :pointer) '(:array ...))
+    ;; the element values of ARR will be updated directly
+    (funcall (library-compute-pipeline lib "your_kernel_function") buff)))
+#+end_src
+
+*** Texture
+*TODO*: not implemented yet.
+
+** Compiling and Pre-compiling shaders
+You can JIT compile Metal Shading Language using
+[[doc:make-library-with-source][=make-library-with-source=]], for example:
+
+#+name: example:make-library-with-source-double-it
+#+begin_src lisp :eval no :exports code
+(defvar lib
+  (make-library-with-source
+   (default-device)
+   "#include <metal_stdlib>
+using namespace metal;
+kernel void double_it(device float *in  [[buffer(0)]],
+                      device float *out [[buffer(1)]],
+                      uint id [[thread_position_in_grid]]) {
+  out[id] = in[id] * 2.0;
+}"))
+#+end_src
+
+And a [[doc:library][=library=]] instance is returned to represent the
+[[https://developer.apple.com/documentation/metal/mtllibrary?language=objc][=MTLLibrary=]].
+
+Or you can use [[doc:make-library-with-file][=make-library-with-file=]] to load pre-compiled
+=.metal= file. (*NOTE*: it is not fully tested yet. )
+
+*DEV NOTE*: it deserves a better API...
+I'm too busy and too young to implement one.
+
+** Operations
+*** Compute Operations
+Use [[doc:library-compute-pipeline][=(library-compute-pipeline library name)=]], you can get a
+funcallable function mirroring the [[https://developer.apple.com/documentation/metal/mtlfunction?language=objc][=MTLFunction=]].
+
+Taking the =double_it= kernel function from [[example:make-library-with-source-double-it][=lib=]],
+you can create a lisp function from existing =lib= via:
+
+#+name: example:library-compute-pipeline-double-it
+#+begin_src lisp :eval no :exports both
+(library-compute-pipeline lib "double_it")
+#+end_src
+
+#+RESULTS: example:library-compute-pipeline-double-it
+: #<sb-kernel:interpreted-function {702178162B}>
+
+And if you describe the result function:
+
+#+name: example:describe-library-compute-pipeline-double-it
+#+begin_example
+#<sb-kernel:interpreted-function {70152A161B}>
+  [interpreted function]
+
+
+Lambda-list: (in out &key (command-queue (default-command-queue))
+              (grid-size (mtl-size 8 1 1))
+              (group-size (mtl-size 8 1 1)))
+Derived type: (function
+               (sb-sys:system-area-pointer sb-sys:system-area-pointer
+                &key (:command-queue t) (:grid-size t) (:group-size t))
+               *)
+
+Slots with :instance allocation:
+  %proto-fn                      = #S(sb-interpreter::interpreted-fun-prototype..
+  env                            = #<sb-interpreter:basic-env {7003486793}>
+  frame                          = nil
+  cookie                         = nil
+#+end_example
+
+you can get the required buffers as the ordinary arguments,
+and three key arguments (=command-queue=, =grid-size=, =group-size=)
+as the function lambda list.
+
+*Example*:
+
+#+name: example:funcall-library-compute-pipeline-double-it
+#+headers: :var size=10
+#+begin_src lisp :eval no :exports both :results verbatim
+(let ((in  (make-array size
+                       :element-type 'single-float
+                       :initial-contents (loop :repeat size :collect (random 1.0))))
+      (out (make-array size
+                       :element-type 'single-float
+                       :initial-element 0.0)))
+  (with-pointer-to-vector-data (in* in)
+    (with-pointer-to-vector-data (out* out)
+      (let ((in!  (make-buffer :float (cons in*  size) :no-copy t))
+            (out! (make-buffer :float (cons out* size) :no-copy t)))
+        (funcall (library-compute-pipeline lib "double_it")
+                 in! out! :grid-size  (mtl-size size 1 1)
+                          :group-size (mtl-size size 1 1)))))
+  out)
+#+end_src
+
+#+RESULTS: example:funcall-library-compute-pipeline-double-it
+: #(1.2588947 0.5419078 1.6231675 1.3400342 0.5079472 1.8754709 1.6535034
+:   0.88413596 0.5294368 1.2326682)
+
+*DEV NOTE*: this API maybe changed in the future.
+I want something more powerful yet more elegant.
+
+*** Graphics Operations
+*TODO*: not implemented yet.
+
+* Examples
 + [[file:~/common-lisp/coca/examples/metal/performing-calculation-on-a-gpu.org][Performing calculations on a GPU]]
+
+* Reference
++ [[https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40014221-CH1-SW1][Metal Programming Guide]]
 
 * API
 :PROPERTIES:
-:header-args:lisp: :package :coca.metal :exports results :results verbatim
+:header-args:lisp: :package coca.metal :exports results :results verbatim
 :END:
 *NOTE*: the API may change in the future. [fn:api-design]
 
@@ -14,7 +163,7 @@
 + =device= *[Struct]*
 
   #+name: doc:device
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation 'device 'type)
   #+end_src
 
@@ -40,7 +189,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =(make-device ptr)= *[Function]*
 
   #+name: doc:make-device
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'make-device t)
   #+end_src
 
@@ -56,7 +205,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =(default-device)= *[Function]*
 
   #+name: doc:default-device
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'default-device t)
   #+end_src
 
@@ -70,7 +219,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =(device-supports-family-p device family)= *[Function]*
 
   #+name: doc:device-supports-family-p
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'device-supports-family-p t)
   #+end_src
 
@@ -95,7 +244,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =(device-current-allocated-size device)= *[Function]*
 
   #+name: doc:device-current-allocated-size
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'device-current-allocated-size t)
   #+end_src
 
@@ -106,13 +255,65 @@ GPU on chips. And currently only M-series macOS is supported
   : Parameter:
   : + DEVICE: the `device' instance
 
+** Command
++ =command-queue= *[Struct]*
+
+  #+name: doc:command-queue
+  #+begin_src lisp :exports results
+  (documentation 'command-queue 'type)
+  #+end_src
+
+  #+RESULTS: doc:command-queue
+  #+begin_example
+  Wrapper of MTLCommandQueue.
+
+  An instance you use to create, submit, and schedule
+  command buffers to a specific GPU device to run the
+  commands within those buffers.
+
+  Slot Values:
+  + PTR: foreign-pointer to MTLCommandQueue
+  + DEVICE: the `device' command queue is attached;
+  + MAX-BUFFER: maximum number of uncompleted command buffers
+    the queue can allow.
+  #+end_example
+
+*** Command Queue Allocation
+Normally, using [[doc:default-command-queue][=default-command-queue=]] is enough.
+
++ =(make-command-queue &optional device &key max-buffer)= *[Function]*
+
+  #+name: doc:make-command-queue
+  #+begin_src lisp :exports results
+  (documentation #'make-command-queue t)
+  #+end_src
+
+  #+RESULTS: doc:make-command-queue
+  : Create a `command-queue' to submit rendering and computation.
+  : Return a `command-queue' instance.
+  :
+  : Parameters:
+  : + DEVICE: where the `command-queue' is attached
+  : + MAX-BUFFER: the maximum number of uncompleted command buffers
+  :   the `command-queue' can allow. (default 64)
+
++ =(default-command-queue)= *[Function]*
+
+  #+name: doc:default-command-queue
+  #+begin_src lisp :exports results
+  (documentation #'default-command-queue t)
+  #+end_src
+
+  #+RESULTS: doc:default-command-queue
+  : Default `command-queue' to create, submit, and schedule
+  : command buffers to `default-device' to run the commands
+  : within those buffers.
+
 ** Resources
-
-
 + =(make-buffer type data-or-length &key device no-copy options)= *[Function]*
 
   #+name: doc:make-buffer
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'make-buffer t)
   #+end_src
 
@@ -169,7 +370,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =msl-dtype= *[Type]*
 
   #+name: doc:msl-dtype
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation 'msl-dtype 'type)
   #+end_src
 
@@ -204,7 +405,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =(msl-dtype-size type)= *[Function]*
 
   #+name: doc:msl-dtype-size
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation #'msl-dtype-size t)
   #+end_src
 
@@ -215,7 +416,7 @@ GPU on chips. And currently only M-series macOS is supported
 + =library= *[Struct]*
 
   #+name: doc:library
-  #+begin_src lisp
+  #+begin_src lisp :exports results
   (documentation 'library 'type)
   #+end_src
 
@@ -237,19 +438,82 @@ GPU on chips. And currently only M-series macOS is supported
 
 *** Library Creation
 + =(make-library-with-source source)= *[Function]*
+
+  #+name: doc:make-library-with-source
+  #+begin_src lisp :exports results
+  (documentation #'make-library-with-source t)
+  #+end_src
+
+  #+RESULTS: doc:make-library-with-source
+  #+begin_example
+  Create a MTLLibrary with SOURCE.
+  Return a `library' instance to MTLLibrary.
+
+  Parameters:
+  + DEVICE: an instance of `device'
+  + SOURCE: string of MSL codes
+  + MATH-MODE:
+    whether the compiler can perform optimizations for
+    floating-point arithmetic that may violate the IEEE
+    754 standard.
+    + `:fast' make aggressive, potentially lossy assumptions
+      about floating-point math.
+    + `:relaxed' make aggressive, potentially lossy
+      assumptions about floating-point math, while honoring Inf/NaN.
+    + `:safe' disable unsafe floating-point optimizations
+      by preventing the compiler from making any transformations
+      that could affect the results.
+  + LIBRARY-TYPE:
+    + `:executable' library that can create pipeline state objects
+    + `:dynamic' library can be dynamically linked from other libraries.
+  + NAME: library name to use when installing the library
+    only effective when LIBARY-TYPE is `:dynamic'
+  + OPTIMIZE: optimization level
+    + `:default' prioritizes runtime performance
+    + `:size' prioritizes minimizing the size of its output binaries
+      which may also reduce compile time
+  + LIBRARIES: a list of dynamic libraries the Metal compiler
+    links against
+  #+end_example
+
 + =(make-library-with-file pathname)= *[Function]*
+
+  #+name: doc:make-library-with-file
+  #+begin_src lisp :exports results
+  (documentation #'make-library-with-file t)
+  #+end_src
+
+  #+RESULTS: doc:make-library-with-file
+  : Load .metallib file at PATHNAME.
+  : Return a `library' instance to MTLLibrary.
+  :
+  : Parameters:
+  : + DEVICE:
+  : + PATHNAME: string or pathname to .metallib
 
 *** Library Attributes
 + =(library-name library)= *[Function]*
 + =(library-type library)= *[Function]*
 + =(library-device library)= *[Function]*
 
-** Command
-+ =command-queue=
+*** Library Pipelines
++ =(library-compute-pipeline library name &key debug)= *[Function]*
 
-*** Command Queue Allocation
-+ =make-command-queue=
-+ =default-command-queue=
+  #+name: doc:library-compute-pipeline
+  #+begin_src lisp :exports results
+  (documentation #'library-compute-pipeline t)
+  #+end_src
+
+  #+RESULTS: doc:library-compute-pipeline
+  : Get the callable function in LIBRARY of NAME.
+  : Return a function with lambda list like
+  :
+  :     (lambda (BUFFER... &key COMMAND-QUEUE GRID-SIZE GROUP-SIZE))
+  :
+  : Parameters:
+  : + LIBRARY: a `library'
+  : + NAME: a string for the library compute MTLFunction
+  : + DEBUG: if non-nil, print the function lambda expression in `*debug-io*'
 
 * Footnotes
 

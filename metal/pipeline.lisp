@@ -68,7 +68,7 @@ violate the IEEE 754 standard."
 
 (defun make-library-with-file (device pathname)
   "Load .metallib file at PATHNAME.
-Return a foreign-pointer to MTLLibrary.
+Return a `library' instance to MTLLibrary.
 
 Parameters:
 + DEVICE:
@@ -96,7 +96,7 @@ Parameters:
                                    (name "MTLLibrary" name?)
                                    (libraries ()))
   "Create a MTLLibrary with SOURCE.
-Return a foreign-pointer to MTLLibrary.
+Return a `library' instance to MTLLibrary.
 
 Parameters:
 + DEVICE: an instance of `device'
@@ -333,6 +333,10 @@ Parameters:
                              (command-queue (default-command-queue))
                              (grid-size     (mtl-size 8 1 1))
                              (group-size    (mtl-size 8 1 1)))
+                    (declare (type foreign-pointer ,@(mapcar #'first args))
+                             (type command-queue command-queue)
+                             (type (or mtl-size (vector integer 3))
+                                   grid-size group-size))
                     (with-command-buffer command-queue (:compute encoder)
                       (encoder-set-compute-pipeline-state encoder ,pipeline)
                       ,@(loop :for (name idx) :in args

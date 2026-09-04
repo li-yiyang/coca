@@ -26,7 +26,8 @@
    #:library-type
    #:library-device
    #:make-library-with-source
-   #:make-library-with-file)
+   #:make-library-with-file
+   #:library-compute-pipeline)
   ;; command
   (:export
    #:command-queue
