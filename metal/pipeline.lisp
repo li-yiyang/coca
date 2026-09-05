@@ -191,21 +191,23 @@ Parameters:
   (declare (type command-queue queue)
            (type (member :render :compute :blit :parallel-render)
                  type))
-  (let* ((cmd (invoke (command-queue-ptr queue)
-                      "commandBuffer"
-                      :object))
-         ;; TODO: maybe fix this
-         (enc (ecase type
-                (:render
-                 (invoke cmd "renderCommandEncoder"  :object))
-                (:compute
-                 (invoke cmd "computeCommandEncoder" :object))
-                (:blit
-                 (invoke cmd "blitCommandEncoder"    :object))
-                (:parallel-render
-                 (invoke cmd "parallelRenderCommandEncoder" :object)))))
-    (values cmd enc)))
+  (let ((cmd (invoke (command-queue-ptr queue)
+                     "commandBuffer"
+                     :object)))
+    (when (null-pointer-p cmd)
+      (error "Failed to create command buffer on ~A. " queue))
+    (let ((enc (ecase type
+                 ((:render :parallel-render)
+                  (error "Command buffer for ~A is not implemented yet. " type))
+                 (:compute
+                  (invoke cmd "computeCommandEncoder" :object))
+                 (:blit
+                  (invoke cmd "blitCommandEncoder"    :object)))))
+      (when (null-pointer-p enc)
+        (error "Failed to create ~A command encoder. " type))
+      (values cmd enc))))
 
+;; TODO: wait or with callback
 (defun command-buffer-commit-and-wait (command-buffer encoder)
   (declare (type foreign-pointer command-buffer encoder))
   (invoke encoder "endEncoding")
@@ -258,24 +260,21 @@ Syntax:
            (returns    (when return-pos
                          (subseq body return-pos)))
            (body       (subseq body 0 return-pos)))
-      `(let ((,successp t)
-             ,result)
-         (multiple-value-bind (,command-buffer ,encoder)
-             (command-queue-make-command-buffer-encoder ,command-queue ,type)
-           (unwind-protect
-                (handler-case
-                    (progn
-                      ,@body
-                      (command-buffer-commit-and-wait ,command-buffer ,encoder))
-                  (error (err)
-                    (setf ,successp nil)
-                    (error err)))
-             (when ,successp
-               (setf ,result (progn ,@returns)))
-             (release ,encoder)
-             (release ,command-buffer)))
-         (when ,successp
-           ,result)))))
+      `(with-autorelease-pool
+         (let ((,successp t)
+               ,result)
+           (multiple-value-bind (,command-buffer ,encoder)
+               (command-queue-make-command-buffer-encoder ,command-queue ,type)
+             (handler-case
+                 (progn
+                   ,@body
+                   (command-buffer-commit-and-wait ,command-buffer ,encoder)
+                   (setf ,result (progn ,@returns)))
+               (error (err)
+                 (setf ,successp nil)
+                 (error err))))
+           (when ,successp
+             ,result))))))
 
 (defun %library-compute-pipeline (library name)
   "Return values are foreign-pointer to MTLFunction, a list of (VAR INDEX). "
@@ -299,7 +298,9 @@ Syntax:
                                :pointer            reflection
                                :pointer            err
                                :object)))
+        (release function)
         (unless (null-pointer-p (mem-ref err :pointer))
+          (release pipeline)
           (error "Failed to get compute pipeline. ~%~A"
                  (description (mem-ref err :pointer))))
         (values pipeline
@@ -352,7 +353,7 @@ Parameters:
                                                             :index  ,idx
                                                             :offset ,off))
                       (encoder-set-grid-size-group-size encoder grid-size group-size))))
-           (fn   (eval expr)))
+           (fn   (compile nil expr)))
       (when debug (print expr *debug-io*))
       (tg:finalize fn (lambda () (release pipeline)))
       (the function fn))))
