@@ -328,19 +328,29 @@ Parameters:
            (type string  name))
   (multiple-value-bind (pipeline args)
       (%library-compute-pipeline library name)
-    (let* ((expr `(lambda (,@(mapcar #'first args)
+    (let* ((offset (loop :for (name) :in args
+                         :collect (intern (concatenate 'string
+                                                       (string name)
+                                                       "-OFFSET"))))
+           (expr `(lambda (,@(mapcar #'first args)
                            &key
                              (command-queue (default-command-queue))
                              (grid-size     (mtl-size 8 1 1))
-                             (group-size    (mtl-size 8 1 1)))
+                             (group-size    (mtl-size 8 1 1))
+                             ,@(loop :for off :in offset
+                                     :collect `(,off 0)))
                     (declare (type foreign-pointer ,@(mapcar #'first args))
                              (type command-queue command-queue)
                              (type (or mtl-size (vector integer 3))
-                                   grid-size group-size))
+                                   grid-size group-size)
+                             (type (unsigned-byte 64) ,@offset))
                     (with-command-buffer command-queue (:compute encoder)
                       (encoder-set-compute-pipeline-state encoder ,pipeline)
                       ,@(loop :for (name idx) :in args
-                              :collect `(encoder-set-buffer encoder ,name :index ,idx))
+                              :for off :in offset
+                              :collect `(encoder-set-buffer encoder ,name
+                                                            :index  ,idx
+                                                            :offset ,off))
                       (encoder-set-grid-size-group-size encoder grid-size group-size))))
            (fn   (eval expr)))
       (when debug (print expr *debug-io*))

@@ -93,16 +93,18 @@ And if you describe the result function:
 
 #+name: example:describe-library-compute-pipeline-double-it
 #+begin_example
-#<sb-kernel:interpreted-function {70152A161B}>
+#<sb-kernel:interpreted-function {70089CA5EB}>
   [interpreted function]
 
 
 Lambda-list: (in out &key (command-queue (default-command-queue))
               (grid-size (mtl-size 8 1 1))
-              (group-size (mtl-size 8 1 1)))
+              (group-size (mtl-size 8 1 1)) (in-offset 0)
+              (out-offset 0))
 Derived type: (function
                (sb-sys:system-area-pointer sb-sys:system-area-pointer
-                &key (:command-queue t) (:grid-size t) (:group-size t))
+                &key (:command-queue t) (:grid-size t) (:group-size t)
+                (:in-offset t) (:out-offset t))
                *)
 
 Slots with :instance allocation:
@@ -113,33 +115,40 @@ Slots with :instance allocation:
 #+end_example
 
 you can get the required buffers as the ordinary arguments,
-and three key arguments (=command-queue=, =grid-size=, =group-size=)
+three command key arguments (=command-queue=, =grid-size=, =group-size=),
+and the offset parameters (=in-offset=, =out-offset=)
 as the function lambda list.
 
-*Example*:
+*Example*: =batch= is =8= and =size= is =16=
 
 #+name: example:funcall-library-compute-pipeline-double-it
-#+headers: :var size=10
-#+begin_src lisp :eval no :exports both :results verbatim
+#+headers: :var size=16
+#+headers: :var batch=8
+#+begin_src lisp :exports both :results verbatim
 (let ((in  (make-array size
                        :element-type 'single-float
-                       :initial-contents (loop :repeat size :collect (random 1.0))))
+                       :initial-contents (loop :for i :below size :collect (* 1.0 i))))
       (out (make-array size
                        :element-type 'single-float
                        :initial-element 0.0)))
   (with-pointer-to-vector-data (in* in)
     (with-pointer-to-vector-data (out* out)
       (let ((in!  (make-buffer :float (cons in*  size) :no-copy t))
-            (out! (make-buffer :float (cons out* size) :no-copy t)))
-        (funcall (library-compute-pipeline lib "double_it")
-                 in! out! :grid-size  (mtl-size size 1 1)
-                          :group-size (mtl-size size 1 1)))))
+            (out! (make-buffer :float (cons out* size) :no-copy t))
+            (fn   (library-compute-pipeline lib "double_it")))
+        (funcall fn in! out!
+                 :grid-size  (mtl-size batch 1 1)
+                 :group-size (mtl-size batch 1 1))
+        (funcall fn in! out!
+                 :grid-size  (mtl-size batch 1 1)
+                 :group-size (mtl-size batch 1 1)
+                 :in-offset  (* batch (msl-dtype-size :float))
+                 :out-offset (* batch (msl-dtype-size :float))))))
   out)
 #+end_src
 
 #+RESULTS: example:funcall-library-compute-pipeline-double-it
-: #(1.2588947 0.5419078 1.6231675 1.3400342 0.5079472 1.8754709 1.6535034
-:   0.88413596 0.5294368 1.2326682)
+: #(0.0 2.0 4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0)
 
 *DEV NOTE*: this API maybe changed in the future.
 I want something more powerful yet more elegant.
