@@ -16,7 +16,14 @@
   ;; hierarchy.lisp
   (:export
    #:parent
-   #:children)
+   #:children
+   #:add-child
+   #:remove-child
+   #:remove-from-parent)
+  ;; subview.lisp
+  (:export
+   #:view
+   #:subview-mixin)
   ;; named.lisp
   (:export
    #:name
@@ -24,7 +31,8 @@
   ;; visible.lisp
   (:export
    #:visible
-   #:visible-mixin)
+   #:visible-mixin
+   #:hidden-mixin)
   ;; titled.lisp
   (:export
    #:titled-mixin
@@ -71,7 +79,10 @@
   (:export
    #:window
    #:screen
-   #:window-style))
+   #:window-style)
+  ;; views.lisp
+  (:export
+   #:button))
 
 (in-package :coca.appkit)
 

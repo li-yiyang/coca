@@ -17,11 +17,32 @@ An OBJ with no child should return (). ")
 
 (defgeneric add-child (parent child)
   (:documentation
-   "Add CHILD to PARENT. "))
+   "Add CHILD to PARENT.
+
+Side Effects:
++ if `parent' of CHILD is not PARENT,
+  the CHILD is removed from PARENT first
+")
+  (:method :before (parent child)
+    (unless (eq parent (parent child))
+      (remove-child parent child))))
 
 (defgeneric remove-child (parent child)
   (:documentation
-   "Remove CHILD from PARENT if it's contained by PARENT. "))
+   "Remove CHILD from PARENT if it's contained by PARENT.
+Return `t' if success, or `nil' if not.
+
+Parameters:
++ PARENT:
++ CHILD: child should be `children' of PARENT,
+  + if PARENT is not `parent' of CHILD, return `nil';
+  + otherwise, the CHILD is `remove-from-parent',
+    and return `t'
+")
+  (:method :around (parent child)
+    (when (eq parent (parent child))
+      (call-next-method)
+      t)))
 
 (defgeneric remove-from-parent (child)
   (:documentation

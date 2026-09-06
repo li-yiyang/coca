@@ -36,10 +36,10 @@ Dev Note:
   (declare (type foreign-pointer ptr))
   (setf (gethash name (objc-ptrs obj)) ptr))
 
-(defun obj-ptr (obj &optional (name :ptr))
+(defmacro obj-ptr (obj &optional (name :ptr))
   "Return foreign-pointer to ObjC OBJ of NAME. "
-  (the foreign-pointer
-    (objc-ptr obj name)))
+  `(the foreign-pointer
+     (objc-ptr ,obj ,name)))
 
 (flet ((expand (obj ptr*)
          (destructuring-bind (ptr &optional name)
@@ -164,11 +164,12 @@ Initialize Parameters:
   ObjC pointer
 "))
 
-(defmethod initialize-instance ((obj owned-mixin)
-                                &key ptr
-                                  (objc-class "NSObject")
-                                  (objc-init #'init)
-                                  init-in-main-p)
+(defmethod initialize-instance
+    ((obj owned-mixin)
+     &key ptr
+       (objc-class (alx:required-argument :objc-class))
+       (objc-init #'init)
+       init-in-main-p)
   (call-next-method)
   (let ((ptr (if ptr
                  (retain ptr)

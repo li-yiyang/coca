@@ -12,17 +12,25 @@
     (init (alloc "CocaWindowDelegate"))
   "The NSWindowDelegate for all the `window'. ")
 
+;; lisp side should manage window close, reuse, and destroy.
+
 (defclass window (obj
                   owned-mixin
                   find-obj-mixin
                   titled-mixin
                   framed-mixin
-                  visible-mixin)
+                  visible-mixin
+                  subview-mixin)
   ((screen
     :initform (main-screen)
     :initarg  :screen
     :reader   screen
-    :reader   parent))
+    ;; TODO: (parent window) should be the screen...
+    ;; :reader   parent
+    )
+   (content-view-ptr
+    :documentation
+    "Foreign pointer to [NSWindow contentView]. "))
   (:default-initargs
    :objc-class     "NSWindow"
    :objc-init      'init-window
@@ -40,7 +48,8 @@ Dev Note:
 "))
 
 (defun init-window (ptr)
-  "Create a NSWindow"
+  "Create a NSWindow. "
+  (declare (type foreign-pointer ptr))
   (invoke ptr
           "initWithContentRect:styleMask:backing:defer:"
           :ns-rect        #(0 0 100 100)
@@ -55,7 +64,9 @@ Dev Note:
 (defmethod initialize-instance :after ((window window) &key)
   (with-ptr window ptr
     (dispatch-main ()
-      (invoke ptr "setDelegate:" :object (window-delegate))))
+      (invoke ptr "setDelegate:" :object (window-delegate))
+      (setf (slot-value window 'content-view-ptr)
+            (invoke ptr "contentView" :object))))
   (pushnew window *window-list* :test #'eq))
 
 (defmethod objc-ptr ((window window) (name (eql :delegate)))
@@ -72,6 +83,9 @@ Dev Note:
 
 (defmethod destroy :after ((window window))
   (setf *window-list* (delete window *window-list* :test #'eq)))
+
+(defmethod objc-ptr ((window window) (name (eql :container-view)))
+  (slot-value window 'content-view-ptr))
 
 (defgeneric window-style (window)
   (:documentation

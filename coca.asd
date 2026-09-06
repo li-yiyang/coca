@@ -82,12 +82,14 @@
    (:file "typing"    :depends-on ("package"))
    (:file "obj"       :depends-on ("package"))
    (:file "hierarchy" :depends-on ("package"))
+   (:file "subview"   :depends-on ("hierarchy"))
    (:file "named"     :depends-on ("package"))
    (:file "visible"   :depends-on ("package"))
    (:file "titled"    :depends-on ("obj"))
    (:file "framed"    :depends-on ("obj" "typing"))
    (:file "screen"    :depends-on ("obj" "framed" "named"))
-   (:file "window"    :depends-on ("screen" "visible"))))
+   (:file "window"    :depends-on ("screen" "visible" "subview"))
+   (:file "views"     :depends-on ("subview"))))
 
 (defsystem #:coca/metal
   :author ("凉凉")
