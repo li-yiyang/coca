@@ -61,11 +61,14 @@ Use `screen-list' to get a list of avaliable screen. "))
 
 (defun screen-list ()
   "Return a list of `screen'. "
-  (mapcar #'wrap-screen-ptr (invoke "NSScreen" "screens" :ns-array)))
+  (dispatch-main ()
+    (mapcar #'wrap-screen-ptr
+            (invoke "NSScreen" "screens" :ns-array))))
 
 (defun main-screen ()
   "Return the main `screen'. "
-  (wrap-screen-ptr (invoke "NSScreen" "mainScreen" :object)))
+  (dispatch-main ()
+    (wrap-screen-ptr (invoke "NSScreen" "mainScreen" :object))))
 
 (defgeneric screen-dpi (screen)
   (:documentation

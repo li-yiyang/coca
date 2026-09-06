@@ -340,6 +340,11 @@ use `static-framed-mixin' to cache frame values. "))
 Note: this is only lisp-side sizing check, the ObjC's min/max size
 updating will not be synced. "))
 
+(defmethod initialize-instance :after ((framed minmax-framed-mixin) &key)
+  (with-slots (min-width max-width min-height max-height) framed
+    (assert (<= min-width  max-width))
+    (assert (<= min-height max-height))))
+
 (defmethod set-frame :before ((framed minmax-framed-mixin) x y (w real) (h real))
   (assert (<= (min-width  framed) w (max-width  framed)))
   (assert (<= (min-height framed) h (max-height framed))))
@@ -353,7 +358,7 @@ updating will not be synced. "))
 (defmethod (setf min-height) :before ((mh real) (framed minmax-framed-mixin))
   (assert (<= mh (max-height framed))))
 
-(defmethod (setf max-width) :before ((mh real) (framed minmax-framed-mixin))
+(defmethod (setf max-height) :before ((mh real) (framed minmax-framed-mixin))
   (assert (<= (min-height framed) mh)))
 
 (defmethod (setf min-width) ((mw null) (framed minmax-framed-mixin))

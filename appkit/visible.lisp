@@ -21,6 +21,7 @@
                            &aux (vis (and visible t)))
   (with-ptr obj ptr
     (dispatch-main ()
-      (invoke ptr "setIsVisible:" :bool vis))))
+      (invoke ptr "setIsVisible:" :bool vis))
+    (and visible t)))
 
 ;;;; visible.lisp ends here

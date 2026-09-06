@@ -2,8 +2,9 @@
 
 (uiop:define-package #:coca.appkit
   (:use :common-lisp :cffi :coca.objc :coca.app)
-  (:local-nicknames (:alx :alexandria)
-                    (:m   :trivia))
+  (:local-nicknames (:alx  :alexandria)
+                    (:m    :trivia)
+                    (:objc :coca.objc))
   (:documentation
    "Coca.AppKit is a collection of mixin classes for AppKit. ")
   ;; obj.lisp
@@ -69,7 +70,8 @@
   ;; window.lisp
   (:export
    #:window
-   #:screen))
+   #:screen
+   #:window-style))
 
 (in-package :coca.appkit)
 

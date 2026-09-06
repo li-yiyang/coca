@@ -330,9 +330,7 @@ Parameters:
   (multiple-value-bind (pipeline args)
       (%library-compute-pipeline library name)
     (let* ((offset (loop :for (name) :in args
-                         :collect (intern (concatenate 'string
-                                                       (string name)
-                                                       "-OFFSET"))))
+                         :collect (objc::symbol-concat name "-OFFSET")))
            (expr `(lambda (,@(mapcar #'first args)
                            &key
                              (command-queue (default-command-queue))

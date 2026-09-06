@@ -26,11 +26,11 @@
   (y :double))
 
 (defmethod translate-from-foreign (ptr (type c-ns-point))
-  (with-foreign-slots ((x y) ptr (:struct %c-ns-rect))
+  (with-foreign-slots ((x y) ptr (:struct %c-ns-point))
     (values x y)))
 
 (defmethod expand-from-foreign (ptr (type c-ns-point))
-  `(with-foreign-slots ((x y) ,ptr (:struct %c-ns-rect))
+  `(with-foreign-slots ((x y) ,ptr (:struct %c-ns-point))
      (values x y)))
 
 (defcstruct (%c-ns-size :class c-ns-size)

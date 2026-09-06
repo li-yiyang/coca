@@ -2,8 +2,9 @@
 
 (uiop:define-package #:coca.metal
   (:use :common-lisp :coca.objc :cffi)
-  (:local-nicknames (:alx :alexandria)
-                    (:m   :trivia))
+  (:local-nicknames (:alx  :alexandria)
+                    (:m    :trivia)
+                    (:objc :coca.objc))
   ;; device
   (:export
    #:device

@@ -67,9 +67,23 @@ Dev Note:
     (dispatch-main ()
       (invoke ptr "setFrame:display:"
               :ns-rect (x y w h)
-              :bool    nil))))
+              :bool    nil)))
+  window)
 
 (defmethod destroy :after ((window window))
   (setf *window-list* (delete window *window-list* :test #'eq)))
+
+(defgeneric window-style (window)
+  (:documentation
+   "Get/Set window style of WINDOW. ")
+  (:method ((window window))
+    (with-ptr window ptr
+      (invoke ptr "styleMask" :ns-window-style))))
+
+(defmethod (setf window-style) (style-mask (window window))
+  (with-ptr window ptr
+    (dispatch-main ()
+      (invoke ptr "setStyleMask:" :ns-window-style style-mask)))
+  style-mask)
 
 ;;;; window.lisp ends here

@@ -289,7 +289,8 @@ See also `define-objc-enum'. "
            (flet ((encode (flag)
                     (etypecase flag
                       (integer flag)
-                      (keyword (ecase flag ,@binding)))))
+                      (keyword (ecase flag ,@binding))
+                      (list    (apply #',enc flag)))))
              (reduce #'logior (mapcar #'encode flags))))
          (defun ,dec (mask)
            ,(format nil "Decode ObjC mask integer ~S.
@@ -304,7 +305,7 @@ See also `~A'. "
                      :if (zerop val)
                        :do (setf zero-flag name)
                      :else
-                       :collect `(when (logand ,val mask)
+                       :collect `(unless (zerop (logand ,val mask))
                                    (push ,name flags))
                          :into acc
                      :finally (return
