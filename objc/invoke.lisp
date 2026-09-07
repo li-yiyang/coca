@@ -175,6 +175,42 @@ For other Lisp implementations, this will take no effects. "
     #-sbcl progn
     ,@body))
 
+(defcstruct (%ns-operating-system-version
+             :class ns-operating-system-version)
+  (major :long)
+  (minor :long)
+  (patch :long))
+
+(defmethod translate-from-foreign (ptr (type ns-operating-system-version))
+  (with-foreign-slots ((major minor patch)
+                       ptr
+                       (:struct %ns-operating-system-version))
+    (list major minor patch)))
+
+(define-objc-global-variable %osx-version
+    (invoke (invoke "NSProcessInfo" "processInfo" :object)
+            "operatingSystemVersion"
+            (:struct %ns-operating-system-version)))
+
+(declaim (inline osx-version))
+(defun osx-version ()
+  "Return values as MAJOR MINOR PATCH version of current os version. "
+  (values-list (%osx-version)))
+
+(defun osx-version>= (major &optional (minor 0 minor?) (patch 0 patch?))
+  "Test if `osx-version' >= MAJOR.MINOR.PATCH
+Return `t' if pass. "
+  (macrolet ((cmp (a b &optional (else t))
+               `(cond ((> ,a ,b) t)
+                      ((< ,a ,b) nil)
+                      (t         ,else))))
+    (destructuring-bind (major* minor* patch*) (%osx-version)
+      (cmp major* major
+           (if minor?
+               (cmp minor* minor
+                    (if patch? (cmp patch* patch) t))
+               t)))))
+
 (defun ns-string-to-string (ns-string)
   "Convert NSString object NS-STRING to lisp string.
 Return string of NS-STRING. "

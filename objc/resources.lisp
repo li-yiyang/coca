@@ -258,7 +258,26 @@ variable accessor function. ")
 
 (defmacro define-objc-global-variable (name initialize-form &optional documentation)
   "Define ObjC global variable accessor function of NAME.
-The global variable is initialized with INITIALIZE-FORM. "
+The global variable is initialized with INITIALIZE-FORM.
+
+Syntax:
+
+    (define-objc-global-variable NAME
+        INITIALIZE-FORM
+      [DOCUMENTATION])
+
++ NAME: symbol of global reader function name
++ INITIALIZE-FORM: initialization form
++ DOCUMENTATION: optional documentation string for NAME function
+
+Dev Note:
++ there would also be a global variable with name like `*NAME*'
+  it should not be used directly since it should be cleared
+  when ObjC runtime initialized and might not properly initialized;
++ this macro acts like `defvar', so if the global variable
+  is defined already (and non-nil), it's INITIALIZE-FORM should
+  only run once.
+"
   (let ((var (symbol-concat "*" name "*")))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (defvar ,var nil)

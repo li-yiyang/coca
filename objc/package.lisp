@@ -30,6 +30,8 @@
    #:invoke
    #:invoke-super
    #:self
+   #:osx-version
+   #:osx-version>=
    #:string-to-ns-string
    #:ns-string-to-string
    #:pathname-to-ns-url

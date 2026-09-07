@@ -7,7 +7,7 @@
 :END:
 
 ** Invoke
-Invoke ObjC method with macro =invoke=:
+Invoke ObjC method with macro [[doc:invoke][=invoke=]]:
 
 #+begin_src lisp
 (description (invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object))
@@ -32,7 +32,7 @@ Note that ObjC errors are not handled by lisp, which just kills the lisp
 image. Be aware to call ObjC methods correctly or check before calling.
 
 ** Typing
-The macro =invoke= is just a thin warpper on =cffi:foreign-funcall=.
+The macro [[doc:invoke][=invoke=]] is just a thin warpper on =cffi:foreign-funcall=.
 
 *** ObjC typing via alias
 For example:
@@ -133,27 +133,34 @@ function like:
 Use the function =my-ns-string= to access the global variable
 =*my-ns-string*= to ensure it would be correctly setted up.
 
+** macOS version and test
+Use [[doc:osx-version][=(osx-version)=]] to get current macintosh major, minor and patch version.
+More commonly, use [[doc:osx-version>=][~(osx-version>= major &optional minor patch)~]] to test
+system version requirements.
+
 * API
 :PROPERTIES:
 :header-args:lisp: :package coca.objc :results verbatim
 :END:
 
-+ =*objc-libraries*= [Variable]
++ =*objc-libraries*= *[Variable]*
 
+  #+name: doc:*objc-libraries
   #+begin_src lisp :exports results
   (documentation '*objc-libraries* 'variable)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:*objc-libraries
   : A list of foreign libraries names.
 
-+ =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= [Macro]
++ =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
+  #+name: doc:invoke
   #+begin_src lisp :exports results
   (documentation (macro-function 'invoke) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:invoke
   #+begin_example
   Invokes an ObjC method that returns RESULT CFFI type.
 
@@ -196,13 +203,15 @@ Use the function =my-ns-string= to access the global variable
     If not provided, by default as `:void'
 
   #+end_example
-+ =(invoke-super OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= [Macro]
 
++ =(invoke-super OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
+
+  #+name: doc:invoke-super
   #+begin_src lisp :exports results
   (documentation (macro-function 'invoke-super) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:invoke-super
   #+begin_example
   Invokes an ObjC method that returns RESULT CFFI type.
 
@@ -244,40 +253,49 @@ Use the function =my-ns-string= to access the global variable
 
     If not provided, by default as `:void'
   #+end_example
-+ =(with-autorelease-pool &body)= [Macro]
 
++ =(with-autorelease-pool &body)= *[Macro]*
+
+  #+name: doc:with-autorelease-pool
   #+begin_src lisp :exports results
   (documentation (macro-function 'with-autorelease-pool) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:with-autorelease-pool
   : Wrap BODY within ObjC autorelease pool block.
 
-+ =sel= [Struct]
-+ =objc-class= [Struct]
-+ =(coerce-to-selector sel)= [Function]
++ =sel= *[Struct]*
 
++ =objc-class= *[Struct]*
+
++ =(coerce-to-selector sel)= *[Function]*
+
+  #+name: doc:coerce-to-selector
   #+begin_src lisp :exports results
   (documentation #'coerce-to-selector t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:coerce-to-selector
   : Return cached `sel' for ObjC SEL.
-+ =(coerce-to-objc-class class)= [Function]
 
++ =(coerce-to-objc-class class)= *[Function]*
+
+  #+name: doc:coerce-to-objc-class
   #+begin_src lisp :exports results
   (documentation #'coerce-to-objc-class t)
   #+end_src
 
   #+RESULTS:
   : Return cached `objc-class' for ObjC Class.
-+ =(define-objc-class class superclass &rest protocols)= [Macro]
 
++ =(define-objc-class class superclass &rest protocols)= *[Macro]*
+
+  #+name: doc:define-objc-class
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-class) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-class
   #+begin_example
   Define ObjC Class if needed.
 
@@ -293,13 +311,15 @@ Use the function =my-ns-string= to access the global variable
   + PROTOCOLS:
     strings of ObjC Protocols
   #+end_example
-+ =(define-objc-method (class sel &key encoding callback) return-type lambda-list &body)= [Macro]
 
++ =(define-objc-method (class sel &key encoding callback) return-type lambda-list &body)= *[Macro]*
+
+  #+name: doc:define-objc-method
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-method) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-method
   #+begin_example
   Define ObjC instance method.
 
@@ -328,27 +348,51 @@ Use the function =my-ns-string= to access the global variable
     + `:sel'     return value will be wrapped as `sel-ptr'
     + otherwise see CFFI foreign types
   + LAMBDA-LIST:
-    same as `cffi:defcallback'
+    same as `cffi:defcallback', or defined in `define-objc-typing'
   + BODY
     method body,
     within the BODY, self is bound to foreign-pointer of ObjC object
   #+end_example
-+ =(define-objc-global-variable reader initial-form &optional documentation)= [Macro]
 
++ =(define-objc-global-variable reader initial-form &optional documentation)= *[Macro]*
+
+  #+name: doc:define-objc-global-variable
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-global-variable) t)
   #+end_src
 
-  #+RESULTS:
-  : nil
+  #+RESULTS: doc:define-objc-global-variable
+  #+begin_example
+  Define ObjC global variable accessor function of NAME.
+  The global variable is initialized with INITIALIZE-FORM.
 
-+ =*on-objc-initialization*= [Variable]
+  Syntax:
 
+      (define-objc-global-variable NAME
+          INITIALIZE-FORM
+        [DOCUMENTATION])
+
+  + NAME: symbol of global reader function name
+  + INITIALIZE-FORM: initialization form
+  + DOCUMENTATION: optional documentation string for NAME function
+
+  Dev Note:
+  + there would also be a global variable with name like `*NAME*'
+    it should not be used directly since it should be cleared
+    when ObjC runtime initialized and might not properly initialized;
+  + this macro acts like `defvar', so if the global variable
+    is defined already (and non-nil), it's INITIALIZE-FORM should
+    only run once.
+  #+end_example
+
++ =*on-objc-initialization*= *[Variable]*
+
+  #+name: doc:*on-objc-initialization*
   #+begin_src lisp :exports results
   (documentation '*on-objc-initialization* 'variable)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:*on-objc-initialization*
   : A list of ObjC initialize callbacks.
   :
   : The element should be callback function symbol
@@ -356,13 +400,14 @@ Use the function =my-ns-string= to access the global variable
   :
   : The function will be called with no argument.
 
-+ =(ensure-objc-initialized)=  [Function]
++ =(ensure-objc-initialized)=  *[Function]*
 
+  #+name: doc:ensure-objc-initialized
   #+begin_src lisp :exports results
   (documentation #'ensure-objc-initialized t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:ensure-objc-initialized
   #+begin_example
   Restore ObjC environment after restore image.
 
@@ -388,13 +433,15 @@ Use the function =my-ns-string= to access the global variable
 
   4. call hooks in `*on-objc-initialization*'
   #+end_example
-+ =(define-objc-typing name &key alias result arg)= [Macro]
 
++ =(define-objc-typing name &key alias result arg)= *[Macro]*
+
+  #+name: doc:define-objc-typing
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-typing) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-typing
   #+begin_example
   Define ObjC typing of NAME.
 
@@ -426,13 +473,14 @@ Use the function =my-ns-string= to access the global variable
           (,@REWRITE (invoke ...))
   #+end_example
 
-+ =(define-objc-mask typing* &body binding)= [Macro]
++ =(define-objc-mask typing* &body binding)= *[Macro]*
 
+  #+name: doc:define-objc-mask
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-mask) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-mask
   #+begin_example
   Define ObjC mask typing.
 
@@ -458,13 +506,14 @@ Use the function =my-ns-string= to access the global variable
   See also `define-objc-enum'.
   #+end_example
 
-+ =(define-objc-enum typing* &body binding)= [Macro]
++ =(define-objc-enum typing* &body binding)= *[Macro]*
 
+  #+name: doc:define-objc-enum
   #+begin_src lisp
   (documentation (macro-function 'define-objc-enum) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-enum
   #+begin_example
   Define ObjC enum typing.
 
@@ -490,22 +539,25 @@ Use the function =my-ns-string= to access the global variable
   See also `define-objc-mask'.
   #+end_example
 
-+ =(with-fp-traps-masked &body)= [Macro, SBCL specific]
++ =(with-fp-traps-masked &body)= *[Macro, SBCL specific]*
 
+  #+name: doc:with-fp-traps-masked
   #+begin_src lisp :exports results
   (documentation (macro-function 'with-fp-traps-masked) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:with-fp-traps-masked
   : Only for SBCL: ignore float traps (often trapped when doing CFFI on macOS).
   : For other Lisp implementations, this will take no effects.
-+ =(objc-symbol-value symbol type &optional library)= [Function]
 
++ =(objc-symbol-value symbol type &optional library)= *[Function]*
+
+  #+name: doc:objc-symbol-value
   #+begin_src lisp :exports results
   (documentation #'objc-symbol-value t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:objc-symbol-value
   : Lookup foreign ObjC SYMBOL value as TYPE.
   :
   : Possible TYPEs:
@@ -513,113 +565,144 @@ Use the function =my-ns-string= to access the global variable
   : + :class  interned as `objc-class'
   : + :sel    interned as `sel'
   : + otherwise, CFFI foreign types
-+ =(alloc class)= [Function]
 
++ =(alloc class)= *[Function]*
+
+  #+name: doc:alloc
   #+begin_src lisp :exports results
   (documentation #'alloc t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:alloc
   : Allocate instance of CLASS.
   : Return foreign-pointer to instance of CLASS (not initialized).
-+ =(init object)= [Function]
 
++ =(init object)= *[Function]*
+
+  #+name: doc:init
   #+begin_src lisp :exports results
   (documentation #'init t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:init
   : Init NS-OBJECT.
   : Return foreign-pointer (same to) NS-OBJECT.
-+ =(alloc-init class)= [Function]
 
-  #+begin_src lisp :exports results
-  (documentation #'alloc-init t)
-  #+end_src
++ =(description object)= *[Function]*
 
-  #+RESULTS:
-  : Shortcuts of (init (alloc CLASS)).
-  : Return foreign-pointer to instance of CLASS.
-+ =(description object)= [Function]
-
+  #+name: doc:description
   #+begin_src lisp :exports results
   (documentation #'description t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:description
   : Return description string of NS-OBJECT.
-+ =(release object)= [Function]
 
++ =(release object)= *[Function]*
+
+  #+name: doc:release
   #+begin_src lisp :exports results
   (documentation #'release t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:release
   : Release NS-OBJECT.
-+ =(retain object)= [Function]
 
++ =(retain object)= *[Function]*
+
+  #+name: doc:retain
   #+begin_src lisp :exports results
   (documentation #'retain t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:retain
   : Retain NS-OBJECT count.
   : Return foreign-pointer (same to) NS-OBJECT.
-+ =(autorelease object)= [Function]
 
++ =(autorelease object)= *[Function]*
+
+  #+name: doc:autorelease
   #+begin_src lisp :exports results
   (documentation #'autorelease t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:autorelease
   : Autorelease NS-OBJECT.
   : Return foreign-pointer (same to) NS-OBJECT.
-+ =(ns-string-to-string ns-string)= [Function]
 
++ =(osx-version)= *[Function]*
+
+  #+name: doc:osx-version
+  #+begin_src lisp :exports results
+  (documentation #'osx-version t)
+  #+end_src
+
+  #+RESULTS: doc:osx-version
+  : Return values as MAJOR MINOR PATCH version of current os version.
+
++ ~(osx-version>= major &optional minor patch)~ *[Function]*
+
+  #+name: doc:osx-version>=
+  #+begin_src lisp :exports results
+  (documentation #'osx-version>= t)
+  #+end_src
+
+  #+RESULTS: doc:osx-version>=
+  : Test if `osx-version' >= MAJOR.MINOR.PATCH
+  : Return `t' if pass.
+
++ =(ns-string-to-string ns-string)= *[Function]*
+
+  #+name: doc:ns-string-to-string
   #+begin_src lisp :exports results
   (documentation #'ns-string-to-string t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:ns-string-to-string
   : Convert NSString object NS-STRING to lisp string.
   : Return string of NS-STRING.
 
-+ =(string-to-ns-string string)= [Function]
++ =(string-to-ns-string string)= *[Function]*
 
+  #+name: doc:string-to-ns-string
   #+begin_src lisp :exports results
   (documentation #'string-to-ns-string t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:string-to-ns-string
   : Convert lisp STRING into NSString object.
   : Return foreign-pointer of NSString for STRING.
-+ =(pathname-to-ns-url pathname)= [Function]
 
++ =(pathname-to-ns-url pathname)= *[Function]*
+
+  #+name: doc:pathname-to-ns-url
   #+begin_src lisp :exports results
   (documentation #'pathname-to-ns-url t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:pathname-to-ns-url
   : Convert PATHNAME into NSURL.
   : Return foreign-pointer of NSPath for PATHNAME.
 
-+ =(ns-array-to-list ns-array)= [Function]
++ =(ns-array-to-list ns-array)= *[Function]*
 
+  #+name: doc:ns-array-to-list
   #+begin_src lisp :exports results
   (documentation #'ns-array-to-list t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:ns-array-to-list
   : Convert NS-ARRAY into list.
   : Return a list of foreign-pointer to NSObject.
 
-+ =(ns-mutable-dictionary ...)= [Macro]
++ =(ns-mutable-dictionary ...)= *[Macro]*
 
+  #+name: doc:ns-mutable-dictionary
   #+begin_src lisp :exports results
   (documentation (macro-function 'ns-mutable-dictionary) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:ns-mutable-dictionary
   #+begin_example
   Make NSMutableDictionary from KEY-VALS.
   Return foreign-pointer of NSMutableDictionary.
@@ -645,24 +728,26 @@ Use the function =my-ns-string= to access the global variable
       + :ns-string => (string-to-ns-string VALUE)
   #+end_example
 
-+ =(ns-number number)= [Function]
++ =(ns-number number)= *[Function]*
 
+  #+name: doc:ns-number
   #+begin_src lisp :exports results
   (documentation #'ns-number t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:ns-number
   : Convert VAL into NSNumber.
   : Return foreign-pointer to NSNumber.
 
 Load =coca/objc/block= to have Block supports setted up:
-+ =(define-objc-block block-type lambda-list)= [Macro]
++ =(define-objc-block block-type lambda-list)= *[Macro]*
 
+  #+name: doc:define-objc-block
   #+begin_src lisp :exports results
   (documentation (macro-function 'define-objc-block) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:define-objc-block
   #+begin_example
   Define ObjC Block of type BLOCK-TYPE.
 

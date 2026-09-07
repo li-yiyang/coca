@@ -14,7 +14,7 @@
 (defsystem #:coca/objc
   :author ("凉凉")
   :license "LGPL"
-  :version "0.0.3"
+  :version "0.0.4"
   :description "Very very very thin ObjC wrapper. "
   :depends-on (#:cffi        ; ObjC runtime in CFFI binding
                #:trivia      ; pattern matching style
