@@ -8,7 +8,8 @@
   :depends-on (#:coca/objc
                #:coca/objc/block
                #:coca/app
-               #:coca/appkit))
+               #:coca/appkit
+               #:coca/metal))
 
 (defsystem #:coca/objc
   :author ("凉凉")

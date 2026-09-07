@@ -168,9 +168,9 @@ Parameters:
 (define-objc-mask :mtl-pipline-option
   "Options that determine how Metal prepares the pipeline. "
   (:none                        0)
-  (:buffer-type-info            1)
-  (:fail-on-binary-archive-miss 2)
-  (:binding-info                4))
+  (:binding-info                1)
+  (:buffer-type-info            2)
+  (:fail-on-binary-archive-miss 4))
 
 (define-objc-enum :mtl-binding-type
   "Types of MTLBinding. "

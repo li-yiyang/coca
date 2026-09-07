@@ -179,16 +179,22 @@ For other Lisp implementations, this will take no effects. "
   "Convert NSString object NS-STRING to lisp string.
 Return string of NS-STRING. "
   (declare (type foreign-pointer ns-string))
-  (the string (invoke ns-string "UTF8String" :string)))
+  (let ((cstring (invoke ns-string "UTF8String" :pointer)))
+    (the string
+      ;; the null pointer CSTRING should be
+      ;; correctly mapped into "" (empty string)
+      (if (null-pointer-p cstring)
+          ""
+          (foreign-string-to-lisp cstring)))))
 
 (defun string-to-ns-string (string)
   "Convert lisp STRING into NSString object.
 Return foreign-pointer of NSString for STRING. "
   (declare (type string string))
   (the foreign-pointer
-       (invoke "NSString" "stringWithUTF8String:"
-               :string string
-               :object)))
+    (invoke "NSString" "stringWithUTF8String:"
+            :string string
+            :object)))
 
 (defun pathname-to-ns-url (pathname)
   "Convert PATHNAME into NSURL.

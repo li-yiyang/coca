@@ -57,3 +57,30 @@ Or take subsystems with functionalities you want:
   just a lowlevel interface to Metal API.
 
 Hope this might be a complete Cocoa GUI library in the future...
+
+* Portability
+The Coca is only tested on M-series macOS, intel-based mac is
+not planed to be supported.
+
+Currently I have M2 (developping machine, the system is kept as
+newest version) and M1 (testing machine, the system is fixed at
+macOS Sequoia 15.5) [fn:m1-test].
+
+Since I wrote this because my lab won't allow to reimburse
+LispWorks for me. So I started this part-time work. The
+Coca is written in portable CFFI (mostly). So it should
+work across different CL implementations:
+
++ SBCL 2.6.4
++ LispWorks Personal 8.0.1 [fn:lw-personal]
++ ECL 26.5.5
+
+* Footnotes
+[fn:lw-personal] I think I've kept the dependency as minimal
+as possible. So you can load Coca into LispWorks Personal
+Edition. If you reach heap size limitation, you may consider
+invoke =(gc-all)=.
+
+[fn:m1-test] Since this year (2026) I got outstation often
+and cannot get access to my old M1 mac, most test would run
+on M2 first.
