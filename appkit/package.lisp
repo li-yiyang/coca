@@ -22,7 +22,7 @@
    #:remove-from-parent)
   ;; subview.lisp
   (:export
-   #:view
+   #:base-view
    #:subview-mixin)
   ;; named.lisp
   (:export
@@ -36,7 +36,9 @@
   ;; titled.lisp
   (:export
    #:titled-mixin
-   #:title)
+   #:title
+   #:alternate-titled-mixin
+   #:alternate-title)
   ;; framed.lisp
   (:export
    #:framed-mixin
@@ -82,7 +84,17 @@
    #:window-style)
   ;; views.lisp
   (:export
-   #:button))
+   #:state-mixin
+   #:state
+   #:bordered-mixin
+   #:borderedp
+   #:base-button
+   #:button
+   #:checkbox
+   #:radio-button
+   #:help-button
+   #:bezel-style
+   #:button-type))
 
 (in-package :coca.appkit)
 

@@ -83,6 +83,7 @@
   :version "0.0.1"
   :description "Mixins to manipulate AppKit"
   :depends-on (#:coca/objc
+               #:coca/objc/osx-version
                #:coca/app
                #:coca/core-graphics
                ;; return struct as values
@@ -102,7 +103,8 @@
    (:file "framed"    :depends-on ("obj" "typing"))
    (:file "screen"    :depends-on ("obj" "framed" "named"))
    (:file "window"    :depends-on ("screen" "visible" "subview"))
-   (:file "views"     :depends-on ("subview"))))
+   (:file "target"    :depends-on ("obj"))
+   (:file "views"     :depends-on ("subview" "target"))))
 
 (defsystem #:coca/metal
   :author ("凉凉")

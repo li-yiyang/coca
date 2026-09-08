@@ -3,16 +3,17 @@
 (in-package :coca.appkit)
 
 
-;;;; view
+;;;; base-view
 
-(defclass view (obj
-                owned-mixin
-                find-obj-mixin
-                framed-mixin
-                hidden-mixin)
+(defclass base-view (obj
+                     owned-mixin
+                     find-obj-mixin
+                     framed-mixin
+                     hidden-mixin)
   ((parent
+    :initarg  :parent
     :initform nil
-    :type     (or view window null)
+    :type     (or base-view window null)
     :reader   parent))
   (:documentation
    "Base class for wrapping NSView instance. ")
@@ -25,7 +26,12 @@
 (defun init-view (ptr)
   "Create a NSView. "
   (declare (type foreign-pointer ptr))
-  (invoke ptr "initWithFrame:" :ns-rect #(0 0 100 100)))
+  (invoke ptr "initWithFrame:" :ns-rect #(0 0 100 100))
+  ptr)
+
+(defmethod initialize-instance :after ((view base-view) &key parent)
+  (when parent
+    (add-child parent view)))
 
 
 ;;;; subview-mixin
@@ -33,7 +39,7 @@
 (defclass subview-mixin ()
   ((subviews
     :initform (make-array 0
-                          :element-type 'view
+                          :element-type 'base-view
                           :adjustable   t
                           :fill-pointer 0)))
   (:documentation
@@ -57,7 +63,7 @@ Typically, this should be different than :ptr (default). "))
   (with-slots (subviews) view
     (coerce subviews 'list)))
 
-(defmethod add-child ((parent subview-mixin) (child view))
+(defmethod add-child ((parent subview-mixin) (child base-view))
   (with-slots (subviews) parent
     (vector-push-extend child subviews))
   (setf (slot-value child 'parent) parent)
@@ -68,9 +74,9 @@ Typically, this should be different than :ptr (default). "))
                 "addSubview:"
                 :object child-ptr)))))
 
-(defmethod remove-child ((parent subview-mixin) (child view))
+(defmethod remove-child ((parent subview-mixin) (child base-view))
   (with-slots (subviews) parent
-    (delete child subviews :test #'eq))
+    (setf subviews (delete child subviews :test #'eq)))
   (with-slots (parent) child
     (when parent
       (with-ptr child ptr
