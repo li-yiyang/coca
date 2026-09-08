@@ -121,7 +121,7 @@ Use =define-objc-block= to define your own =block-type=.
 Since Coca.ObjC is built on ObjC's runtime, every time you terminate
 the ObjC runtime, you have to re-initialize it.
 
-Use =define-objc-global-variable= to define a global variable access
+Use [[doc:define-objc-global-variable][=define-objc-global-variable=]] to define a global variable access
 function like:
 
 #+begin_src lisp :eval no
@@ -140,6 +140,10 @@ macOS version.
 Use [[doc:osx-version][=(osx-version)=]] to get current macintosh major, minor and patch version.
 More commonly, use [[doc:osx-version>=][~(osx-version>= major &optional minor patch)~]] to test
 system version requirements.
+
+One of the common usage case would be [[doc:define-objc-enum][=define-objc-enum=]] and
+[[doc:define-objc-mask][=define-objc-mask=]] where you could use [[doc:osx-version>=][~osx-version>=~]] to enclude
+flags depending on macOS version. 
 
 * API
 :PROPERTIES:
@@ -499,11 +503,19 @@ system version requirements.
 
       (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
         [DOCSTRING]
-        (KEYWORD FLAG-VALUE)
+        (KEYWORD FLAG-VALUE &optional CONDITION)
         ...)
 
   + DOCSTRING: documentation string (optional)
   + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+  + CONDITION: conditionally enable or disable KEYWORD
+    + an expression whose result is non-nil for enable
+
+    for example:
+
+        (:foo 1 (osx-version>= 26))
+
+    this is tested when macro expand
 
   Like `define-objc-typing':
   + ALIAS: by default is :unsigned-long
@@ -530,13 +542,21 @@ system version requirements.
 
   Syntax:
 
-      (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+      (define-objc-enum [TYPING|(TYPING &key alias result wrap arg)]
         [DOCSTRING]
-        (KEYWORD FLAG-VALUE)
+        (KEYWORD FLAG-VALUE &optional CONDITION)
         ...)
 
   + DOCSTRING: documentation string (optional)
   + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
+  + CONDITION: conditionally enable or disable KEYWORD
+    + an expression whose result is non-nil for enable
+
+    for example:
+
+        (:foo 1 (osx-version>= 26))
+
+    this is tested when macro expand
 
   Like `define-objc-typing':
   + ALIAS: by default is :unsigned-long

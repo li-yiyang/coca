@@ -24,6 +24,8 @@ Or take subsystems with functionalities you want:
   in a vector table. The real C callback evaluates the
   lisp callback by looking up the vector table.
 
++ =coca/objc/osx-version=: Get/Check macOS version.
+
 + =coca/app=: A thin wrapper for NSApp
 
   You can only use =coca/app= subsystem to create your

@@ -251,6 +251,14 @@ Syntax:
                              literal))))
       `(,enc ,flags)))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun normalize-enum-binding (binding)
+    "Return a trimed BINDING. "
+    (loop :for (keyword flag-value . condition) :in binding
+          :if (or (endp condition)
+                  (eval (car condition)))
+            :collect (list keyword flag-value))))
+
 (defmacro define-objc-mask (typing* &body binding)
   "Define ObjC mask typing.
 
@@ -258,11 +266,19 @@ Syntax:
 
     (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
       [DOCSTRING]
-      (KEYWORD FLAG-VALUE)
+      (KEYWORD FLAG-VALUE &optional CONDITION)
       ...)
 
 + DOCSTRING: documentation string (optional)
 + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
++ CONDITION: conditionally enable or disable KEYWORD
+  + an expression whose result is non-nil for enable
+
+  for example:
+
+      (:foo 1 (osx-version>= 26))
+
+  this is tested when macro expand
 
 Like `define-objc-typing':
 + ALIAS: by default is :unsigned-long
@@ -283,6 +299,7 @@ See also `define-objc-enum'. "
           (enc (symbol-concat "AS-"     typing))
           (dec (symbol-concat "DECODE-" typing)))
       (unless (stringp doc) (push doc binding))
+      (setf binding (normalize-enum-binding binding))
       `(eval-when (:compile-toplevel :execute :load-toplevel)
          (defun ,enc (&rest flags)
            ,@(when (stringp doc) (list doc))
@@ -337,13 +354,21 @@ See also `~A'. "
 
 Syntax:
 
-    (define-objc-mask [TYPING|(TYPING &key alias result wrap arg)]
+    (define-objc-enum [TYPING|(TYPING &key alias result wrap arg)]
       [DOCSTRING]
-      (KEYWORD FLAG-VALUE)
+      (KEYWORD FLAG-VALUE &optional CONDITION)
       ...)
 
 + DOCSTRING: documentation string (optional)
 + KEYWORD, FLAG-VALUE: keyword of flag and responding enum value
++ CONDITION: conditionally enable or disable KEYWORD
+  + an expression whose result is non-nil for enable
+
+  for example:
+
+      (:foo 1 (osx-version>= 26))
+
+  this is tested when macro expand
 
 Like `define-objc-typing':
 + ALIAS: by default is :unsigned-long
@@ -364,6 +389,7 @@ See also `define-objc-mask'. "
           (enc (symbol-concat "AS-"     typing))
           (dec (symbol-concat "DECODE-" typing)))
       (unless (stringp doc) (push doc binding))
+      (setf binding (normalize-enum-binding binding))
       `(eval-when (:compile-toplevel :execute :load-toplevel)
          (defun ,enc (flag)
            ,@(when (stringp doc) (list doc))
