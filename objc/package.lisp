@@ -30,8 +30,6 @@
    #:invoke
    #:invoke-super
    #:self
-   #:osx-version
-   #:osx-version>=
    #:string-to-ns-string
    #:ns-string-to-string
    #:pathname-to-ns-url
@@ -44,6 +42,10 @@
    #:release
    #:retain
    #:autorelease)
+  ;; osx-version.lisp
+  (:export
+   #:osx-version
+   #:osx-version>=)
   ;; block.lisp
   (:export
    #:define-objc-block))

@@ -11,7 +11,16 @@
 (in-package :coca.objc)
 
 (defvar *objc-libraries* ()
-  "A list of foreign libraries names. ")
+  "A list of foreign libraries names.
+
+To load new ObjC libraries:
+
+    (define-foreign-library lib-name
+      (:darwin (:framework \"...\")))
+    (load-foreign-library 'lib-name)
+    (pushnew 'lib-name *objc-libraries*)
+
+")
 
 (define-foreign-library foundation
   (:darwin (:framework "Foundation")))

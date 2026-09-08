@@ -134,6 +134,9 @@ Use the function =my-ns-string= to access the global variable
 =*my-ns-string*= to ensure it would be correctly setted up.
 
 ** macOS version and test
+Load =coca/objc/osx-version= subsystem to get the ability to get/test
+macOS version.
+
 Use [[doc:osx-version][=(osx-version)=]] to get current macintosh major, minor and patch version.
 More commonly, use [[doc:osx-version>=][~(osx-version>= major &optional minor patch)~]] to test
 system version requirements.
@@ -152,6 +155,14 @@ system version requirements.
 
   #+RESULTS: doc:*objc-libraries
   : A list of foreign libraries names.
+  :
+  : To load new ObjC libraries:
+  :
+  :     (define-foreign-library lib-name
+  :       (:darwin (:framework \"...\")))
+  :     (load-foreign-library 'lib-name)
+  :     (pushnew 'lib-name *objc-libraries*)
+  :
 
 + =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
@@ -650,6 +661,12 @@ system version requirements.
   #+RESULTS: doc:osx-version>=
   : Test if `osx-version' >= MAJOR.MINOR.PATCH
   : Return `t' if pass.
+  :
+  : Parameters:
+  : + MAJOR: major version number
+  :   or keyword like `:sequoia', `:tahoe', `:golden-gate'
+  : + MINOR: minor version number
+  : + PATCH: patch version number
 
 + =(ns-string-to-string ns-string)= *[Function]*
 

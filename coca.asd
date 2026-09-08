@@ -7,6 +7,7 @@
   :description "Toolbox for programming ObjC Cocoa in Lisp"
   :depends-on (#:coca/objc
                #:coca/objc/block
+               #:coca/objc/osx-version
                #:coca/app
                #:coca/appkit
                #:coca/metal))
@@ -36,6 +37,17 @@
   :pathname "objc"
   :components
   ((:file "block")))
+
+(defsystem #:coca/objc/osx-version
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.2"
+  :description "ObjC macOS version support"
+  :depends-on (#:coca/objc
+               #:cffi-libffi)
+  :pathname "objc"
+  :components
+  ((:file "osx-version")))
 
 (defsystem #:coca/app
   :author ("凉凉")
