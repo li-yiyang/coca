@@ -152,16 +152,24 @@ with :objc-class and initialized using lisp process
 
 Initialize Parameters:
 + PTR: foreign-pointer to ObjC pointer to be wrapped
+
   if not given, the :ptr of obj will be initialized
   like:
 
       (funcall OBJC-INIT (alloc OBJC-CLASS))
 
+  if given PTR, the PTR would be retained by lisp side,
+  and released when the lisp object is finalized
+
 + OBJC-CLASS: if not given PTR, the ObjC pointer
   is allocated with OBJC-CLASS
+
 + OBJC-INIT: by default to be `init'
   should be a function given with allocated
   ObjC pointer
+
+  The return value of OBJC-INIT should be
+  foreign-pointer to ObjC object itself.
 "))
 
 (defmethod initialize-instance
@@ -175,11 +183,12 @@ Initialize Parameters:
                  (retain ptr)
                  (setf (gethash :ptr (objc-ptrs obj))
                        (let ((ptr (alloc objc-class)))
-                         (if init-in-main-p
-                             (dispatch-main ()
-                               (funcall objc-init ptr))
-                             (funcall objc-init ptr))
-                         ptr)))))
+                         (the foreign-pointer
+                           (if init-in-main-p
+                               (dispatch-main ()
+                                 (funcall objc-init ptr))
+                               (funcall objc-init ptr))))))))
+    (declare (type foreign-pointer ptr))
     (flet ((finalize () (release ptr)))
       (tg:finalize obj #'finalize))))
 

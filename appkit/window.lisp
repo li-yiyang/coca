@@ -59,7 +59,8 @@ Dev Note:
                             :miniaturizable)
           :unsigned-long   2
           :bool            t)
-  (invoke ptr "setReleasedWhenClosed:" :bool nil))
+  (invoke ptr "setReleasedWhenClosed:" :bool nil)
+  ptr)
 
 (defmethod initialize-instance :after ((window window) &key)
   (with-ptr window ptr

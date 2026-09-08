@@ -8,6 +8,9 @@
 Return nil if OBJ is not not attached to any parent. ")
   (:method (obj) nil))
 
+(defmethod (setf parent) (parent child)
+  (add-child parent child))
+
 (defgeneric children (obj)
   (:documentation
    "Return a list of children `obj' of VIEW.
@@ -25,7 +28,7 @@ Side Effects:
 ")
   (:method :before (parent child)
     (unless (eq parent (parent child))
-      (remove-child parent child))))
+      (remove-child (parent child) child))))
 
 (defgeneric remove-child (parent child)
   (:documentation
@@ -46,7 +49,10 @@ Parameters:
 
 (defgeneric remove-from-parent (child)
   (:documentation
-   "Remove CHILD from its `parent' if it's attached. ")
+   "Remove CHILD from its `parent' if it's attached.
+
+Dev Note:
++ implement `remove-child' for standard behavior")
   (:method (child)
     (alx:when-let ((parent (parent child)))
       (remove-child parent child))))
