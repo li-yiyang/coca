@@ -61,7 +61,7 @@ Key: foreign pointer address
 Val: `objc-block' instance
 ")
 
-(flet ((make-objc-block-layout ()
+(flet ((make-objc-block-layout (c-callback)
          (let ((blk (foreign-alloc '(:struct block-layout))))
            (macrolet ((slot (name)
                         `(foreign-slot-value blk
@@ -75,7 +75,7 @@ Val: `objc-block' instance
            blk)))
   
   (defun alloc-objc-block (c-callback lisp-callback)
-    (let ((blk (make-objc-block-layout)))
+    (let ((blk (make-objc-block-layout c-callback)))
       (setf (gethash (pointer-address blk) *objc-blocks*)
             (make-objc-block blk lisp-callback))))
 
@@ -143,12 +143,20 @@ this will define:
 ;;; (invoke obj sel :block (BLOCK-TYPE (lambda-list) ,@body))
 ;;; (invoke obj sel :block (BLOCK-TYPE #'function))
 ;;; (invoke obj sel :block (BLOCK-TYPE 'function))
+;;; (invoke obj sel :block OBJC-BLOCK)
 ;;; => (with-objc-<BLOCK-TYPE>-block (OBJC-BLOCK FUNC)
 ;;;      (invoke obj sel :pointer (objc-block-ptr OBJC-BLOCK)))
 
 (define-objc-typing :block
   :alias :pointer
-  :arg   (((list* (and (type symbol) block-type)
+  :arg   (((list (and (type symbol) block-type)
+                 (list 'function (and (type symbol) func-name)))
+           (alx:with-gensyms (objc-block)
+             (values `(:pointer (objc-block-ptr ,objc-block))
+                     `(with-objc-block (,objc-block
+                                        ,(gen-block-callback block-type)
+                                        #',func-name)))))
+          ((list* (and (type symbol) block-type)
                   (and (type list)   lambda-list)
                   body)
            (alx:with-gensyms (objc-block)
@@ -156,18 +164,13 @@ this will define:
                      `(with-objc-block (,objc-block
                                         ,(gen-block-callback block-type)
                                         (lambda ,lambda-list ,@body))))))
-          ((list (and (type symbol) block-type)
-                 (list 'function (and (type symbol) func-name)))
-           (alx:with-gensyms (objc-block)
-             (values `(:pointer (objc-block-ptr ,objc-block))
-                     `(with-objc-block (,objc-block
-                                        ,(gen-block-callback block-type)
-                                        #',func-name)))))
           ((list (and (type symbol) block-type) func-expr)
            (alx:with-gensyms (objc-block)
              (values `(:pointer (objc-block-ptr ,objc-block))
                      `(with-objc-block (,objc-block
                                         ,(gen-block-callback block-type)
-                                        ,func-expr)))))))
+                                        ,func-expr)))))
+          (objc-block
+           `(:pointer (objc-block-ptr ,objc-block)))))
 
 ;;;; block.lisp ends here
