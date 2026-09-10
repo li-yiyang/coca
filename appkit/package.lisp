@@ -32,7 +32,9 @@
   (:export
    #:visible
    #:visible-mixin
-   #:hidden-mixin)
+   #:hidden-mixin
+   #:show
+   #:hide)
   ;; titled.lisp
   (:export
    #:titled-mixin

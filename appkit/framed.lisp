@@ -338,7 +338,7 @@ use `static-framed-mixin' to cache frame values. "))
    "Mixin class add sizing check before modification of size.
 
 Note: this is only lisp-side sizing check, the ObjC's min/max size
-updating will not be synced. "))
+updating may not be synced. "))
 
 (defmethod initialize-instance :after ((framed minmax-framed-mixin) &key)
   (with-slots (min-width max-width min-height max-height) framed

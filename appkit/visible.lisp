@@ -42,4 +42,18 @@
       (invoke ptr "setHidden:" :bool (not vis)))
     vis))
 
+(defun show (obj)
+  "Show OBJ. 
+
+This is equal to (setf (visible OBJ) t). 
+"
+  (setf (visible obj) t))
+
+(defun hide (obj)
+  "Hide OBJ. 
+
+This is equal to (setf (visible OBJ) nil). 
+"
+  (setf (visible obj) t))
+
 ;;;; visible.lisp ends here
