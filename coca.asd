@@ -103,6 +103,7 @@
    (:file "framed"    :depends-on ("obj" "typing"))
    (:file "screen"    :depends-on ("obj" "framed" "named"))
    (:file "window"    :depends-on ("screen" "visible" "subview"))
+   (:file "modal"     :depends-on ("window"))
    (:file "target"    :depends-on ("obj"))
    (:file "views"     :depends-on ("subview" "target"))))
 

@@ -84,6 +84,10 @@
    #:window
    #:screen
    #:window-style)
+  ;; modal.lisp
+  (:export
+   #:alert
+   #:alert-style)
   ;; target.lisp
   (:export
    #:target-mixin
