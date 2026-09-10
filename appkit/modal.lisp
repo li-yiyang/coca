@@ -89,7 +89,7 @@ Parameters:
 + ICON:    (to be implemented)
 "
   (declare (type string message title)
-           (type alert-stype style)
+           (type alert-style style)
            (type (or null window) window)
            (type list choices)
            (ignore icon))
