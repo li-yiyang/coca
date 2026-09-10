@@ -76,7 +76,31 @@ The action could be:
 + `nil'
 + `string' of `sel' name
 + `sel'
-+ `function'"))
++ `function'
+  the function should be like: 
+
+      (lambda (self sender)
+        (declare (type obj self sender))
+        ...)
+
+  the return value of function will be ignored, 
+  the action will be invoked in main thread (GUI thread),
+  so it is adviced to switch to background thread if
+  the action contains some heavy computation.
++ `symbol' symbol to function
+
+Dev Note: 
++ when action is set to be symbol or function, 
+  it will use cocaRespondActionInLisp: SEL as target"))
+
+(define-objc-method
+    ("NSObject" "cocaRespondActionInLisp:" :encoding "@:@")
+    :void ((sender :object))
+  (alx:when-let* ((self   (find-obj self))
+                  (action (action   self)))
+    (when (or (functionp action)
+              (symbolp   action))
+      (funcall action self (find-obj sender)))))
 
 (defmethod (setf action) ((sel string) (obj target-mixin))
   (setf (action obj) (coerce-to-selector sel)))
@@ -92,5 +116,18 @@ The action could be:
     (dispatch-main ()
       (invoke ptr "setAction" :pointer (null-pointer)))
     (setf (slot-value obj 'action) nil)))
+
+(flet ((set-target-with-function (obj function)
+         (declare (type target-mixin obj)
+                  (type (or function symbol) function))
+         (with-ptr obj ptr
+           (dispatch-main ()
+             (invoke ptr "setAction:" :sel "cocaRespondActionInLisp:"))
+           (setf (slot-value obj 'action) function))))
+  (defmethod (setf action) ((function symbol) (obj target-mixin))
+    (set-target-with-function obj function))
+  (defmethod (setf action) ((function function) (obj target-mixin))
+    (set-target-with-function obj function)))
+
 
 ;;;; target.lisp ends here

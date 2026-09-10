@@ -97,7 +97,8 @@ See `button-type'.
                        titled-mixin
                        alternate-titled-mixin
                        state-mixin
-                       bordered-mixin)
+                       bordered-mixin
+                       target-mixin)
   ((button-type
     :initarg  :button-type
     :initform (alx:required-argument :button-type)
