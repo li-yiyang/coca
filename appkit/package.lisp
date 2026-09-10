@@ -84,6 +84,12 @@
    #:window
    #:screen
    #:window-style)
+  ;; target.lisp
+  (:export
+   #:target-mixin
+   #:target
+   #:action
+   #:enabledp)
   ;; views.lisp
   (:export
    #:state-mixin

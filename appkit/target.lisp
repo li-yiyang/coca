@@ -13,7 +13,7 @@
    (action
     :initarg  :action
     :initform nil
-    :type     (or null string sel function)
+    :type     (or null string sel function symbol)
     :reader   action
     :documentation
     "Action is internally stored as `sel', `nil' or `function'. "))
@@ -25,15 +25,15 @@
     (setf (target obj) target
           (action obj) action)))
 
-(defgeneric enabled (obj)
+(defgeneric enabledp (obj)
   (:documentation
    "Whether or not OBJ is enabled. ")
   (:method ((obj target-mixin))
     (with-ptr obj ptr
       (invoke ptr "enabled" :bool))))
 
-(defmethod (setf enabled) (enable (obj target-mixin)
-                           &aux (enablep (and enable t)))
+(defmethod (setf enabledp) (enable (obj target-mixin)
+                            &aux (enablep (and enable t)))
   (with-ptr obj ptr
     (dispatch-main ()
       (invoke ptr "setEnabled:" :bool enablep))
@@ -80,8 +80,15 @@ The action could be:
   the function should be like: 
 
       (lambda (self sender)
-        (declare (type obj self sender))
+        (declare (type obj self)
+                 (type (or foreign-pointer obj) sender))
         ...)
+  
+  Parameters:
+  + SELF: the `target-mixin' object itself;
+  + SENDER: try to `find-obj' of the sender first, 
+    if the sender is not findable, 
+    it would be the foreign-pointer to sender directly
 
   the return value of function will be ignored, 
   the action will be invoked in main thread (GUI thread),
@@ -91,16 +98,17 @@ The action could be:
 
 Dev Note: 
 + when action is set to be symbol or function, 
-  it will use cocaRespondActionInLisp: SEL as target"))
+  it will use cocaRespondActionInLisp: SEL as target")
+  (:method (obj) nil))
 
 (define-objc-method
-    ("NSObject" "cocaRespondActionInLisp:" :encoding "@:@")
+    ("NSObject" "cocaRespondActionInLisp:" :encoding "v@:@")
     :void ((sender :object))
   (alx:when-let* ((self   (find-obj self))
                   (action (action   self)))
     (when (or (functionp action)
               (symbolp   action))
-      (funcall action self (find-obj sender)))))
+      (funcall action self (or (find-obj sender) sender)))))
 
 (defmethod (setf action) ((sel string) (obj target-mixin))
   (setf (action obj) (coerce-to-selector sel)))
@@ -114,7 +122,7 @@ Dev Note:
 (defmethod (setf action) ((none null) (obj target-mixin))
   (with-ptr obj ptr
     (dispatch-main ()
-      (invoke ptr "setAction" :pointer (null-pointer)))
+      (invoke ptr "setAction:" :pointer (null-pointer)))
     (setf (slot-value obj 'action) nil)))
 
 (flet ((set-target-with-function (obj function)
@@ -128,6 +136,5 @@ Dev Note:
     (set-target-with-function obj function))
   (defmethod (setf action) ((function function) (obj target-mixin))
     (set-target-with-function obj function)))
-
 
 ;;;; target.lisp ends here
