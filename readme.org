@@ -20,10 +20,6 @@ Or take subsystems with functionalities you want:
 
 + =coca/objc/block=: Support ObjC's block
 
-  Currently, the ObjC's block is registed and looked up
-  in a vector table. The real C callback evaluates the
-  lisp callback by looking up the vector table.
-
 + =coca/objc/osx-version=: Get/Check macOS version.
 
 + =coca/app=: A thin wrapper for NSApp
