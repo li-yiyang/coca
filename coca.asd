@@ -83,6 +83,7 @@
   :version "0.0.1"
   :description "Mixins to manipulate AppKit"
   :depends-on (#:coca/objc
+               #:coca/objc/block
                #:coca/objc/osx-version
                #:coca/app
                #:coca/core-graphics

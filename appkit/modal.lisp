@@ -44,7 +44,7 @@ Parameters:
 
 ;;;; Alert
 
-(deftype alert-stype ()
+(deftype alert-style ()
   "Style of popuped NSAlert. 
 
 Definitions: 
