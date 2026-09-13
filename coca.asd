@@ -106,6 +106,7 @@
    (:file "window"    :depends-on ("screen" "visible" "subview"))
    (:file "modal"     :depends-on ("window"))
    (:file "target"    :depends-on ("obj"))
+   (:file "menu"      :depends-on ("target"))
    (:file "views"     :depends-on ("subview" "target"))))
 
 (defsystem #:coca/metal

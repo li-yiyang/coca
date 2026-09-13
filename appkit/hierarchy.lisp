@@ -27,7 +27,8 @@ Side Effects:
   the CHILD is removed from PARENT first
 ")
   (:method :before (parent child)
-    (unless (eq parent (parent child))
+    (when (and (not (null (parent child)))
+               (not (eq parent (parent child))))
       (remove-child (parent child) child))))
 
 (defgeneric remove-child (parent child)

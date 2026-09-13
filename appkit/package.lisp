@@ -4,7 +4,8 @@
   (:use :common-lisp :cffi :coca.objc :coca.app)
   (:local-nicknames (:alx  :alexandria)
                     (:m    :trivia)
-                    (:objc :coca.objc))
+                    (:objc :coca.objc)
+                    (:app  :coca.app))
   (:documentation
    "Coca.AppKit is a collection of mixin classes for AppKit. ")
   ;; obj.lisp
@@ -69,7 +70,12 @@
    #:max-height)
   ;; menu.lisp
   (:export
-   #:menu)
+   #:menu
+   #:menu-item
+   #:menu-separator
+   #:main-menu-p
+   #:main-menu-mixin
+   #:set-main-menu)
   ;; screen.lisp
   (:export
    #:screen

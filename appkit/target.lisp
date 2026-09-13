@@ -49,6 +49,14 @@ The target could be:
 + `obj'
 "))
 
+;;; Dev Note: not sure if this is needed.
+;; (defmethod (setf target) (target (obj target-mixin))
+;;   (declare (type foreign-pointer target))
+;;   (with-ptr obj ptr
+;;     (dispatch-main ()
+;;       (invoke ptr "setTarget:" :object target))
+;;     (setf (slot-value obj 'target) target)))
+
 (defmethod (setf target) ((none null) (obj target-mixin))
   (with-ptr obj ptr
     (dispatch-main ()
@@ -77,27 +85,27 @@ The action could be:
 + `string' of `sel' name
 + `sel'
 + `function'
-  the function should be like: 
+  the function should be like:
 
       (lambda (self sender)
         (declare (type obj self)
                  (type (or foreign-pointer obj) sender))
         ...)
-  
+
   Parameters:
   + SELF: the `target-mixin' object itself;
-  + SENDER: try to `find-obj' of the sender first, 
-    if the sender is not findable, 
+  + SENDER: try to `find-obj' of the sender first,
+    if the sender is not findable,
     it would be the foreign-pointer to sender directly
 
-  the return value of function will be ignored, 
+  the return value of function will be ignored,
   the action will be invoked in main thread (GUI thread),
   so it is adviced to switch to background thread if
   the action contains some heavy computation.
 + `symbol' symbol to function
 
-Dev Note: 
-+ when action is set to be symbol or function, 
+Dev Note:
++ when action is set to be symbol or function,
   it will use cocaRespondActionInLisp: SEL as target")
   (:method (obj) nil))
 

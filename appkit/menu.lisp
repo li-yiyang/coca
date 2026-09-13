@@ -2,203 +2,249 @@
 
 (in-package :coca.appkit)
 
-(define-objc-global-variable nsapp-help-menu
-    (dispatch-main ()
-      (invoke (app) "helpMenu" :object))
-  "[NSApp helpMenu]")
-
-(define-objc-global-variable nsapp-services-menu
-    (dispatch-main ()
-      (invoke (app) "servicesMenu" :object))
-  "[NSApp servicesMenu]")
-
-(defun %nsapp-process-name ()
-  "Return current Cocoa process name NSString pointer. "
-  (invoke (invoke "NSProcessInfo" "processInfo" :object)
-          "processName"
-          :object))
-
-(defun nsapp-process-name ()
-  "Return current Cocoa process name string. "
-  (ns-string-to-string (%nsapp-process-name)))
-
-(declaim (type (or null string) *nsapp-show-settings-sel*))
-(defvar *nsapp-show-settings-sel* nil
-  "The selector name (string) or `nil' for no Settings. ")
-
-(defun ns-menu-item (title &optional action (key "") &rest modifiers
-                     &aux (title* (etypecase title
-                                    (string (string-to-ns-string title))
-                                    (foreign-pointer title))))
-  (declare (type (or string foreign-pointer) title)
-           (type (or null string foreign-pointer) action))
-  (let ((item (if action
-                  (invoke (alloc "NSMenuItem")
-                          "initWithTitle:action:keyEquivalent:"
-                          :object    title*
-                          :sel       (coerce-to-selector action)
-                          :ns-string key
-                          :object)
-                  (let ((item (init (alloc "NSMenuItem"))))
-                    (invoke item "setTitle:" :object title*)
-                    item))))
-    (when (and action (string/= key ""))
-      (invoke item "setKeyEquivalentModifierMask:"
-              :unsigned-long (apply #'as-ns-event-modifier modifiers)))
-    item))
-
-(defun ns-menu-add-items (item &rest items)
-  (let ((menu (invoke (alloc "NSMenu")
-                      "initWithTitle:"
-                      :object (invoke item "title" :object)
-                      :object)))
-    (dolist (item items)
-      (when (typep item 'foreign-pointer)
-        (invoke menu "addItem:" :object item)))
-    (invoke item "setSubmenu:" :object menu)
-    item))
-
-(defun ns-menu-separator ()
-  (invoke "NSMenuItem" "separatorItem" :object))
-
-(defun make-nsapp-application-menu-item ()
-  (let* ((proc (%nsapp-process-name))
-         (name (ns-string-to-string proc)))
-    (ns-menu-add-items
-     (ns-menu-item proc)
-     (ns-menu-item (format nil "About ~A" name)
-                   "orderFrontStandardAboutPanel:")
-     (ns-menu-separator)
-     (ns-menu-item "Settings"
-                   "showSettings:"
-                   ","
-                   :command)
-     (ns-menu-separator)
-     (let ((item (ns-menu-item "Services")))
-       (invoke item "setSubmenu:" :object (nsapp-services-menu))
-       item)
-     (ns-menu-separator)
-     (ns-menu-item (format nil "Hide ~A" name)
-                   "hide:"
-                   "h"
-                   :command)
-     (ns-menu-item "Hide Others"
-                   "hideOtherApplications:"
-                   "h"
-                   :option :command)
-     (ns-menu-item "Show All"
-                   "unhideAllApplications:")
-     (ns-menu-separator)
-     (ns-menu-item (format nil "Quit ~A" name)
-                   "terminate:"
-                   "q"
-                   :command))))
-
-(define-objc-global-variable nsapp-application-menu
-    (make-nsapp-application-menu-item)
-  "A foreign-pointer to NSMenuItem for NSApp Application. ")
+(defclass base-menu-item (obj)
+  ((menu
+    :initform nil
+    :type     (or null menu)
+    :reader   parent))
+  (:documentation
+   "Base class for NSMenuItem wrapper. "))
 
 (defclass menu (obj
                 owned-mixin
-                find-obj-mixin
                 titled-mixin)
-  ()
-  (:default-initargs
-   :objc-class "NSMenu")
+  ((supermenu
+    :initform nil
+    :type     (or null menu)
+    :reader   parent)
+   (menu-items
+    :initform ()
+    :reader   children))
   (:documentation
-   "Wrapper of NSMenu.
+   "Wrapper of NSMenu. ")
+  (:default-initargs
+   :objc-class     "NSMenu"
+   :init-in-main-p t
+   :title          "Menu"))
 
-Initialize Parameter:
-+ MENU-ITEMS: should be a list of `menu-item'. "))
+(defclass menu-item (base-menu-item
+                     owned-mixin
+                     find-obj-mixin
+                     target-mixin
+                     titled-mixin)
+  ((submenu
+    :initform nil
+    :type     (or null menu)))
+  (:documentation
+   "Wrapper of NSMenuItem. ")
+  (:default-initargs
+   :objc-class     "NSMenuItem"
+   :init-in-main-p t
+   :title          (alx:required-argument :title)))
 
-(defmethod initialize-instance :after ((menu menu) &key menu-items)
-  (declare (type list menu-items))
-  (assert (every (alx:rcurry #'typep 'menu-item) menu-items))
-  (dispatch-main ()
-    (dolist (item menu-items)
-      (add-child menu item))))
+(defmethod add-child ((item menu-item) (child base-menu-item))
+  (with-slots (submenu) item
+    ;; ensure submenu is initialized as menu
+    (unless submenu
+      (let ((menu (make-instance 'menu :title (title item))))
+        (with-ptr item item-ptr
+          (with-ptr menu menu-ptr
+            (dispatch-main ()
+              (invoke item-ptr "setSubmenu:" :object menu-ptr))))
+        (setf submenu menu)))
+    (add-child submenu child)))
+
+(defmethod remove-child ((item menu-item) (child base-menu-item))
+  (with-slots (submenu) item
+    (when submenu
+      (remove-child submenu child))))
+
+(defmethod add-child ((menu menu) (item base-menu-item))
+  (with-ptr menu menu-ptr
+    (with-ptr item item-ptr
+      (dispatch-main ()
+        (invoke menu-ptr "addItem:" :object item-ptr))))
+  (setf (slot-value item 'menu) menu)
+  (setf (slot-value menu 'menu-items)
+        (append (slot-value menu 'menu-items) (list item)))
+  item)
+
+(defmethod add-child ((menu menu) (item menu-item))
+  (call-next-method)
+  (alx:when-let ((submenu (slot-value item 'submenu)))
+    (setf (slot-value submenu 'supermenu) menu))
+  item)
+
+(defmethod remove-child ((menu menu) (item base-menu-item))
+  (with-ptr menu menu-ptr
+    (with-ptr item item-ptr
+      (dispatch-main ()
+        (invoke menu-ptr "removeItem:" :object item-ptr))))
+  (setf (slot-value item 'menu) nil)
+  (setf (slot-value menu 'menu-items)
+        (delete item (slot-value menu 'menu-items) :test #'eq)))
+
+(defmethod remove-child ((menu menu) (item menu-item))
+  (let ((res (call-next-method)))
+    (alx:when-let ((submenu (slot-value item 'submenu)))
+      (setf (slot-value submenu 'supermenu) nil))
+    res))
+
+
+;;;; main menu
+
+(flet ((submenu-item (name initf)
+         (declare (type string   name)
+                  (type function initf))
+         (dispatch-main ()
+           (let ((item (invoke (alloc "NSMenuItem")
+                               "initWithTitle:action:keyEquivalent:"
+                               :ns-string name
+                               :pointer   (null-pointer)
+                               :ns-string ""
+                               :object))
+                 (menu (invoke (alloc "NSMenu")
+                               "initWithTitle:"
+                               :ns-string name
+                               :object)))
+             (invoke item  "setSubmenu:" :object menu)
+             (funcall initf menu)
+             item))))
+
+  (defclass help-menu-item (base-menu-item) ()
+    (:documentation
+     "Wrapper of [NSApp helpMenu].
+
+Dev Note:
++ do not manually make-instance of help-menu-item
++ there should only be one help-menu-item
+")
+    (:default-initargs
+     :ptr (flet ((set-help-menu (menu)
+                   (invoke (app) "setHelpMenu:" :object menu)))
+            (submenu-item "Help" #'set-help-menu))))
+
+  (defclass services-menu-item (base-menu-item) ()
+    (:documentation
+     "Wrapper of [NSApp servicesMenu].
+
+Dev Note:
++ do not manually make-instance of service-menu-item
++ there should only be one service-menu-item
+")
+    (:default-initargs
+     :ptr (flet ((set-services-menu (menu)
+                   (invoke (app) "setServicesMenu:" :object menu)))
+            (submenu-item "Services" #'set-services-menu)))))
+
+(define-objc-global-variable help-menu-item
+  (make-instance 'help-menu-item)
+  "[NSApp helpMenu]")
+
+(define-objc-global-variable services-menu-item
+    (make-instance 'services-menu-item)
+  "[NSApp servicesMenu]")
+
+;; Dev Note: should menu-separator use `owned-mixin'?
+(defclass menu-separator (base-menu-item) ()
+  (:default-initargs
+   :ptr (invoke "NSMenuItem" "separatorItem" :object)))
+
+(defclass process-menu-item (menu-item) ()
+  (:documentation
+   "Subclass for process menu item. "))
+
+(define-objc-global-variable process-menu-item
+    (let* ((process (invoke (invoke "NSProcessInfo" "processInfo" :object)
+                            "processName" :ns-string))
+           (item    (make-instance 'process-menu-item :title process)))
+    (add-child item (make-instance
+                     'menu-item
+                     :title  "About"
+                     :action "orderFrontStandardAboutPanel:"))
+    (add-child item (make-instance 'menu-separator))
+    (add-child item (services-menu-item))
+    (add-child item (make-instance 'menu-separator))
+    (add-child item (make-instance
+                     'menu-item
+                     :title  "Hide Other"
+                     :action "hideOtherApplications:"))
+    (add-child item (make-instance
+                     'menu-item
+                     :title  "Show All"
+                     :action "unhideAllApplications:"))
+    (add-child item (make-instance
+                     'menu-item
+                     :title  "Quit"
+                     :action "terminate:"))
+    item))
+
+(defmethod add-child ((menu menu) (item process-menu-item))
+  "The `process-menu-item' ITEM should always be added as
+the first `menu-item' of MENU. "
+  (with-ptr menu menu-ptr
+    (with-ptr item item-ptr
+      (dispatch-main ()
+        (invoke menu-ptr "insertItem:atIndex:"
+                :object item-ptr
+                :ns-int 0))))
+  (setf (slot-value item 'menu) menu)
+  (setf (slot-value menu 'menu-items)
+        (cons item (slot-value menu 'menu-items)))
+  item)
+
+(defvar *main-menu* nil
+  "The `menu' as the main menu. ")
+
+(app:define-on-coca-app-finish-run set-main-menu
+  (set-main-menu (make-instance 'menu)))
 
 (defclass main-menu (menu) ()
   (:documentation
-   "The `menu' set to be [NSApp mainMenu].
+   ""))
 
-Use `set-main-menu' only to make a `menu' as `main-menu'.
-"))
+(defun main-menu-p (menu)
+  "Test if MENU is main menu.
+Return `t' if MENU is setted as main menu. "
+  (typep menu 'main-menu))
 
-(defclass menu-item (obj
-                     owned-mixin
-                     find-obj-mixin
-                     titled-mixin)
+(defun main-menu ()
+  "Return the `menu' as the main menu. "
+  *main-menu*)
+
+(defclass main-menu-mixin ()
   ((menu
-    :type     (or null menu)
-    :initarg  :menu
-    :initform nil
-    :reader   menu
-    :reader   parent)
-   (submenu
-    :type     (or null menu)
-    :initform nil
-    :reader   submenu))
+    :initform (make-instance 'menu)
+    :type     menu))
   (:documentation
-   "Wrapper of NSMenuItem. "))
+   "Mixin classes for instances having a `menu' as main menu. "))
 
-(defun menu-item-ensure-submenu (item)
-  (declare (type menu-item item))
-  (let ((menu (submenu item)))
-    (if menu
-        menu
-        (setf (slot-value item 'submenu)
-              (make-instance 'menu :title (title item))))))
-
-(defmethod initialize-instance :after ((menu-item menu-item) &key menu-items)
-  (declare (type list menu-items))
-  (assert (every (alx:rcurry #'typep 'menu-item) menu-items))
-  (let ((menu (menu-item-ensure-submenu menu-item)))
-    (dolist (item menu-items)
-      (add-child menu item))))
-
-(defclass menu-seperator (special-menu-item) ()
+(defgeneric set-main-menu (menu &rest main-menu-initargs)
   (:documentation
-   "NSMenuItem seperator. "))
+   "Set MENU as main menu.
 
-(defun menu-seperator ()
-  "Make `menu-seperator'. "
-  (make-instance 'menu-seperator
-                 :ptr (invoke "NSMenuItem"
-                              "separatorItem"
-                              :object)))
-
-(defmethod children ((menu menu))
-  (with-ptr menu ptr
-    (loop :for item* :in (invoke ptr "itemArray" :ns-array)
-          :if (pointer-eq item* (nsapp-help-menu))
-            :collect :seperator
-          :else :if (pointer-eq item* (nsapp-services-menu))
-                  :collect :services
-          :else :if (find-obj item*)
-                  :collect (find-obj item*))))
-
-(defmethod children ((item menu-item))
-  (alx:when-let ((menu (submenu item)))
-    (children menu)))
-
-(defmethod add-child ((menu menu) (item menu-item))
-  (with-ptr menu menu*
-    (with-ptr item item*
-      (dispatch-main ()
-        (invoke menu* "addItem:" :object item*)))))
-
-(defmethod add-child ((item menu-item) (child menu-item))
-  (add-child (menu-item-ensure-submenu item) child))
-
-(defmethod remove-child ((menu menu) (item menu-item))
-  (with-ptr menu menu*
-    (with-ptr item item*
-      (dispatch-main ()
-        (invoke menu* "removeItem:" :object item*)))))
-
-(defmethod remove-child ((item menu-item) (child menu-item))
-  (alx:when-let ((submenu (submenu item)))
-    (remove-child submenu child)))
+Parameters:
++ MENU
+  If MENU is `main-menu-mixin', the menu of `main-menu-mixin'
+  would be setted as App's main menu.
++ MAIN-MENU-INITARGS
+  additional initargs for `change-class'
+")
+  (:method ((menu menu) &rest args)
+    (unless (main-menu-p menu)
+      (let ((process (process-menu-item))
+            (help    (help-menu-item)))
+        (with-ptr menu ptr
+          (dispatch-main ()
+            (add-child menu process)
+            (add-child menu help)
+            (invoke (app) "setMainMenu:" :object ptr))))
+      (apply #'change-class menu 'main-menu args)
+      (when *main-menu*
+        (change-class *main-menu* 'menu))
+      (setf *main-menu* menu))
+    menu)
+  (:method ((obj main-menu-mixin) &rest args)
+    (apply #'set-main-menu (slot-value obj 'menu) args)))
 
 ;;;; menu.lisp ends here
