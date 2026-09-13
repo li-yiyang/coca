@@ -6,23 +6,23 @@
 ;;;; ObjC Block in lisp side
 
 (defvar *objc-blocks* (make-hash-table)
-  "All the registed ObjC blocks. 
+  "All the registed ObjC blocks.
 
-Key: foreign pointer address 
+Key: foreign pointer address
 Val: `objc-block' instance
 ")
 
 (defstruct (objc-block (:constructor make-objc-block
                            (ptr c-callback callback)))
-  "Representation of ObjC Block in lisp side. 
+  "Representation of ObjC Block in lisp side.
 
 Slot Values:
-+ PTR: foreign-pointer to `block-layout' struct 
-+ C-CALLBACK: the C callback symbol 
++ PTR: foreign-pointer to `block-layout' struct
++ C-CALLBACK: the C callback symbol
 + CALLBACK: lisp callback function or symbol
 
-Dev Note: 
-+ use `alloc-objc-block' (internally) 
+Dev Note:
++ use `alloc-objc-block' (internally)
 + use `release-objc-block' to free
 + use `find-objc-block' to look up block with foreign-pointer
 "
@@ -36,51 +36,8 @@ Dev Note:
   (declare (type foreign-pointer blk*))
   (gethash (pointer-address blk*) *objc-blocks*))
 
-(flet ((make-objc-block-layout (c-callback)
-         (let ((blk (foreign-alloc '(:struct block-layout))))
-           (macrolet ((slot (name)
-                        `(foreign-slot-value blk
-                                             '(:struct block-layout)
-                                             ',name)))
-             (setf (slot isa)        (foreign-symbol-pointer
-                                      "_NSConcreteStackBlock")
-                   (slot flags)      #.(logior (ash 1 29)  ; has descriptor
-                                               (ash 1 25)) ; has copy dispose
-                   (slot reserved)   0
-                   (slot invoke)     (get-callback c-callback)
-                   (slot descriptor) (block-descriptor)))
-           blk)))
-  
-  (defun alloc-objc-block (c-callback lisp-callback)
-    "Allocate `objc-block' instance with C-CALLBACK and LISP-CALLBACK. 
-Return `objc-block' instance.
-
-Parameters: 
-+ C-CALLBACK: symbol of C callback function 
-+ LISP-CALLBACK: symbol or function as callback function 
-"
-    (declare (type symbol c-callback)
-             (type (or symbol function) lisp-callback))
-    (let ((blk (make-objc-block-layout c-callback)))
-      (setf (gethash (pointer-address blk) *objc-blocks*)
-            (make-objc-block blk c-callback lisp-callback))))
-
-  (defun ensure-objc-block-initialized ()
-    "Dev Note: this should only be invoked by `ensure-objc-initialized'. "
-    (let ((objc-blocks (alx:hash-table-values *objc-blocks*)))
-      (clrhash *objc-blocks*)
-      ;; Note: no need to foreign-free previous blk,
-      ;; since they are invalid after image dump. 
-      (dolist (objc-block objc-blocks)
-        (let ((blk (make-objc-block-layout
-                    (objc-block-c-callback objc-block))))
-          (setf (objc-block-ptr objc-block)                   blk
-                (gethash (pointer-address blk) *objc-blocks*) objc-block)))))
-
-  (pushnew 'ensure-objc-block-initialized *on-objc-initialization*))
-
 (defun release-objc-block (objc-block)
-  "Free OBJC-BLOCK foreign ObjC Block struct and unregist it. 
+  "Free OBJC-BLOCK foreign ObjC Block struct and unregist it.
 Return OBJC-BLOCK itself. "
   (declare (type objc-block objc-block))
   (let ((ptr (objc-block-ptr objc-block)))
@@ -109,7 +66,7 @@ Return OBJC-BLOCK itself. "
 ;; `block-layout' and `block-descriptor'
 
 (defcstruct block-descriptor
-    (reserved  :unsigned-long)
+  (reserved  :unsigned-long)
   (size      :unsigned-long)
   (copy      :pointer)
   (dispose   :pointer))
@@ -119,8 +76,51 @@ Return OBJC-BLOCK itself. "
   (flags      :int)
   (reserved   :int)
   ;; Invoke is the C callback function pointer
-  (invoke     :pointer) 
+  (invoke     :pointer)
   (descriptor :pointer))
+
+(flet ((make-objc-block-layout (c-callback)
+         (let ((blk (foreign-alloc '(:struct block-layout))))
+           (macrolet ((slot (name)
+                        `(foreign-slot-value blk
+                                             '(:struct block-layout)
+                                             ',name)))
+             (setf (slot isa)        (foreign-symbol-pointer
+                                      "_NSConcreteStackBlock")
+                   (slot flags)      #.(logior (ash 1 29)  ; has descriptor
+                                               (ash 1 25)) ; has copy dispose
+                   (slot reserved)   0
+                   (slot invoke)     (get-callback c-callback)
+                   (slot descriptor) (block-descriptor)))
+           blk)))
+
+  (defun alloc-objc-block (c-callback lisp-callback)
+    "Allocate `objc-block' instance with C-CALLBACK and LISP-CALLBACK.
+Return `objc-block' instance.
+
+Parameters:
++ C-CALLBACK: symbol of C callback function
++ LISP-CALLBACK: symbol or function as callback function
+"
+    (declare (type symbol c-callback)
+             (type (or symbol function) lisp-callback))
+    (let ((blk (make-objc-block-layout c-callback)))
+      (setf (gethash (pointer-address blk) *objc-blocks*)
+            (make-objc-block blk c-callback lisp-callback))))
+
+  (defun ensure-objc-block-initialized ()
+    "Dev Note: this should only be invoked by `ensure-objc-initialized'. "
+    (let ((objc-blocks (alx:hash-table-values *objc-blocks*)))
+      (clrhash *objc-blocks*)
+      ;; Note: no need to foreign-free previous blk,
+      ;; since they are invalid after image dump.
+      (dolist (objc-block objc-blocks)
+        (let ((blk (make-objc-block-layout
+                    (objc-block-c-callback objc-block))))
+          (setf (objc-block-ptr objc-block)                   blk
+                (gethash (pointer-address blk) *objc-blocks*) objc-block)))))
+
+  (pushnew 'ensure-objc-block-initialized *on-objc-initialization*))
 
 (defcallback copy-block-layout :void ((dst :pointer)
                                       (src :pointer))
