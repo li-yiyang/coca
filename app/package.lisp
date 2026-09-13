@@ -8,6 +8,7 @@
   ;; app.lisp
   (:export
    #:app
+   #:define-on-coca-app-finish-run
    #:coca-app-run
    #:coca-app-terminate
    #:dispatch-main))

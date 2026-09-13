@@ -52,6 +52,34 @@
       (unless (invoke *app* "isRunning" :bool)
         (invoke *app* "run")))))
 
+(declaim (type (or null (cons (or symbol function) list))
+               *on-coca-app-finish-run*))
+(defvar *on-coca-app-finish-run* ()
+  "A list of symbols and functions called after `coca-app-run'.
+
+The element of `*on-coca-app-finish-run*' should be:
++ symbol of function name (see below)
++ function with empty lambda list
+")
+
+(defmacro define-on-coca-app-finish-run (name &body body)
+  "Define init function called after `coca-app-run'.
+
+Syntax:
+
+    (define-on-coca-app-finish-run NAME
+      &body)
+
++ NAME: symbol
+  Dev note: a new function would be created as
+  ON-COCA-APP-FINISH-RUN-<NAME>
+"
+  (declare (type symbol name))
+  (let ((name (coca.objc::symbol-concat "ON-COCA-APP-FINISH-RUN-" name)))
+    `(progn
+       (defun ,name () ,@body)
+       (pushnew ',name *on-coca-app-finish-run*))))
+
 (defun coca-app-run ()
   "Start NSApp run loop.
 Return foreign-pointer to NSApp."
@@ -62,6 +90,7 @@ Please create issue at Coca. "))
   (bt:with-lock-held (*app-lock*)
     (tmt:swap-main-thread #'coca-app-loop)
     (bt:condition-wait *app-cvar* *app-lock*))
+  (mapcar #'funcall *on-coca-app-finish-run*)
   *app*)
 
 (defun coca-app-terminate ()

@@ -10,33 +10,66 @@
 :header-args:lisp: :package coca.app :results verbatim
 :END:
 
-+ =(coca-app-run)= [Function]
++ =(app)= *[Function]*
 
+  #+name: doc:app
   #+begin_src lisp
-  (documentation #'coca-app-run t)
+    (documentation #'app t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:app
+  : Return the foreign-pointer to NSApp. 
+
++ =(coca-app-run)= [Function]
+
+  #+name: doc:coca-app-run
+  #+begin_src lisp
+    (documentation #'coca-app-run t)
+  #+end_src
+
+  #+RESULTS: doc:coca-app-run
   : Start NSApp run loop.
   : Return foreign-pointer to NSApp.
 
-+ =(coca-app-terminate)= [Function]
++ =define-on-coca-app-finish-run= *[Macro]*
 
+  #+name: doc:*on-coca-app-finish-run*
   #+begin_src lisp
-  (documentation #'coca-app-terminate t)
+    (documentation (macro-function 'define-on-coca-app-finish-run) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:*on-coca-app-finish-run*
+  #+begin_example
+  Define init function called after `coca-app-run'. 
+
+  Syntax: 
+
+      (define-on-coca-app-finish-run NAME 
+        &body)
+
+  + NAME: symbol 
+    Dev note: a new function would be created as 
+    ON-COCA-APP-FINISH-RUN-<NAME> 
+  #+end_example
++ =(coca-app-terminate)= [Function]
+
+  #+name: doc:coca-app-terminate
+  #+begin_src lisp
+    (documentation #'coca-app-terminate t)
+  #+end_src
+
+  #+RESULTS: doc:coca-app-terminate
   : Terminate NSApp.
-  : Note that this will also terminate lisp image.
+  : Note that this will also terminate lisp image. 
 
 + =(dispatch-main () &body)= [Macro]
 
-  #+begin_src lisp
-  (documentation (macro-function 'dispatch-main) t)
+  #+name: doc:dispatch-main
+  #+begin_src lisp doc:dispatch-main
+    (documentation (macro-function 'dispatch-main) t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:dispatch-main
   #+begin_example
   Invoke BODY within NSApp main thread.
 
