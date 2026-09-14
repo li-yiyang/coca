@@ -89,7 +89,9 @@
   (:export
    #:window
    #:screen
-   #:window-style)
+   #:window-style
+   #:window-select
+   #:window-select-event-handler)
   ;; modal.lisp
   (:export
    #:alert

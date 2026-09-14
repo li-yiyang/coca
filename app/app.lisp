@@ -60,6 +60,9 @@
 The element of `*on-coca-app-finish-run*' should be:
 + symbol of function name (see below)
 + function with empty lambda list
+
+Dev Note: 
++ the first added function is executed first
 ")
 
 (defmacro define-on-coca-app-finish-run (name &body body)
@@ -90,7 +93,7 @@ Please create issue at Coca. "))
   (bt:with-lock-held (*app-lock*)
     (tmt:swap-main-thread #'coca-app-loop)
     (bt:condition-wait *app-cvar* *app-lock*))
-  (mapcar #'funcall *on-coca-app-finish-run*)
+  (mapcar #'funcall (reverse *on-coca-app-finish-run*))
   *app*)
 
 (defun coca-app-terminate ()

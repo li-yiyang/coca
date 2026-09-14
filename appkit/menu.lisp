@@ -179,7 +179,38 @@ Dev Note:
                      :action "terminate:"))
     item))
 
-(defmethod add-child ((menu menu) (item process-menu-item))
+(declaim (type menu *main-menu* *default-main-menu*))
+(defvar *main-menu*)
+(defvar *default-main-menu*)
+
+(app:define-on-coca-app-finish-run set-main-menu
+  (set-main-menu (setf *default-main-menu* (make-instance 'menu))))
+
+(defclass %main-menu (menu) ()
+  (:documentation
+   "Internal usage only. 
+
+This should be used to mark a `menu' is setted as main menu. 
+
+Dev Note: 
++ [maybe] introduce some slot values to save more infomation
+"))
+
+(defun main-menu-p (menu)
+  "Test if MENU is main menu.
+Return `t' if MENU is setted as main menu. "
+  (typep menu '%main-menu))
+
+(defun main-menu ()
+  "Get/Set the main menu of "
+  *main-menu*)
+
+(defun (setf main-menu) (menu)
+  (etypecase menu
+    (menu (set-main-menu menu))
+    (null (set-main-menu *default-main-menu*))))
+
+(defmethod add-child ((menu %main-menu) (item process-menu-item))
   "The `process-menu-item' ITEM should always be added as
 the first `menu-item' of MENU. "
   (with-ptr menu menu-ptr
@@ -193,28 +224,24 @@ the first `menu-item' of MENU. "
         (cons item (slot-value menu 'menu-items)))
   item)
 
-(defvar *main-menu* nil
-  "The `menu' as the main menu. ")
-
-(app:define-on-coca-app-finish-run set-main-menu
-  (set-main-menu (make-instance 'menu)))
-
-(defclass main-menu (menu) ()
-  (:documentation
-   ""))
-
-(defun main-menu-p (menu)
-  "Test if MENU is main menu.
-Return `t' if MENU is setted as main menu. "
-  (typep menu 'main-menu))
-
-(defun main-menu ()
-  "Return the `menu' as the main menu. "
-  *main-menu*)
+(defmethod add-child ((menu %main-menu) (item menu-item))
+  "Normal `menu-item' should be inserted as last two item, 
+before the `help-menu-item'. "
+  (with-ptr menu menu-ptr
+    (with-ptr item item-ptr
+      (let ((idx (1- (length (slot-value menu 'menu-items)))))
+        (dispatch-main ()
+          (invoke menu-ptr "insertItem:atIndex:"
+                  :object item-ptr
+                  :ns-int idx)))))
+  (setf (slot-value item 'menu) menu)
+  (setf (slot-value menu 'menu-items)
+        (cons item (slot-value menu 'menu-items)))
+  item)
 
 (defclass main-menu-mixin ()
   ((menu
-    :initform (make-instance 'menu)
+    :initform (main-menu)
     :type     menu))
   (:documentation
    "Mixin classes for instances having a `menu' as main menu. "))
@@ -239,8 +266,8 @@ Parameters:
             (add-child menu process)
             (add-child menu help)
             (invoke (app) "setMainMenu:" :object ptr))))
-      (apply #'change-class menu 'main-menu args)
-      (when *main-menu*
+      (apply #'change-class menu '%main-menu args)
+      (when (boundp '*main-menu*)
         (change-class *main-menu* 'menu))
       (setf *main-menu* menu))
     menu)

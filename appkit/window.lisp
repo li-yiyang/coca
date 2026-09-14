@@ -11,7 +11,7 @@
   "A list of weak pointer to all the `window' instance. ")
 
 (defun window-list ()
-  "Return a list of `window' instance. 
+  "Return a list of `window' instance.
 
 The `window' instance is ordered by window creation
 order. "
@@ -26,6 +26,14 @@ order. "
     (init (alloc "CocaWindowDelegate"))
   "The NSWindowDelegate for all the `window'. ")
 
+(defun ns-notification-window (notification)
+  (declare (type foreign-pointer notification))
+  (let* ((object (invoke notification "object" :object))
+         (window (find-obj object)))
+    (when (typep window 'window)
+      window)))
+
+
 ;; lisp side should manage window close, reuse, and destroy.
 
 (defclass window (obj
@@ -35,7 +43,8 @@ order. "
                   framed-mixin
                   minmax-framed-mixin
                   visible-mixin
-                  subview-mixin)
+                  subview-mixin
+                  main-menu-mixin)
   ((screen
     :initform (main-screen)
     :initarg  :screen
@@ -143,5 +152,44 @@ Dev Note:
     (dispatch-main ()
       (invoke ptr "setStyleMask:" :ns-window-style style-mask)))
   style-mask)
+
+
+;;;; Events
+
+(defgeneric window-select (window)
+  (:documentation
+   "Brings WINDOW to the front, activates it,
+and shows it if it is hidden.
+Return the WINDOW itself.
+
+Note: The previously active window is deactivated.
+
+Parameter:
++ WINDOW: a `window'")
+  (:method ((window window))
+    (with-ptr window ptr
+      (dispatch-main ()
+        (invoke ptr "makeKeyAndOrderFront:" :pointer (null-pointer))))
+    window))
+
+(defgeneric window-select-event-handler (window)
+  (:documentation
+   "The generic function `window-select-event-handler' is called
+whenever the user clicks an inactive WINDOW.
+
+The `window-select-event-handler' function maybe specialized,
+for example, to make a window unselectable.
+
+Parameter:
++ WINDOW: a `window'.
+")
+  (:method ((window window)))
+  (:method :before ((obj main-menu-mixin))
+    (set-main-menu (slot-value obj 'menu))))
+
+(define-objc-method ("CocaWindowDelegate" "windowDidBecomeKey:")
+                    :void ((notification :object))
+  (alx:when-let ((window (ns-notification-window notification)))
+    (window-select-event-handler window)))
 
 ;;;; window.lisp ends here
