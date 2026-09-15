@@ -69,9 +69,22 @@ LispWorks for me. So I started this part-time work. The
 Coca is written in portable CFFI (mostly). So it should
 work across different CL implementations:
 
-+ SBCL 2.6.4
++ SBCL 2.6.8
 + LispWorks Personal 8.0.1 [fn:lw-personal]
 + ECL 26.5.5
+
+** Portabilities on macOS 27
+If you encounter
+
+#+begin_example
+[∂_∂] > sbcl
+failed to allocate 1048576 bytes at 0x300100000
+(hint: Try "ulimit -a"; maybe you should increase memory limits.)
+#+end_example
+
+on macOS 27, you may check your SBCL's version, which should be updated.
+If you're using [[https://github.com/li-yiyang/homebrew-sbcl-goodies][github@li-yiyang/hoembrew-sbcl-goodies]],
+you may run =brew reinstall --build-from-source sbcl-goodies=.
 
 * Footnotes
 [fn:lw-personal] I think I've kept the dependency as minimal
