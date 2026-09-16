@@ -354,7 +354,7 @@ See also `~A'. "
 
 Syntax:
 
-    (define-objc-enum [TYPING|(TYPING &key alias result wrap arg)]
+    (define-objc-enum [TYPING|(TYPING &key alias type result wrap arg)]
       [DOCSTRING]
       (KEYWORD FLAG-VALUE &optional CONDITION)
       ...)
@@ -371,7 +371,8 @@ Syntax:
   this is tested when macro expand
 
 Like `define-objc-typing':
-+ ALIAS: by default is :unsigned-long
++ ALIAS: by default is `:unsigned-long'
++ TYPE:  by default is `integer'
 + RESULT: by default is parsed with DECODE-<TYPING>
 + ARG: additional matching pattern
 
@@ -382,6 +383,7 @@ Two functions are created:
 See also `define-objc-mask'. "
   (destructuring-bind (typing &key
                                 (alias :unsigned-long)
+                                (type  'integer)
                                 result
                                 wrap arg)
       (alx:ensure-list typing*)
@@ -394,7 +396,7 @@ See also `define-objc-mask'. "
          (defun ,enc (flag)
            ,@(when (stringp doc) (list doc))
            (etypecase flag
-             (integer flag)
+             (,type   flag)
              (keyword (ecase flag ,@binding))))
          (defun ,dec (enum)
            ,(format nil "Decode ObjC ENUM integer ~S.
@@ -402,18 +404,18 @@ Return values are decoded flag and original ENUM.
 
 See also `~A'. "
                     typing enc)
-           (declare (type integer enum))
+           (declare (type ,type enum))
            (values
             (case enum
               ,@(loop :for (enum val) :in binding
-                      :collect (list val enum))
+                      :collect (list val (alx:ensure-car enum)))
               (otherwise enum))
             enum))
          (define-objc-typing ,typing
            :alias  ,alias
            :arg    (((and (type keyword) enum)
                      (list ,alias (,enc enum)))
-                    ((and (type integer) enum)
+                    ((and (type ,type)   enum)
                      (list ,alias enum))
                     ,@arg
                     (enum
