@@ -39,9 +39,7 @@
 
 (in-package :coca.metal)
 
-(define-foreign-library metal
+(define-objc-library metal
   (:darwin (:framework "Metal")))
-(load-foreign-library 'metal)
-(pushnew 'metal *objc-libraries*)
 
 ;;;; package.lisp ends here

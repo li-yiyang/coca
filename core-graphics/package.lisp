@@ -5,9 +5,7 @@
 
 (in-package :coca.core-graphics)
 
-(define-foreign-library core-graphics
+(define-objc-library core-graphics
   (:darwin (:framework "CoreGraphics")))
-(load-foreign-library 'core-graphics)
-(pushnew 'core-graphics *objc-libraries*)
 
 ;;;; package.lisp ends here

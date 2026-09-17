@@ -10,7 +10,7 @@
 Invoke ObjC method with macro [[doc:invoke][=invoke=]]:
 
 #+begin_src lisp
-(description (invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object))
+  (description (invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object))
 #+end_src
 
 #+RESULTS:
@@ -19,7 +19,7 @@ Invoke ObjC method with macro [[doc:invoke][=invoke=]]:
 Or use the shortcut function:
 
 #+begin_src lisp :results silent
-(cffi:foreign-funcall "NSLog" :pointer (string-to-ns-string "Hello World"))
+  (cffi:foreign-funcall "NSLog" :pointer (string-to-ns-string "Hello World"))
 #+end_src
 
 which should print out like:
@@ -38,51 +38,51 @@ The macro [[doc:invoke][=invoke=]] is just a thin warpper on =cffi:foreign-funca
 For example:
 
 #+begin_src lisp :eval no
-(invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object)
+  (invoke "NSString" "stringWithUTF8String:" :string "Hello World" :object)
 #+end_src
 
 would be expanded into
 
 #+begin_src lisp :eval no
-(foreign-funcall
- "objc_msgSend"
- :pointer (objc-class-ptr #<NSString 1F9E6A100>)
- :pointer (sel-ptr #<sel stringWithUTF8String: 20890E8C0>)
- :string "Hello World"
- :pointer)
+  (foreign-funcall
+   "objc_msgSend"
+   :pointer (objc-class-ptr #<NSString 1F9E6A100>)
+   :pointer (sel-ptr #<sel stringWithUTF8String: 20890E8C0>)
+   :string "Hello World"
+   :pointer)
 #+end_src
 
 with typing alias:
 
 #+begin_src lisp :eval no
-(define-objc-typing :object
-  :alias :pointer)
+  (define-objc-typing :object
+    :alias :pointer)
 #+end_src
 
 *** Complex ObjC typing transforming rules
 For complex transforming rules:
 
 #+begin_src lisp :eval no
-(invoke ns-object "description" :ns-string)
+  (invoke ns-object "description" :ns-string)
 #+end_src
 
 would be expanded into
 
 #+begin_src lisp :eval no
-(ns-string-to-string
- (foreign-funcall
-  "objc_msgSend"
-  :pointer (mcclim-coca.objc::objc-pointer ns-object)
-  :pointer (mcclim-coca.objc::sel-ptr #<sel description 208A1BFE0>)
-  :pointer))
+  (ns-string-to-string
+   (foreign-funcall
+    "objc_msgSend"
+    :pointer (mcclim-coca.objc::objc-pointer ns-object)
+    :pointer (mcclim-coca.objc::sel-ptr #<sel description 208A1BFE0>)
+    :pointer))
 #+end_src
 
 with result and input args rules:
 
 #+begin_src lisp :eval no
-(define-objc-typing :ns-string
-  :result (:pointer ns-string-to-string)
-  :arg    ((str `(:pointer (string-to-ns-string ,str)))))
+  (define-objc-typing :ns-string
+    :result (:pointer ns-string-to-string)
+    :arg    ((str `(:pointer (string-to-ns-string ,str)))))
 #+end_src
 
 the =:arg= parameter can be a list of elements =(PATTERN EXPANSION-RULE)=
@@ -96,14 +96,14 @@ the =:arg= parameter can be a list of elements =(PATTERN EXPANSION-RULE)=
 *** Built-in ObjC typing
 Coca.ObjC provides some built-in ObjC typing:
 
-| ObjC typing  | CFFI equivent                      | ~invoke~ as return value |
-|--------------+------------------------------------+--------------------------|
-| ~:class~     | ~:pointer~                         | ~coerce-to-objc-class~   |
-| ~:sel~       | ~:pointer~                         | ~coerce-to-selector~     |
-| ~:object~    | ~:pointer~                         |                          |
-| ~:ns-array~  | ~:pointer~ (not implemented yet)   | ~ns-array-to-list~       |
-| ~:ns-string~ | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
-| ~:block~     | ~:pointer~ (ObjC's block)          | (not implemented)        |
+| ObjC typing | CFFI equivent                  | ~invoke~ as return value |
+|-------------+--------------------------------+------------------------|
+| ~:class~      | ~:pointer~                       | ~coerce-to-objc-class~   |
+| ~:sel~        | ~:pointer~                       | ~coerce-to-selector~     |
+| ~:object~     | ~:pointer~                       |                        |
+| ~:ns-array~   | ~:pointer~ (not implemented yet) | ~ns-array-to-list~       |
+| ~:ns-string~  | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
+| ~:block~      | ~:pointer~ (ObjC's block)        | (not implemented)      |
 
 Can use =define-objc-typing= macro to define a new ObjC typing.
 
@@ -112,7 +112,7 @@ Some ObjC functions expect blocks as arguments, which can be invoked
 like:
 
 #+begin_src lisp :eval no
-(invoke obj "methodWithBlock:" :block (BLOCK-TYPE (LAMBDA-LIST) &body ...))
+  (invoke obj "methodWithBlock:" :block (BLOCK-TYPE (LAMBDA-LIST) &body ...))
 #+end_src
 
 Use =define-objc-block= to define your own =block-type=.
@@ -125,9 +125,9 @@ Use [[doc:define-objc-global-variable][=define-objc-global-variable=]] to define
 function like:
 
 #+begin_src lisp :eval no
-(define-objc-global-variable my-ns-string
-  (string-to-ns-string "My NSString")
-  "Just to demo it")
+  (define-objc-global-variable my-ns-string
+    (string-to-ns-string "My NSString")
+    "Just to demo it")
 #+end_src
 
 Use the function =my-ns-string= to access the global variable
@@ -143,36 +143,39 @@ system version requirements.
 
 One of the common usage case would be [[doc:define-objc-enum][=define-objc-enum=]] and
 [[doc:define-objc-mask][=define-objc-mask=]] where you could use [[doc:osx-version>=][~osx-version>=~]] to enclude
-flags depending on macOS version. 
+flags depending on macOS version.
 
 * API
 :PROPERTIES:
 :header-args:lisp: :package coca.objc :results verbatim
 :END:
 
-+ =*objc-libraries*= *[Variable]*
++ =(define-objc-library name &body pairs)= *[Macro]*
 
-  #+name: doc:*objc-libraries
+  #+name: doc:define-objc-library
   #+begin_src lisp :exports results
-  (documentation '*objc-libraries* 'variable)
+    (documentation (macro-function 'define-objc-library) t)
   #+end_src
 
-  #+RESULTS: doc:*objc-libraries
-  : A list of foreign libraries names.
-  :
-  : To load new ObjC libraries:
-  :
-  :     (define-foreign-library lib-name
-  :       (:darwin (:framework \"...\")))
-  :     (load-foreign-library 'lib-name)
-  :     (pushnew 'lib-name *objc-libraries*)
-  :
+  #+RESULTS: doc:define-objc-library
+  #+begin_example
+  Define ObjC library of NAME and load it.
+
+  Syntax:
+
+      (define-objc-library NAME
+        (:darwin (:framework \"...\")))
+
+  + NAME: a symbol for foreign library
+  + PAIRS: like CFFI `define-foreign-library' PAIRS,
+    normally this should be (:darwin (:framework ...))
+  #+end_example
 
 + =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
   #+name: doc:invoke
   #+begin_src lisp :exports results
-  (documentation (macro-function 'invoke) t)
+    (documentation (macro-function 'invoke) t)
   #+end_src
 
   #+RESULTS: doc:invoke
@@ -218,12 +221,11 @@ flags depending on macOS version.
     If not provided, by default as `:void'
 
   #+end_example
-
 + =(invoke-super OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
   #+name: doc:invoke-super
   #+begin_src lisp :exports results
-  (documentation (macro-function 'invoke-super) t)
+    (documentation (macro-function 'invoke-super) t)
   #+end_src
 
   #+RESULTS: doc:invoke-super
@@ -268,12 +270,11 @@ flags depending on macOS version.
 
     If not provided, by default as `:void'
   #+end_example
-
 + =(with-autorelease-pool &body)= *[Macro]*
 
   #+name: doc:with-autorelease-pool
   #+begin_src lisp :exports results
-  (documentation (macro-function 'with-autorelease-pool) t)
+    (documentation (macro-function 'with-autorelease-pool) t)
   #+end_src
 
   #+RESULTS: doc:with-autorelease-pool
@@ -287,7 +288,7 @@ flags depending on macOS version.
 
   #+name: doc:coerce-to-selector
   #+begin_src lisp :exports results
-  (documentation #'coerce-to-selector t)
+    (documentation #'coerce-to-selector t)
   #+end_src
 
   #+RESULTS: doc:coerce-to-selector
@@ -297,17 +298,17 @@ flags depending on macOS version.
 
   #+name: doc:coerce-to-objc-class
   #+begin_src lisp :exports results
-  (documentation #'coerce-to-objc-class t)
+    (documentation #'coerce-to-objc-class t)
   #+end_src
 
-  #+RESULTS:
+  #+RESULTS: doc:coerce-to-objc-class
   : Return cached `objc-class' for ObjC Class.
 
 + =(define-objc-class class superclass &rest protocols)= *[Macro]*
 
   #+name: doc:define-objc-class
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-class) t)
+    (documentation (macro-function 'define-objc-class) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-class
@@ -331,7 +332,7 @@ flags depending on macOS version.
 
   #+name: doc:define-objc-method
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-method) t)
+    (documentation (macro-function 'define-objc-method) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-method
@@ -373,7 +374,7 @@ flags depending on macOS version.
 
   #+name: doc:define-objc-global-variable
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-global-variable) t)
+    (documentation (macro-function 'define-objc-global-variable) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-global-variable
@@ -404,7 +405,7 @@ flags depending on macOS version.
 
   #+name: doc:*on-objc-initialization*
   #+begin_src lisp :exports results
-  (documentation '*on-objc-initialization* 'variable)
+    (documentation '*on-objc-initialization* 'variable)
   #+end_src
 
   #+RESULTS: doc:*on-objc-initialization*
@@ -419,7 +420,7 @@ flags depending on macOS version.
 
   #+name: doc:ensure-objc-initialized
   #+begin_src lisp :exports results
-  (documentation #'ensure-objc-initialized t)
+    (documentation #'ensure-objc-initialized t)
   #+end_src
 
   #+RESULTS: doc:ensure-objc-initialized
@@ -453,7 +454,7 @@ flags depending on macOS version.
 
   #+name: doc:define-objc-typing
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-typing) t)
+    (documentation (macro-function 'define-objc-typing) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-typing
@@ -492,7 +493,7 @@ flags depending on macOS version.
 
   #+name: doc:define-objc-mask
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-mask) t)
+    (documentation (macro-function 'define-objc-mask) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-mask
@@ -533,7 +534,7 @@ flags depending on macOS version.
 
   #+name: doc:define-objc-enum
   #+begin_src lisp
-  (documentation (macro-function 'define-objc-enum) t)
+    (documentation (macro-function 'define-objc-enum) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-enum
@@ -542,7 +543,7 @@ flags depending on macOS version.
 
   Syntax:
 
-      (define-objc-enum [TYPING|(TYPING &key alias result wrap arg)]
+      (define-objc-enum [TYPING|(TYPING &key alias type result wrap arg)]
         [DOCSTRING]
         (KEYWORD FLAG-VALUE &optional CONDITION)
         ...)
@@ -559,7 +560,8 @@ flags depending on macOS version.
     this is tested when macro expand
 
   Like `define-objc-typing':
-  + ALIAS: by default is :unsigned-long
+  + ALIAS: by default is `:unsigned-long'
+  + TYPE:  by default is `integer'
   + RESULT: by default is parsed with DECODE-<TYPING>
   + ARG: additional matching pattern
 
@@ -574,7 +576,7 @@ flags depending on macOS version.
 
   #+name: doc:with-fp-traps-masked
   #+begin_src lisp :exports results
-  (documentation (macro-function 'with-fp-traps-masked) t)
+    (documentation (macro-function 'with-fp-traps-masked) t)
   #+end_src
 
   #+RESULTS: doc:with-fp-traps-masked
@@ -585,7 +587,7 @@ flags depending on macOS version.
 
   #+name: doc:objc-symbol-value
   #+begin_src lisp :exports results
-  (documentation #'objc-symbol-value t)
+    (documentation #'objc-symbol-value t)
   #+end_src
 
   #+RESULTS: doc:objc-symbol-value
@@ -601,7 +603,7 @@ flags depending on macOS version.
 
   #+name: doc:alloc
   #+begin_src lisp :exports results
-  (documentation #'alloc t)
+    (documentation #'alloc t)
   #+end_src
 
   #+RESULTS: doc:alloc
@@ -612,7 +614,7 @@ flags depending on macOS version.
 
   #+name: doc:init
   #+begin_src lisp :exports results
-  (documentation #'init t)
+    (documentation #'init t)
   #+end_src
 
   #+RESULTS: doc:init
@@ -623,7 +625,7 @@ flags depending on macOS version.
 
   #+name: doc:description
   #+begin_src lisp :exports results
-  (documentation #'description t)
+    (documentation #'description t)
   #+end_src
 
   #+RESULTS: doc:description
@@ -633,7 +635,7 @@ flags depending on macOS version.
 
   #+name: doc:release
   #+begin_src lisp :exports results
-  (documentation #'release t)
+    (documentation #'release t)
   #+end_src
 
   #+RESULTS: doc:release
@@ -643,7 +645,7 @@ flags depending on macOS version.
 
   #+name: doc:retain
   #+begin_src lisp :exports results
-  (documentation #'retain t)
+    (documentation #'retain t)
   #+end_src
 
   #+RESULTS: doc:retain
@@ -654,45 +656,18 @@ flags depending on macOS version.
 
   #+name: doc:autorelease
   #+begin_src lisp :exports results
-  (documentation #'autorelease t)
+    (documentation #'autorelease t)
   #+end_src
 
   #+RESULTS: doc:autorelease
   : Autorelease NS-OBJECT.
   : Return foreign-pointer (same to) NS-OBJECT.
 
-+ =(osx-version)= *[Function]*
-
-  #+name: doc:osx-version
-  #+begin_src lisp :exports results
-  (documentation #'osx-version t)
-  #+end_src
-
-  #+RESULTS: doc:osx-version
-  : Return values as MAJOR MINOR PATCH version of current os version.
-
-+ ~(osx-version>= major &optional minor patch)~ *[Function]*
-
-  #+name: doc:osx-version>=
-  #+begin_src lisp :exports results
-  (documentation #'osx-version>= t)
-  #+end_src
-
-  #+RESULTS: doc:osx-version>=
-  : Test if `osx-version' >= MAJOR.MINOR.PATCH
-  : Return `t' if pass.
-  :
-  : Parameters:
-  : + MAJOR: major version number
-  :   or keyword like `:sequoia', `:tahoe', `:golden-gate'
-  : + MINOR: minor version number
-  : + PATCH: patch version number
-
 + =(ns-string-to-string ns-string)= *[Function]*
 
   #+name: doc:ns-string-to-string
   #+begin_src lisp :exports results
-  (documentation #'ns-string-to-string t)
+    (documentation #'ns-string-to-string t)
   #+end_src
 
   #+RESULTS: doc:ns-string-to-string
@@ -703,7 +678,7 @@ flags depending on macOS version.
 
   #+name: doc:string-to-ns-string
   #+begin_src lisp :exports results
-  (documentation #'string-to-ns-string t)
+    (documentation #'string-to-ns-string t)
   #+end_src
 
   #+RESULTS: doc:string-to-ns-string
@@ -714,7 +689,7 @@ flags depending on macOS version.
 
   #+name: doc:pathname-to-ns-url
   #+begin_src lisp :exports results
-  (documentation #'pathname-to-ns-url t)
+    (documentation #'pathname-to-ns-url t)
   #+end_src
 
   #+RESULTS: doc:pathname-to-ns-url
@@ -725,7 +700,7 @@ flags depending on macOS version.
 
   #+name: doc:ns-array-to-list
   #+begin_src lisp :exports results
-  (documentation #'ns-array-to-list t)
+    (documentation #'ns-array-to-list t)
   #+end_src
 
   #+RESULTS: doc:ns-array-to-list
@@ -736,7 +711,7 @@ flags depending on macOS version.
 
   #+name: doc:ns-mutable-dictionary
   #+begin_src lisp :exports results
-  (documentation (macro-function 'ns-mutable-dictionary) t)
+    (documentation (macro-function 'ns-mutable-dictionary) t)
   #+end_src
 
   #+RESULTS: doc:ns-mutable-dictionary
@@ -765,23 +740,95 @@ flags depending on macOS version.
       + :ns-string => (string-to-ns-string VALUE)
   #+end_example
 
++ =(get-ns-dictionary dictionary key)= *[Function]*
+
+  #+name: doc:get-ns-dictionary
+  #+begin_src lisp :exports results
+    (documentation #'get-ns-dictionary t)
+  #+end_src
+
+  #+RESULTS: doc:get-ns-dictionary
+  #+begin_example
+  Get/Set object in DICTIONARY of KEY.
+  Return result specificed by RESULT.
+
+  Parameters:
+  + DICTIONARY: foreign-pointer to NSDictionary
+  + KEY:
+    + foreign-pointer: foreign-pointer to NSObject
+    + string: use (objc-symbol-value KEY :pointer) as key
+    + list of (TYPE LISP-VALUE):
+      + (:ns-string STRING)
+        use NSString as key
+  + RESULT:
+    + `:object', `:pointer': return the foreign-pointer
+    + `:ns-string': convert NSString as string
+    + `:bool', `:char', `:float', `:double', `:int', `:string'
+      treat value as NSNumber and decoded with `ns-number-value'
+
+  Dev Note:
+  + when (setf (get-ns-dictionary dictionary key) value)
+    the DICTIONARY should be foreign-pointer to NSMutableDictionary,
+    sadly, this won't be checked when setting the value
+  + when setf, the VALUE might be:
+    + foreign-pointer
+    + nil: treat as [NSNull null]
+    + string: treat as NSString
+    + number: converted using `ns-number'
+  #+end_example
+
 + =(ns-number number)= *[Function]*
 
   #+name: doc:ns-number
   #+begin_src lisp :exports results
-  (documentation #'ns-number t)
+    (documentation #'ns-number t)
   #+end_src
 
   #+RESULTS: doc:ns-number
-  : Convert VAL into NSNumber.
-  : Return foreign-pointer to NSNumber.
+  #+begin_example
+  Convert VAL into NSNumber.
+  Return foreign-pointer to NSNumber.
 
+  Parameter:
+  + VAL
+    might be:
+    + boolean
+    + character
+    + integer
+    + float
+  #+end_example
+
++ =(ns-number-value ns-number type)= *[Function]*
+
+  #+name: doc:ns-number-value
+  #+begin_src lisp :exports results
+    (documentation #'ns-number-value t)
+  #+end_src
+
+  #+RESULTS: doc:ns-number-value
+  #+begin_example
+  Convert pointer to NS-NUMBER into TYPE lisp value.
+  Return value of TYPE.
+
+  Parameters:
+  + NS-NUMBER:
+    foreign-pointer to NSNumber instance
+  + TYPE:
+    + `:bool'
+    + `:char'
+    + `:double'
+    + `:float'
+    + `:int'
+    + `:string'
+  #+end_example
+
+** Block
 Load =coca/objc/block= to have Block supports setted up:
 + =(define-objc-block block-type lambda-list)= *[Macro]*
 
   #+name: doc:define-objc-block
   #+begin_src lisp :exports results
-  (documentation (macro-function 'define-objc-block) t)
+    (documentation (macro-function 'define-objc-block) t)
   #+end_src
 
   #+RESULTS: doc:define-objc-block
@@ -802,3 +849,32 @@ Load =coca/objc/block= to have Block supports setted up:
     within macro, use (BLOCK-TYPE lambda-list &body body)
     as callback
   #+end_example
+
+** OSX-Version
+Load =coca/objc/osx-version= to have macOS version support:
++ =(osx-version)= *[Function]*
+
+  #+name: doc:osx-version
+  #+begin_src lisp :exports results
+    (documentation #'osx-version t)
+  #+end_src
+
+  #+RESULTS: doc:osx-version
+  : Return values as MAJOR MINOR PATCH version of current os version.
+
++ ~(osx-version>= major &optional minor patch)~ *[Function]*
+
+  #+name: doc:osx-version>=
+  #+begin_src lisp :exports results
+    (documentation #'osx-version>= t)
+  #+end_src
+
+  #+RESULTS: doc:osx-version>=
+  : Test if `osx-version' >= MAJOR.MINOR.PATCH
+  : Return `t' if pass.
+  :
+  : Parameters:
+  : + MAJOR: major version number
+  :   or keyword like `:sequoia', `:tahoe', `:golden-gate'
+  : + MINOR: minor version number
+  : + PATCH: patch version number

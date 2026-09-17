@@ -15,9 +15,7 @@
 
 (in-package :coca.app)
 
-(define-foreign-library appkit
+(define-objc-library appkit
   (:darwin (:framework "AppKit")))
-(load-foreign-library 'appkit)
-(pushnew 'appkit *objc-libraries*)
 
 ;;;; package.lisp ends here

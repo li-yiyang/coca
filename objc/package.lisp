@@ -7,7 +7,7 @@
   (:documentation "Coca.ObjC is a minimum ObjC runtime binding")
   ;; resources.lisp
   (:export
-   #:*objc-libraries*
+   #:define-objc-library
    #:*on-objc-initialization*
    #:sel
    #:objc-class

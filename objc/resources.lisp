@@ -13,14 +13,29 @@
 (defvar *objc-libraries* ()
   "A list of foreign libraries names.
 
-To load new ObjC libraries:
+To define new ObjC library, use
 
-    (define-foreign-library lib-name
-      (:darwin (:framework \"...\")))
-    (load-foreign-library 'lib-name)
-    (pushnew 'lib-name *objc-libraries*)
+    (define-objc-library NAME
+      (:darwin (:framework ...)))
 
 ")
+
+(defmacro define-objc-library (name &body pairs)
+  "Define ObjC library of NAME and load it.
+
+Syntax:
+
+    (define-objc-library NAME
+      (:darwin (:framework \"...\")))
+
++ NAME: a symbol for foreign library
++ PAIRS: like CFFI `define-foreign-library' PAIRS,
+  normally this should be (:darwin (:framework ...))
+"
+  `(progn
+     (define-foreign-library ,name ,@pairs)
+     (load-foreign-library ',name)
+     (pushnew ',name *objc-libraries*)))
 
 (define-foreign-library foundation
   (:darwin (:framework "Foundation")))

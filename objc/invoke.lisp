@@ -234,8 +234,16 @@ Return a list of foreign-pointer to NSObject. "
 
 (defun ns-number (val)
   "Convert VAL into NSNumber.
-Return foreign-pointer to NSNumber. "
-  (declare (type real val))
+Return foreign-pointer to NSNumber.
+
+Parameter:
++ VAL
+  might be:
+  + boolean
+  + character
+  + integer
+  + float
+"
   (the foreign-pointer
     (etypecase val
       (boolean
@@ -296,6 +304,33 @@ Parameters:
     (number (ns-number val))))
 
 (defun get-ns-dictionary (dictionary key &optional (result :object))
+  "Get/Set object in DICTIONARY of KEY.
+Return result specificed by RESULT.
+
+Parameters:
++ DICTIONARY: foreign-pointer to NSDictionary
++ KEY:
+  + foreign-pointer: foreign-pointer to NSObject
+  + string: use (objc-symbol-value KEY :pointer) as key
+  + list of (TYPE LISP-VALUE):
+    + (:ns-string STRING)
+      use NSString as key
++ RESULT:
+  + `:object', `:pointer': return the foreign-pointer
+  + `:ns-string': convert NSString as string
+  + `:bool', `:char', `:float', `:double', `:int', `:string'
+    treat value as NSNumber and decoded with `ns-number-value'
+
+Dev Note:
++ when (setf (get-ns-dictionary dictionary key) value)
+  the DICTIONARY should be foreign-pointer to NSMutableDictionary,
+  sadly, this won't be checked when setting the value
++ when setf, the VALUE might be:
+  + foreign-pointer
+  + nil: treat as [NSNull null]
+  + string: treat as NSString
+  + number: converted using `ns-number'
+"
   (declare (type foreign-pointer dictionary)
            (type (or foreign-pointer string list) key)
            (type keyword result))
