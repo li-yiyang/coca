@@ -114,7 +114,8 @@
     :components
     ((:file "utils")
      (:file "button"     :depends-on ("utils"))
-     (:file "text-field" :depends-on ("utils"))))))
+     (:file "text-field" :depends-on ("utils"))
+     (:file "combobox"   :depends-on ("utils"))))))
 
 (defsystem #:coca/metal
   :author ("凉凉")

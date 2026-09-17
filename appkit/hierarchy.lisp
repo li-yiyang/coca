@@ -58,4 +58,76 @@ Dev Note:
     (alx:when-let ((parent (parent child)))
       (remove-child parent child))))
 
+(defgeneric item-list (container)
+  (:documentation
+   "Return a list of items in CONTAINER. "))
+
+(defgeneric item-list-length (container)
+  (:documentation
+   "Return numbers of items in CONTAINER. ")
+  (:method (container)
+    (length (item-list container))))
+
+(defgeneric add-item (container item)
+  (:documentation
+   "Add ITEM to CONTAINER. "))
+
+(defgeneric add-nth-item (container nth item)
+  (:documentation
+   "Add ITEM to CONTAINER at NTH.
+
+If NTH >= (length (item-list CONTAINER)),
+this generic function would be equal to `add-item'.
+
+Parameters:
++ CONTAINER
++ NTH:
++ ITEM
+")
+  (:method :around (container (nth integer) item)
+    (if (>= nth (item-list-length container))
+        (add-item container item)
+        (call-next-method))))
+
+(defgeneric nth-item (container nth)
+  (:documentation
+   "Get NTH item in CONTAINER.
+
+This is equal to (nth NTH (item-list CONTAINER)). ")
+  (:method (container nth)
+    (nth nth (item-list container))))
+
+(defgeneric item-position (container item)
+  (:documentation
+   "Return ITEM position in CONTAINER list.
+Return `nil' if ITEM is not within CONTAINER.
+
+This is equal to (position ITEM (item-list CONTAINER) :test #'equal). ")
+  (:method (container item)
+    (position item (item-list container) :test #'equal)))
+
+(defgeneric remove-item (container item)
+  (:documentation
+   "Remove ITEM in CONTAINER.
+Return `t' if success, otherwise, `nil'. ")
+  (:method (container item)
+    (alx:when-let ((nth (item-position container item)))
+      (remove-nth-item container nth))))
+
+(defgeneric remove-nth-item (container nth)
+  (:documentation
+   "Remove NTH item in CONTAINER.
+Return `t' if success, otherwise, `nil'.
+
+Parameters:
++ CONTAINER:
++ NTH:
+  + if NTH >= (length (item-list CONTAINER)),
+    return `nil'
+")
+  (:method :around (container (nth integer))
+    (unless (>= nth (item-list-length container))
+      (call-next-method)
+      t)))
+
 ;;;; hierarchy.lisp ends here

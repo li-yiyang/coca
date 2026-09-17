@@ -62,13 +62,17 @@ See `button-type'.
     :documentation
     "NSButton types. "))
   (:documentation
-   "Wrapper of NSButton. ")
+   "Wrapper of NSButton.
+
+A NSButton is a control that defines an area on the screen
+that a user clicks to trigger an action.
+")
   (:default-initargs
    :objc-class "NSButton"))
 
 (defclass button (base-button) ()
   (:documentation
-   "Default push button.
+   "A default push button.
 
 Dev Note:
 + different than AppKit default push button,

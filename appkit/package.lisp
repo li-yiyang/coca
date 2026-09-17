@@ -33,7 +33,15 @@
    #:children
    #:add-child
    #:remove-child
-   #:remove-from-parent)
+   #:remove-from-parent
+   #:item-list
+   #:item-list-length
+   #:add-item
+   #:add-nth-item
+   #:nth-item
+   #:item-position
+   #:remove-item
+   #:remove-nth-item)
   ;; subview.lisp
   (:export
    #:base-view
@@ -140,7 +148,15 @@
    #:label
    #:placeholder-mixin
    #:placeholder
-   #:text-input))
+   #:text-input)
+  ;; views/combobox.lisp
+  (:export
+   #:combobox
+   #:has-vertical-scroller-p
+   #:intercell-spacing
+   #:set-intercell-spacing
+   #:button-bordered-p
+   #:item-height))
 
 (in-package :coca.appkit)
 

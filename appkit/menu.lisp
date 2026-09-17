@@ -2,7 +2,11 @@
 
 (in-package :coca.appkit)
 
-(defclass base-menu-item (obj)
+(defclass menu-element (obj) ()
+  (:documentation
+   "Base class for `menu-item', `menu'. "))
+
+(defclass base-menu-item (menu-element)
   ((menu
     :initform nil
     :type     (or null menu)
@@ -10,7 +14,7 @@
   (:documentation
    "Base class for NSMenuItem wrapper. "))
 
-(defclass menu (obj
+(defclass menu (menu-element
                 owned-mixin
                 titled-mixin)
   ((supermenu
@@ -19,7 +23,8 @@
     :reader   parent)
    (menu-items
     :initform ()
-    :reader   children))
+    :reader   children
+    :reader   item-list))
   (:documentation
    "Wrapper of NSMenu. ")
   (:default-initargs
@@ -42,7 +47,13 @@
    :init-in-main-p t
    :title          (alx:required-argument :title)))
 
-(defmethod add-child ((item menu-item) (child base-menu-item))
+(defmethod add-child ((container menu-element) (item menu-element))
+  (add-item container item))
+
+(defmethod remove-child ((container menu-element) (item menu-element))
+  (remove-item container item))
+
+(defmethod add-item ((item menu-item) (child base-menu-item))
   (with-slots (submenu) item
     ;; ensure submenu is initialized as menu
     (unless submenu
@@ -52,14 +63,14 @@
             (dispatch-main ()
               (invoke item-ptr "setSubmenu:" :object menu-ptr))))
         (setf submenu menu)))
-    (add-child submenu child)))
+    (add-item submenu child)))
 
-(defmethod remove-child ((item menu-item) (child base-menu-item))
+(defmethod remove-item ((item menu-item) (child base-menu-item))
   (with-slots (submenu) item
     (when submenu
-      (remove-child submenu child))))
+      (remove-item submenu child))))
 
-(defmethod add-child ((menu menu) (item base-menu-item))
+(defmethod add-item ((menu menu) (item base-menu-item))
   (with-ptr menu menu-ptr
     (with-ptr item item-ptr
       (dispatch-main ()
@@ -69,13 +80,13 @@
         (append (slot-value menu 'menu-items) (list item)))
   item)
 
-(defmethod add-child ((menu menu) (item menu-item))
+(defmethod add-item ((menu menu) (item menu-item))
   (call-next-method)
   (alx:when-let ((submenu (slot-value item 'submenu)))
     (setf (slot-value submenu 'supermenu) menu))
   item)
 
-(defmethod remove-child ((menu menu) (item base-menu-item))
+(defmethod remove-item ((menu menu) (item base-menu-item))
   (with-ptr menu menu-ptr
     (with-ptr item item-ptr
       (dispatch-main ()
@@ -84,7 +95,7 @@
   (setf (slot-value menu 'menu-items)
         (delete item (slot-value menu 'menu-items) :test #'eq)))
 
-(defmethod remove-child ((menu menu) (item menu-item))
+(defmethod remove-item ((menu menu) (item menu-item))
   (let ((res (call-next-method)))
     (alx:when-let ((submenu (slot-value item 'submenu)))
       (setf (slot-value submenu 'supermenu) nil))
@@ -158,26 +169,26 @@ Dev Note:
     (let* ((process (invoke (invoke "NSProcessInfo" "processInfo" :object)
                             "processName" :ns-string))
            (item    (make-instance 'process-menu-item :title process)))
-    (add-child item (make-instance
-                     'menu-item
-                     :title  "About"
-                     :action "orderFrontStandardAboutPanel:"))
-    (add-child item (make-instance 'menu-separator))
-    (add-child item (services-menu-item))
-    (add-child item (make-instance 'menu-separator))
-    (add-child item (make-instance
-                     'menu-item
-                     :title  "Hide Other"
-                     :action "hideOtherApplications:"))
-    (add-child item (make-instance
-                     'menu-item
-                     :title  "Show All"
-                     :action "unhideAllApplications:"))
-    (add-child item (make-instance
-                     'menu-item
-                     :title  "Quit"
-                     :action "terminate:"))
-    item))
+      (add-item item (make-instance
+                      'menu-item
+                      :title  "About"
+                      :action "orderFrontStandardAboutPanel:"))
+      (add-item item (make-instance 'menu-separator))
+      (add-item item (services-menu-item))
+      (add-item item (make-instance 'menu-separator))
+      (add-item item (make-instance
+                      'menu-item
+                      :title  "Hide Other"
+                      :action "hideOtherApplications:"))
+      (add-item item (make-instance
+                      'menu-item
+                      :title  "Show All"
+                      :action "unhideAllApplications:"))
+      (add-item item (make-instance
+                      'menu-item
+                      :title  "Quit"
+                      :action "terminate:"))
+      item))
 
 (declaim (type menu *main-menu* *default-main-menu*))
 (defvar *main-menu*)
@@ -212,7 +223,7 @@ Return `t' if MENU is setted as main menu. "
     (menu (set-main-menu menu))
     (null (set-main-menu *default-main-menu*))))
 
-(defmethod add-child ((menu %main-menu) (item process-menu-item))
+(defmethod add-item ((menu %main-menu) (item process-menu-item))
   "The `process-menu-item' ITEM should always be added as
 the first `menu-item' of MENU. "
   (with-ptr menu menu-ptr
@@ -226,7 +237,7 @@ the first `menu-item' of MENU. "
         (cons item (slot-value menu 'menu-items)))
   item)
 
-(defmethod add-child ((menu %main-menu) (item menu-item))
+(defmethod add-item ((menu %main-menu) (item menu-item))
   "Normal `menu-item' should be inserted as last two item,
 before the `help-menu-item'. "
   (with-ptr menu menu-ptr
@@ -265,8 +276,8 @@ Parameters:
             (help    (help-menu-item)))
         (with-ptr menu ptr
           (dispatch-main ()
-            (add-child menu process)
-            (add-child menu help)
+            (add-item menu process)
+            (add-item menu help)
             (invoke (app) "setMainMenu:" :object ptr))))
       (apply #'change-class menu '%main-menu args)
       (when (boundp '*main-menu*)
