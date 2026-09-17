@@ -2,14 +2,6 @@
 
 (in-package :coca.appkit)
 
-(define-objc-global-variable ns-font-traits-attribute
-    (objc-symbol-value "NSFontTraitsAttribute" :pointer)
-  "NSFontTraitsAttribute")
-
-(define-objc-global-variable ns-font-weight-trait
-    (objc-symbol-value "NSFontWeightTrait" :pointer)
-  "NSFontWeightTrait")
-
 (defvar *fonts* (tg:make-weak-hash-table)
   "Cache of `font'.
 
@@ -17,15 +9,16 @@ Key: pointer address
 Val: `font'")
 
 (defstruct (font (:constructor make-ns-font))
-  (ptr       (null-pointer) :type foreign-pointer)
-  (cg-ptr    (null-pointer) :type foreign-pointer)
-  (name      ""             :type string       :read-only t)
-  (family    ""             :type string       :read-only t)
-  (display-name ""          :type string       :read-only t)
-  (size      0.0d0          :type double-float :read-only t)
-  (weight    0.0d0          :type double-float :read-only t)
-  (ascender  0.0d0          :type double-float :read-only t)
-  (descender 0.0d0          :type double-float :read-only t))
+  (ptr          (null-pointer) :type foreign-pointer)
+  (cg-ptr       (null-pointer) :type foreign-pointer)
+  (name         ""             :type string :read-only t)
+  (family       ""             :type string :read-only t)
+  (display-name ""             :type string :read-only t)
+  (size         0.0d0          :type (double-float 0d0)      :read-only t)
+  (weight       0.0d0          :type (double-float -1d0 1d0) :read-only t)
+  (slant        0.0d0          :type (double-float -1d0 1d0) :read-only t)
+  (ascender     0.0d0          :type double-float            :read-only t)
+  (descender    0.0d0          :type double-float            :read-only t))
 
 (defmethod print-object ((font font) stream)
   (print-unreadable-object (font stream :type t)
@@ -47,15 +40,17 @@ Val: `font'")
     (dolist (font fonts)
       (let ((ptr (make-ns-font-ptr (font-family font)
                                    (font-size   font)
-                                   (font-weight font))))
+                                   (font-weight font)
+                                   (font-slant  font))))
         (setf (font-ptr    font) ptr
               (font-cg-ptr font) (ct-font-copy-graphics-font ptr)
               (gethash (pointer-address ptr) *fonts*) font)))))
 
-(defun ns-font-to-font (ptr &optional weight)
+(defun ns-font-to-font (ptr &key weight slant)
   "Make `font' fron NSFont pointer PTR.
 Return `font' instance. "
-  (declare (type foreign-pointer ptr))
+  (declare (type foreign-pointer ptr)
+           (type (or null (double-float -1.0d0 1.0d0)) weight slant))
   (alx:ensure-gethash
    (pointer-address ptr)
    *fonts*
@@ -66,16 +61,13 @@ Return `font' instance. "
          (size      (invoke ptr "pointSize"   :double))
          (ascender  (invoke ptr "ascender"    :double))
          (descender (invoke ptr "descender"   :double)))
-     (if weight
-         (setf weight (coerce weight 'double-float))
-         (let* ((desc   (invoke ptr "fontDescriptor" :object))
-                (traits (invoke desc "objectForKey:"
-                                :pointer (ns-font-traits-attribute)
-                                :object))
-                (w*     (invoke traits "objectForKey:"
-                                :pointer (ns-font-weight-trait)
-                                :object)))
-           (setf weight (invoke w* "doubleValue" :double))))
+     (unless (and weight slant)
+       (let* ((desc   (invoke ptr "fontDescriptor" :object))
+              (traits (get-ns-dictionary desc   "NSFontTraitsAttribute")))
+         (unless weight
+           (setf weight (get-ns-dictionary traits "NSFontWeightTrait" :double)))
+         (unless slant
+           (setf slant  (get-ns-dictionary traits "NSFontSlantTrait"  :double)))))
      (make-ns-font :ptr          ptr
                    :cg-ptr       cg-ptr
                    :name         name
@@ -83,6 +75,7 @@ Return `font' instance. "
                    :display-name display
                    :size         size
                    :weight       weight
+                   :slant        slant
                    :ascender     ascender
                    :descender    descender))))
 
@@ -290,7 +283,7 @@ Parameter:
             :object)))
 
 (defun make-font (&key
-                    (family :system)
+                    (family :fix)
                     (size   :regular)
                     (weight :regular)
                     (slant  :roman))
@@ -299,7 +292,6 @@ Return a `font' object.
 
 Parameters:
 + FAMILY: keyword or string for font family name
-  + `:system'
   + `:san-francisco'
   + `:helvetica'
   + `:arial'
@@ -335,10 +327,14 @@ Parameters:
   (declare (type (or keyword string) family)
            (type (or keyword (real -1 1)) weight slant)
            (type (or keyword (real 0)) size))
-  (ns-font-to-font
-   (make-ns-font-ptr (as-ns-font-family-name family)
-                     (as-ns-font-size        size)
-                     (as-ns-font-weight      weight)
-                     (as-ns-font-slant       slant))))
+  (let ((weight (as-ns-font-weight weight))
+        (slant  (as-ns-font-slant  slant)))
+    (ns-font-to-font
+     (make-ns-font-ptr (as-ns-font-family-name family)
+                       (as-ns-font-size        size)
+                       weight
+                       slant)
+     :weight weight
+     :slant  slant)))
 
 ;;;; font.lisp ends here

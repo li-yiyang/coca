@@ -232,24 +232,91 @@ Return a list of foreign-pointer to NSObject. "
   (loop :for i :below (invoke ns-array "count" :unsigned-long)
         :collect (invoke ns-array "objectAtIndex:" :unsigned-long i :object)))
 
-(defun %ns-mutable-dictionary (&rest key-vals)
-  (loop :with dict := (invoke "NSMutableDictionary" "dictionary" :object)
-        :for (key val) :on key-vals :by #'cddr
-        :for val* := (etypecase val
-                       (foreign-pointer val)
-                       (null   (invoke "NSNull" "null" :object))
-                       (string (string-to-ns-string val))
-                       (number (ns-number val)))
-        :for key* := (etypecase key
-                       (foreign-pointer key)
-                       (string
-                        (objc-symbol-value key :object))
-                       (list
-                        (destructuring-bind (type value) key
-                          (ecase type
-                            (:ns-string (string-to-ns-string value))))))
-        :do (invoke dict "setObject:forKey:" :object val* :object key*)
-        :finally (return dict)))
+(defun ns-number (val)
+  "Convert VAL into NSNumber.
+Return foreign-pointer to NSNumber. "
+  (declare (type real val))
+  (the foreign-pointer
+    (etypecase val
+      (boolean
+       (invoke "NSNumber" "numberWithBool:" :bool val :object))
+      (character
+       (invoke "NSNumber" "numberWithChar:" :char (char-code val) :object))
+      (integer
+       (invoke "NSNumber" "numberWithInt:" :int val :object))
+      (single-float
+       (invoke "NSNumber" "numberWithFloat:" :float val :object))
+      (double-float
+       (invoke "NSNumber" "numberWithDouble:" :double val :object)))))
+
+(defun ns-number-value (ns-number type)
+  "Convert pointer to NS-NUMBER into TYPE lisp value.
+Return value of TYPE.
+
+Parameters:
++ NS-NUMBER:
+  foreign-pointer to NSNumber instance
++ TYPE:
+  + `:bool'
+  + `:char'
+  + `:double'
+  + `:float'
+  + `:int'
+  + `:string'
+"
+  (declare (type foreign-pointer ns-number)
+           (type keyword type))
+  (ecase type
+    (:bool      (invoke ns-number "boolValue" :bool))
+    (:char      (code-char (invoke ns-number "charValue" :char)))
+    (:float     (invoke ns-number "floatValue"  :float))
+    (:double    (invoke ns-number "doubleValue" :double))
+    (:int       (invoke ns-number "intValue" :int))
+    (:string    (invoke ns-number "stringValue" :ns-string))))
+
+(defun make-ns-mutable-dictionary ()
+  "Return a foreign-pointer to NSMutableDictionary. "
+  (invoke "NSMutableDictionary" "dictionary" :object))
+
+(defun as-ns-dictionary-key (key)
+  (declare (type (or foreign-pointer string list) key))
+  (etypecase key
+    (foreign-pointer key)
+    (string (objc-symbol-value key :object))
+    (list   (destructuring-bind (type value) key
+              (ecase type
+                (:ns-string (string-to-ns-string value)))))))
+
+(defun as-ns-dictionary-val (val)
+  (declare (type (or foreign-pointer null string number) val))
+  (etypecase val
+    (foreign-pointer val)
+    (null   (invoke "NSNull" "null" :object))
+    (string (string-to-ns-string val))
+    (number (ns-number val))))
+
+(defun get-ns-dictionary (dictionary key &optional (result :object))
+  (declare (type foreign-pointer dictionary)
+           (type (or foreign-pointer string list) key)
+           (type keyword result))
+  (let ((val (invoke dictionary "objectForKey:"
+                     :pointer (as-ns-dictionary-key key)
+                     :object)))
+    (ecase result
+      ((:object :pointer)
+       val)
+      ((:ns-string)
+       (ns-string-to-string val))
+      ((:bool :char :float :double :int :string)
+       (ns-number-value val result)))))
+
+(defun (setf get-ns-dictionary) (value dictionary key &optional result)
+  (declare (type foreign-pointer dictionary)
+           (ignore result))
+  (invoke dictionary
+          "setObject:forKey:"
+          :object (as-ns-dictionary-val value)
+          :object (as-ns-dictionary-key key)))
 
 (defmacro ns-mutable-dictionary (&rest key-val-pairs)
   "Make NSMutableDictionary from KEY-VALS.
@@ -275,19 +342,11 @@ KEY-VALS should be like {KEY VAL}... and would be evaluated
     TYPE:
     + :ns-string => (string-to-ns-string VALUE)
 "
-  `(%ns-mutable-dictionary ,@(loop :for (key val) :in key-val-pairs
-                                   :collect key :collect val)))
-
-(defun ns-number (val)
-  "Convert VAL into NSNumber.
-Return foreign-pointer to NSNumber. "
-  (declare (type real val))
-  (the foreign-pointer
-    (etypecase val
-      (integer
-       (invoke "NSNumber" "numberWithInt:" :int val :object))
-      (double-float
-       (invoke "NSNumber" "numberWithDouble:" :double val :object)))))
+  (alx:with-gensyms (dictionary)
+    `(let ((,dictionary (make-ns-mutable-dictionary)))
+       ,@(loop :for (key val) :in key-val-pairs
+               :collect `(setf (get-ns-dictionary ,dictionary ,key) ,val))
+       ,dictionary)))
 
 (defun alloc (class)
   "Allocate instance of CLASS.

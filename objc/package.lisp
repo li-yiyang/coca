@@ -35,7 +35,9 @@
    #:pathname-to-ns-url
    #:ns-array-to-list
    #:ns-mutable-dictionary
+   #:get-ns-dictionary
    #:ns-number
+   #:ns-number-value
    #:alloc
    #:init
    #:description

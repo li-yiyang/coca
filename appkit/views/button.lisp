@@ -1,51 +1,6 @@
-;;;; views.lisp --- Wrapper of NSViews-like widgets
+;;;; button.lisp --- Wrapper for NSButton-like widgets
 
 (in-package :coca.appkit)
-
-
-;;;; misc mixins
-
-(define-objc-enum (:ns-control-state :alias :long)
-  "Whether a control is on, off, or in a mixed state. "
-  (:on    1)
-  (:off   0)
-  (:mixed -1))
-
-(defclass state-mixin () ()
-  (:documentation
-   "Mixin class for obj support state method. "))
-
-(defgeneric state (state-mixin)
-  (:method ((obj state-mixin))
-    (with-ptr obj ptr
-      (invoke ptr "state" :ns-control-state))))
-
-(defmethod (setf state) (state (obj state-mixin))
-  (declare (type (member :on :off :mixed) state))
-  (with-ptr obj ptr
-    (dispatch-main ()
-      (invoke ptr "setState:" :ns-control-state state))))
-
-(defclass bordered-mixin () ()
-  (:documentation
-   "Mixin class for obj support isBordered method. "))
-
-(defgeneric borderedp (bordered-mixin)
-  (:documentation
-   "Get/Set if BORDERED-MIXIN is bordered or not. ")
-  (:method ((obj bordered-mixin))
-    (with-ptr obj ptr
-      (invoke ptr "isBordered" :bool))))
-
-(defmethod (setf borderedp) (bordered (obj bordered-mixin)
-                             &aux (borderedp (and bordered t)))
-  (with-ptr obj ptr
-    (dispatch-main ()
-      (invoke ptr "setBordered:" :bool borderedp))
-    borderedp))
-
-
-;;;; button
 
 (define-objc-enum :ns-button-type
   "ObjC NSButton type.
@@ -229,4 +184,4 @@ Typically used to open a help dialog. ")
       (invoke ptr "setBezelStyle:" :ns-bezel-style style))
     style))
 
-;;;; views.lisp ends here
+;;;; button.lisp ends here

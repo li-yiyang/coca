@@ -97,6 +97,7 @@
    (:file "typing"    :depends-on ("package"))
    (:file "obj"       :depends-on ("package"))
    (:file "font"      :depends-on ("obj"))
+   (:file "color"     :depends-on ("obj"))
    (:file "hierarchy" :depends-on ("package"))
    (:file "subview"   :depends-on ("hierarchy"))
    (:file "named"     :depends-on ("package"))
@@ -108,7 +109,12 @@
    (:file "modal"     :depends-on ("window"))
    (:file "target"    :depends-on ("obj"))
    (:file "menu"      :depends-on ("target"))
-   (:file "views"     :depends-on ("subview" "target"))))
+   (:module "views"
+    :depends-on ("subview" "target" "font")
+    :components
+    ((:file "utils")
+     (:file "button"     :depends-on ("utils"))
+     (:file "text-field" :depends-on ("utils"))))))
 
 (defsystem #:coca/metal
   :author ("凉凉")

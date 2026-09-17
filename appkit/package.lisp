@@ -115,19 +115,32 @@
    #:target
    #:action
    #:enabledp)
-  ;; views.lisp
+  ;; views/utils.lisp
   (:export
    #:state-mixin
    #:state
    #:bordered-mixin
-   #:borderedp
+   #:borderedp)
+  ;; views/button.lisp
+  (:export
    #:base-button
    #:button
    #:checkbox
    #:radio-button
    #:help-button
    #:bezel-style
-   #:button-type))
+   #:button-type)
+  ;; views/text-field.lisp
+  (:export
+   #:base-text-field
+   #:text-alignment
+   #:editable
+   #:selectable
+   #:draws-background-p
+   #:label
+   #:placeholder-mixin
+   #:placeholder
+   #:text-input))
 
 (in-package :coca.appkit)
 

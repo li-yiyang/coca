@@ -188,11 +188,11 @@ Dev Note:
 
 (defclass %main-menu (menu) ()
   (:documentation
-   "Internal usage only. 
+   "Internal usage only.
 
-This should be used to mark a `menu' is setted as main menu. 
+This should be used to mark a `menu' is setted as main menu.
 
-Dev Note: 
+Dev Note:
 + [maybe] introduce some slot values to save more infomation
 "))
 
@@ -202,7 +202,9 @@ Return `t' if MENU is setted as main menu. "
   (typep menu '%main-menu))
 
 (defun main-menu ()
-  "Get/Set the main menu of "
+  "Get/Set the main menu of current app. "
+  (unless (boundp '*main-menu*)
+    (coca-app-run))
   *main-menu*)
 
 (defun (setf main-menu) (menu)
@@ -225,7 +227,7 @@ the first `menu-item' of MENU. "
   item)
 
 (defmethod add-child ((menu %main-menu) (item menu-item))
-  "Normal `menu-item' should be inserted as last two item, 
+  "Normal `menu-item' should be inserted as last two item,
 before the `help-menu-item'. "
   (with-ptr menu menu-ptr
     (with-ptr item item-ptr
