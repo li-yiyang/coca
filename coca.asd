@@ -96,6 +96,7 @@
   ((:file "package")
    (:file "typing"    :depends-on ("package"))
    (:file "obj"       :depends-on ("package"))
+   (:file "font"      :depends-on ("obj"))
    (:file "hierarchy" :depends-on ("package"))
    (:file "subview"   :depends-on ("hierarchy"))
    (:file "named"     :depends-on ("package"))

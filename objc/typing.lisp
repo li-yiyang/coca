@@ -465,4 +465,22 @@ See also `~A'. "
   :result (:pointer ns-array-to-list)
   :arg    ((_ (error "(:ns-array) Not implemented yet... "))))
 
+(define-objc-typing :ns-dictionary
+  :result :pointer
+  :arg    (((and (type list) bindings)
+            (labels ((kv! (bindings)
+                       (loop :for (key val . rest) :in bindings
+                             :if (not (null rest))
+                               :do (error "Malformed :ns-dictionary expression.
+Unexpected expression ~A. "
+                                          rest)
+                             :collect (if (and (listp val)
+                                               (listp (car val)))
+                                          (list key (kv! val))
+                                          (list key val))
+                               :into kv-pairs
+                             :finally (return (cons 'ns-mutable-dictionary
+                                                    kv-pairs)))))
+              `(:pointer ,(kv! bindings))))))
+
 ;;;; typing.lisp ends here

@@ -14,6 +14,19 @@
    #:obj-ptr
    #:find-obj-mixin
    #:find-obj)
+  ;; font.lisp
+  (:export
+   #:font
+   #:font-name
+   #:font-family
+   #:font-display-name
+   #:font-size
+   #:font-weight
+   #:font-ascender
+   #:font-descender
+   #:font-family-list
+   #:load-font-file
+   #:make-font)
   ;; hierarchy.lisp
   (:export
    #:parent

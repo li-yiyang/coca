@@ -3,13 +3,11 @@
 (in-package :coca.appkit)
 
 (define-objc-global-variable ns-font-traits-attribute
-    (mem-ref (foreign-symbol-pointer "NSFontTraitsAttribute")
-             :pointer)
+    (objc-symbol-value "NSFontTraitsAttribute" :pointer)
   "NSFontTraitsAttribute")
 
 (define-objc-global-variable ns-font-weight-trait
-    (mem-ref (foreign-symbol-pointer "NSFontWeightTrait")
-             :pointer)
+    (objc-symbol-value "NSFontWeightTrait" :pointer)
   "NSFontWeightTrait")
 
 (defvar *fonts* (tg:make-weak-hash-table)
@@ -19,8 +17,8 @@ Key: pointer address
 Val: `font'")
 
 (defstruct (font (:constructor make-ns-font))
-  (ptr       (null-pointer) :type foreign-pointer :read-only t)
-  (cg-ptr    (null-pointer) :type foreign-pointer :read-only t)
+  (ptr       (null-pointer) :type foreign-pointer)
+  (cg-ptr    (null-pointer) :type foreign-pointer)
   (name      ""             :type string       :read-only t)
   (family    ""             :type string       :read-only t)
   (display-name ""          :type string       :read-only t)
@@ -36,6 +34,24 @@ Val: `font'")
             (font-size         font)
             (pointer-address (font-ptr font)))))
 
+(defun ct-font-copy-graphics-font (ptr)
+  (declare (type foreign-pointer ptr))
+  (foreign-funcall "CTFontCopyGraphicsFont"
+                   :pointer ptr
+                   :pointer (null-pointer)
+                   :pointer))
+
+(define-on-coca-app-finish-run renew-font-ptr-cg-ptr
+  (let ((fonts (alx:hash-table-values *fonts*)))
+    (clrhash *fonts*)
+    (dolist (font fonts)
+      (let ((ptr (make-ns-font-ptr (font-family font)
+                                   (font-size   font)
+                                   (font-weight font))))
+        (setf (font-ptr    font) ptr
+              (font-cg-ptr font) (ct-font-copy-graphics-font ptr)
+              (gethash (pointer-address ptr) *fonts*) font)))))
+
 (defun ns-font-to-font (ptr &optional weight)
   "Make `font' fron NSFont pointer PTR.
 Return `font' instance. "
@@ -43,10 +59,7 @@ Return `font' instance. "
   (alx:ensure-gethash
    (pointer-address ptr)
    *fonts*
-   (let ((cg-ptr    (foreign-funcall "CTFontCopyGraphicsFont"
-                                     :pointer ptr
-                                     :pointer (null-pointer)
-                                     :pointer))
+   (let ((cg-ptr    (ct-font-copy-graphics-font ptr))
          (name      (invoke ptr "fontName"    :ns-string))
          (family    (invoke ptr "familyName"  :ns-string))
          (display   (invoke ptr "displayName" :ns-string))
@@ -77,99 +90,9 @@ Return `font' instance. "
   :alias (:pointer ns-font-to-font)
   :arg   ((font `(:pointer (font-ptr ,font)))))
 
-
-;;;; font-weight
-
-(defvar *font-weight-map*
-  (alx:alist-hash-table
-   '((:ultra-light . -0.8d0)
-     (:thin        . -0.6d0)
-     (:light       . -0.4d0)
-     (:regular     .  0.0d0)
-     (:medium      .  0.23d0)
-     (:semibold    .  0.3d0)
-     (:bold        .  0.4d0)
-     (:heavy       .  0.56d0)
-     (:black       .  0.62d0))
-   :test 'eq)
-  "Named font weights.
-
-Key: keyword of weight
-Val: double-float of ns font weight
-")
-
-(defun ns-font-weight (weight)
-  (declare (type keyword weight))
-  (or (gethash weight *font-weight-map*)
-      (error "Unknown font weight `~S'. " weight)))
-
-(defun (setf ns-font-weight) (weight name)
-  (declare (type keyword weight))
-  (let ((weight! (as-ns-font-weight weight)))
-    (setf (gethash name *font-weight-map*) weight!)))
-
-(defun as-ns-font-weight (weight)
-  "Convert WEIGHT into ns font weight.
-Return `double-float' as ns font weight. "
-  (declare (type (or (real -1 1) keyword) weight))
-  (the double-float
-    (etypecase weight
-      (double-float
-       (assert (<= -1d0 weight 1d0))
-       weight)
-      ((real -1 1)
-       (coerce weight 'double-float))
-      (keyword      (ns-font-weight weight)))))
-
-(define-compiler-macro as-ns-font-weight (&whole form weight)
-  (typecase weight
-    (keyword (ns-font-weight weight))
-    (number
-     (assert (<= -1 weight 1))
-     (coerce weight 'double-float))
-    (t       form)))
-
-(define-objc-typing :ns-font-weight
-  :alias :double
-  :arg   (weight `(:double (as-ns-font-weight ,weight))))
-
 (define-objc-global-variable ns-font-manager
     (invoke "NSFontManager" "sharedFontManager" :object)
   "Return the ObjC NSFontManager instance. ")
-
-
-;;;; font-size
-
-(defvar *font-size-map*
-  (alx:alist-hash-table
-   '((:normal . 13d0))
-   :test 'eq)
-  "")
-
-(defun ns-font-size (name)
-  (declare (type keyword name))
-  (or (gethash name *font-size-map*)
-      (error "Unknown font size for ~S. " name)))
-
-(defun (setf ns-font-size) (size name)
-  (declare (type (real 0) size)
-           (type keyword  name))
-  (setf (gethash name *font-size-map*)
-        (coerce size 'double-float)))
-
-(defun as-ns-font-size (size)
-  (declare (type (or keyword (real 0)) size))
-  (etypecase size
-    (double-float size)
-    (real         (coerce size 'double-float))
-    (keyword      (ns-font-size size))))
-
-(define-objc-typing :ns-font-size
-  :alias :double
-  :arg   ((size `(:double (as-ns-font-size ,size)))))
-
-
-;;;; font-family
 
 (defun %font-family-list ()
   (mapcar #'ns-string-to-string
@@ -238,8 +161,9 @@ Parameter:
 
 (defvar *font-family-name-map*
   (alx:alist-hash-table
-   '((:system          . ".AppleSystemUIFont")
-     (:san-francisco   . ".SF NS")
+   '((:fix             . "Courier New")
+     (:serif           . "Times New Roman")
+     (:sans-serif      . "Verdana")
      (:helvetica       . "Helvetica")
      (:arial           . "Arial")
      (:times-new-roman . "Times New Roman")
@@ -248,34 +172,28 @@ Parameter:
      (:ping-fang-sc    . "PingFang SC")
      (:ping-fang-tc    . "PingFang TC")
      (:ping-fang-hk    . "PingFang HK"))
-   :test 'eq)
-  "Named font family names.
+   :test 'eq))
 
-Key: keyword of fonts
-Val: string of family name
-")
+(defun ns-font-family-name (face &optional (errorp t))
+  (declare (type keyword face))
+  (or (gethash face *font-family-name-map*)
+      (when errorp
+        (error "Unknown font family name for `~S' face. " face))))
 
-(defun ns-font-family-name (name)
-  (declare (type keyword name))
-  (or (gethash name *font-family-name-map*)
-      (error "Get the family name")))
+(defun (setf ns-font-family-name) (family name &optional errorp)
+  (declare (type keyword name)
+           (ignore errorp))
+  (setf (gethash name *font-family-name-map*)
+        (as-ns-font-family-name family)))
 
-(defun (setf ns-font-family-name) (family name)
-  (declare (type string  family)
-           (type keyword name))
-  (unless (find family (font-family-list) :test #'string=)
-    (error "Unknown font family name ~A. " family))
-  (setf (gethash name *font-family-name-map*) family))
-
-(defun as-ns-font-family-name (name)
-  (declare (type (or string keyword) name))
-  (etypecase name
+(defun as-ns-font-family-name (face)
+  (declare (type (or string keyword) face))
+  (etypecase face
     (string
-     (unless (find name (font-family-list) :test #'string=)
-       (error "Font ~A is not known font family name. " name))
-     (string-to-ns-string name))
-    (keyword
-     (string-to-ns-string (ns-font-family-name name)))))
+     (unless (find face (font-family-list) :test #'string=)
+       (error "Font ~A is not known font family name. " face))
+     face)
+    (keyword (ns-font-family-name face))))
 
 (define-objc-typing :ns-font-family-name
   :alias :pointer
@@ -289,94 +207,138 @@ Val: string of family name
           (name
            `(:pointer (as-ns-font-family-name ,name)))))
 
-
-;;;; make-font
+(macrolet ((define-font-attr-map ((name low high) binding)
+             (let ((table   (objc::symbol-concat "*FONT-" name "-MAP*"))
+                   (accessf (objc::symbol-concat "NS-FONT-" name))
+                   (as-f    (objc::symbol-concat "AS-NS-FONT-" name)))
+               `(progn
+                  (defvar ,table
+                    (alx:alist-hash-table ',binding :test 'eq))
+                  (defun ,accessf (face &optional (errorp t))
+                    (declare (type keyword face))
+                    (or (gethash face ,table)
+                        (when errorp
+                          (error ,(format nil
+                                          "Unknown font ~(~A~) for `~~S' face. "
+                                          name)
+                                 face))))
+                  (defun ,as-f (face)
+                    (declare (type (or keyword
+                                       (real ,low ,high)
+                                       (cons keyword list))
+                                   face))
+                    (etypecase face
+                      ((double-float ,low ,high) face)
+                      ((real ,low ,high) (coerce face 'double-float))
+                      (keyword (,accessf face))))
+                  (defun (setf ,accessf) (,name face &optional errorp)
+                    (declare (type keyword face)
+                             (ignore errorp))
+                    (setf (gethash face ,table) (,as-f ,name)))
+                  (define-objc-typing (intern (symbol-name accessf) :keyword)
+                    :alias :double
+                    :arg   (((and (type (double-float ,low ,high)) val)
+                             (list :double val))
+                            ((and (type (real ,low ,high)) val)
+                             (list :double (coerce val 'double-float)))
+                            (face
+                             `(:double (,',as-f ,face)))))))))
 
-(defun make-font-of-style (style size)
-  (declare (type keyword style))
-  (macrolet ((font* (&rest bindings)
-               `(ecase style
-                  ,@(loop :for (key sel*) :in bindings
-                          :for sel := (format nil "~AFontOfSize:" sel*)
-                          :collect `(,key (invoke "NSFont" ,sel
-                                                  :ns-font-size size
-                                                  :ns-font))))))
-    (font*
-     (:label           "label")
-     (:message         "message")
-     (:menubar         "menuBar")
-     (:menu            "menu")
-     (:control-content "controlContent")
-     (:titlebar        "titleBar")
-     (:palette         "palette")
-     (:tooltips        "toolTips"))))
+  (define-font-attr-map (weight -1d0 1d0)
+      ((:ultra-light . -0.8d0)
+       (:thin        . -0.6d0)
+       (:light       . -0.4d0)
+       (:regular     .  0.0d0)
+       (:medium      .  0.23d0)
+       (:semibold    .  0.3d0)
+       (:bold        .  0.4d0)
+       (:heavy       .  0.56d0)
+       (:black       .  0.62d0)))
 
-;; (defun make-font (&rest font-description
-;;                   &key style family size weight slant
-;;                   &allow-other-keys)
-;;   "Make `font' instance.
-;;
-;; Parameters:
-;; + STYLE:
-;; + FAMILY:
-;; + SIZE
-;;   + font size in points
-;;   + `:normal'
-;;   + `
-;; + WEIGHT
-;;   + `:ultra-light'
-;;   + `:thin'
-;;   + `:light'
-;;   + `:normal', `:regular' (default)
-;;   + `:medium'
-;;   + `:semibold'
-;;   + `:bold'
-;;   + `:heavy'
-;;   + `:black'
-;;   + number between [-1, 1]
-;; + SLANT
+  (define-font-attr-map (size 0d0 *)
+      ((:tiny       . 9d0)
+       (:very-small . 10d0)
+       (:small      . 11d0)
+       (:normal     . 13d0)
+       (:regular    . 13d0)
+       (:large      . 18d0)
+       (:very-large . 24d0)
+       (:huge       . 32d0)))
 
-;; "
-;;   (macrolet ((givenp (required excluded)
-;;                `(and ,@required (not (or ,@excluded)))))
-;;     (cond ((givenp (style) (family weight slant))
-;;            (case style
-;;              (:system
-;;               (invoke "NSFont"
-;;                       "systemFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :ns-font))
-;;              (:label
-;;               (invoke "NSFont"
-;;                       "labelFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :ns-font))
-;;              (:menubar
-;;               (invoke "NSFont"
-;;                       "menuBarFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :ns-font))
-;;              (:menu
-;;               (invoke "NSFont"
-;;                       "menuFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :ns-font))
-;;              (:control-content
-;;               (invoke "NSFont"
-;;                       "controlContentFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :object))
-;;              (:title-bar
-;;               (invoke "NSFont"
-;;                       "titleBarFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :object))
-;;              (:palette
-;;               (invoke "NSFont"
-;;                       "paletteFontOfSize:"
-;;                       :double (as-ns-font-size size)
-;;                       :object))))
-;;           ((givenp (style weight) (family slant))
-;;            ))))
+  (define-font-attr-map (slant -1d0 1d0)
+      ((:roman   . 0d0)
+       (:regular . 0d0)
+       (:normal  . 0d0)
+       (:italic  . -0.2d0))))
+
+(defun make-ns-font-ptr (family size weight slant)
+  "Make and return foreign-pointer to NSFont of FAMILY, SIZE, WEIGHT, TRAIT. "
+  (declare (type string family)
+           (type (double-float 0d0) size)
+           (type (double-float -1d0 1d0) weight slant))
+  (let ((desc (invoke "NSFontDescriptor"
+                      "fontDescriptorWithFontAttributes:"
+                      :ns-dictionary (("NSFontFamilyAttribute" family)
+                                      ("NSFontTraitsAttribute"
+                                       (("NSFontWeightTrait" weight)
+                                        ("NSFontSlantTrait"  slant))))
+                      :object)))
+    (invoke "NSFont"
+            "fontWithDescriptor:size:"
+            :object desc
+            :double size
+            :object)))
+
+(defun make-font (&key
+                    (family :system)
+                    (size   :regular)
+                    (weight :regular)
+                    (slant  :roman))
+  "Create `font' using FAMILY, SIZE, WEIGHT, SLANT.
+Return a `font' object.
+
+Parameters:
++ FAMILY: keyword or string for font family name
+  + `:system'
+  + `:san-francisco'
+  + `:helvetica'
+  + `:arial'
+  + `:times-new-roman'
+  + `:monaco'
+  + `:ping-fang'
+  + `:ping-fang-sc'
+  + `:ping-fang-tc'
+  + `:ping-fang-hk'
++ SIZE: keyword or point size of font
+  + `:tiny'
+  + `:very-small'
+  + `:small'
+  + `:normal'
+  + `:regular'
+  + `:large'
+  + `:very-large'
+  + `:huge'
++ WEIGHT: keyword or [-1, 1] for font weight
+  + `:ultra-light'
+  + `:thin'
+  + `:light'
+  + `:regular'
+  + `:medium'
+  + `:semibold'
+  + `:bold'
+  + `:heavy'
+  + `:black'
++ SLANT: keyword or [-1, 1] for font slant
+  + `:roman'
+  + `:italic'
+"
+  (declare (type (or keyword string) family)
+           (type (or keyword (real -1 1)) weight slant)
+           (type (or keyword (real 0)) size))
+  (ns-font-to-font
+   (make-ns-font-ptr (as-ns-font-family-name family)
+                     (as-ns-font-size        size)
+                     (as-ns-font-weight      weight)
+                     (as-ns-font-slant       slant))))
 
 ;;;; font.lisp ends here
