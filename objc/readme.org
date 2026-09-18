@@ -878,3 +878,164 @@ Load =coca/objc/osx-version= to have macOS version support:
   :   or keyword like `:sequoia', `:tahoe', `:golden-gate'
   : + MINOR: minor version number
   : + PATCH: patch version number
+
+** Runtime Inspect
+Load =coca/objc/runtime-inspect= to have ObjC runtime environment
+inspection abilities. Note that this package should only for
+development usage (not recommanded to use in production environemnt).
+
++ =(objc-class-list)= *[Function]*
+
+  #+name: doc:objc-class-list
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-list t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-list
+  : Return a list of all the ObjC classes.
+
++ =(objc-class-superclass objc-class)= *[Function]*
+
+  #+name: doc:objc-class-superclass
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-superclass t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-superclass
+  : Return the superclass of OBJC-CLASS.
+  : If the OBJC-CLASS is the root class, its superclass is `t',
+  : otherwise, return `objc-class'.
+
++ =(objc-class-subclassp class superclass)= *[Function]*
+
+  #+name: doc:objc-class-subclassp
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-subclassp t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-subclassp
+  : Test if CLASS is subclass of SUPERCLASS.
+
++ =(objc-class-subclasses objc-class)= *[Function]*
+
+  #+name: doc:objc-class-subclasses
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-subclasses t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-subclasses
+  : Return a list of subclasses of OBJC-CLASS.
+
++ =(decode-objc-type-encoding encoding)=
+
+  #+name: doc:decode-objc-type-encoding
+  #+begin_src lisp :exports results
+    (documentation #'decode-objc-type-encoding t)
+  #+end_src
+
+  #+RESULTS: doc:decode-objc-type-encoding
+  #+begin_example
+  Parse ObjC type encoding string ENCODING.
+  Return values are list ObjC encoding, and ENCODING string.
+
+  Dev Note:
+
+    <type>    := :char | :int | :short | ... ;; see below
+    <array>   := (:array len <type>)
+    <struct>  := (:struct name (<type>...))
+    <union>   := (:union name (<type>...))
+
+  ObjC type encoding: (
+    Code             ObjC encoding       Meaning
+    c                :char               A char
+    i                :int                An int
+    s                :short              A short
+    l                :long               A long
+    q                :long-long          A long long
+    C                :unsigned-char      An unsigned char
+    I                :unsigned-int       An unsigned int
+    S                :unsigned-short     An unsigned short
+    L                :unsigned-long      An unsigned long
+    Q                :unsigned-long-long An unsigned long long
+    f                :float              A float
+    d                :double             A double
+    B                :bool               A C++ bool or a C99 _Bool
+    v                :void               A void
+    ,*                :string             A character string (char *)
+    @                :object             An object (whether statically typed or typed id)
+    #                :class              A class object (Class)
+    :                :sel                A method selector (SEL)
+    [array type]     (:array len enc)    An array
+    {name=type . ..} (:struct NAME)      A structure
+    (name=type . ..) (:union  NAME)      A union
+    bnum             (:bits NUM)         A bit field of num bits
+    ^type            :pointer            A pointer to type
+    ?                :unknown            An unknown type
+
+  ObjC method encoding:
+    r                         const
+    n                         in
+    N                         inout
+    o                         out
+    O                         bycopy
+    R                         byref
+    V                         oneway
+
+  see also:
+  https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
+  #+end_example
+
++ =(encode-objc-type-encoding objc-encoding-list)= *[Function]*
+
+  #+name: doc:encode-objc-type-encoding
+  #+begin_src lisp :exports results
+    (documentation #'encode-objc-type-encoding t)
+  #+end_src
+
+  #+RESULTS: doc:encode-objc-type-encoding
+  : Encode OBJC-ENCODING-LIST as ObjC type encoding string.
+  : Return ObjC type encoding string.
+  :
+  : Example:
+  :
+  :     (encode-objc-type-encoding '(:void :object :sel)) ;; => \"v@:\"
+
++ =(objc-class-instance-method-encoding objc-class-or-object sel &optional errorp objc-class-p)= *[Function]*
+
+  #+name: doc:objc-class-instance-method-encoding
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-instance-method-encoding t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-instance-method-encoding
+  #+begin_example
+  Get class instance method encoding of OBJC-CLASS and SEL.
+  Return values are argument encoding list, return type and encoding string.
+  If not found and not ERRORP, return `nil'.
+
+  Parameters:
+  + OBJC-CLASS-OR-OBJECT:
+    + foreign-pointer to object
+    + otherwise, would be `coerce-to-objc-class'
+  + SEL: would be `coerce-to-selector' first
+  + ERRORP: if or not error when class method is not found
+  + OBJC-CLASS-P:
+    if non-nil, assume OBJC-CLASS-OR-OBJECT is pointer to ObjC class
+  #+end_example
+
++ =(objc-class-class-method-encoding objc-class sel &optional errorp)= *[Function]*
+
+  #+name: doc:objc-class-class-method-encoding
+  #+begin_src lisp :exports results
+    (documentation #'objc-class-class-method-encoding t)
+  #+end_src
+
+  #+RESULTS: doc:objc-class-class-method-encoding
+  : Get class method encoding of OBJC-CLASS and SEL.
+  : Return values are argument encoding list, return type and encoding string.
+  : If not found and not ERRORP, return `nil'.
+  :
+  : Parameters:
+  : + OBJC-CLASS: would be `coerce-to-objc-class' first
+  : + SEL: would be `coerce-to-selector' first
+  : + ERRORP: if or not error when class method is not found

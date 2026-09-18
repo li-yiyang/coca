@@ -50,7 +50,17 @@
    #:osx-version>=)
   ;; block.lisp
   (:export
-   #:define-objc-block))
+   #:define-objc-block)
+  ;; runtime-inspect.lisp
+  (:export
+   #:objc-class-list
+   #:objc-class-superclass
+   #:objc-class-subclasses
+   #:objc-class-subclassp
+   #:decode-objc-type-encoding
+   #:encode-objc-type-encoding
+   #:objc-class-instance-method-encoding
+   #:objc-class-class-method-encoding))
 
 (in-package :coca.objc)
 

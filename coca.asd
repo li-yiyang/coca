@@ -8,6 +8,7 @@
   :depends-on (#:coca/objc
                #:coca/objc/block
                #:coca/objc/osx-version
+               #:coca/objc/runtime-inspect
                #:coca/app
                #:coca/appkit
                #:coca/metal))
@@ -48,6 +49,16 @@
   :pathname "objc"
   :components
   ((:file "osx-version")))
+
+(defsystem #:coca/objc/runtime-inspect
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.0"
+  :description "Provide inspect methods for ObjC method (Dev Only)"
+  :depends-on (#:coca/objc)
+  :pathname "objc"
+  :components
+  ((:file "runtime-inspect")))
 
 (defsystem #:coca/app
   :author ("凉凉")
