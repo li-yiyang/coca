@@ -154,7 +154,8 @@ Parameter:
 
 (defvar *font-family-name-map*
   (alx:alist-hash-table
-   '((:fix             . "Courier New")
+   '((:system          . ".AppleSystemUIFont")
+     (:fix             . "Courier New")
      (:serif           . "Times New Roman")
      (:sans-serif      . "Verdana")
      (:helvetica       . "Helvetica")
@@ -283,7 +284,7 @@ Parameter:
             :object)))
 
 (defun make-font (&key
-                    (family :fix)
+                    (family :system)
                     (size   :regular)
                     (weight :regular)
                     (slant  :roman))
@@ -292,6 +293,7 @@ Return a `font' object.
 
 Parameters:
 + FAMILY: keyword or string for font family name
+  + `:system'
   + `:san-francisco'
   + `:helvetica'
   + `:arial'

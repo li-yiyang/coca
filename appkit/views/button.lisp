@@ -53,7 +53,8 @@ See `button-type'.
                        alternate-titled-mixin
                        state-mixin
                        bordered-mixin
-                       target-mixin)
+                       target-mixin
+                       font-mixin)
   ((button-type
     :initarg  :button-type
     :initform (alx:required-argument :button-type)

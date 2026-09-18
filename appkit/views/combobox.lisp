@@ -3,7 +3,8 @@
 (in-package :coca.appkit)
 
 (defclass combobox (base-view
-                    target-mixin)
+                    target-mixin
+                    font-mixin)
   ((item-list*
     :initform ()
     :type     list
