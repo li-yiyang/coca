@@ -48,7 +48,7 @@
    :title          (alx:required-argument :title)))
 
 (defmethod add-child ((container menu-element) (item menu-element))
-  (add-item container item))
+  (and (add-item container item) t))
 
 (defmethod remove-child ((container menu-element) (item menu-element))
   (remove-item container item))

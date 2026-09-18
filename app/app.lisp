@@ -61,7 +61,7 @@ The element of `*on-coca-app-finish-run*' should be:
 + symbol of function name (see below)
 + function with empty lambda list
 
-Dev Note: 
+Dev Note:
 + the first added function is executed first
 ")
 
@@ -138,7 +138,7 @@ starts -- this ensures CFFI environment correct after image restarts. ")
               (setf *app-dispatch-result*
                     (multiple-value-list
                      (funcall (the function dispatch))))
-            (error (err) (setf *app-dispatch-error* err)))
+            (condition (err) (setf *app-dispatch-error* err)))
           (restart-case
               (setf *app-dispatch-result*
                     (multiple-value-list

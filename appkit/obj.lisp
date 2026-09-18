@@ -2,6 +2,8 @@
 
 (in-package :coca.appkit)
 
+(define-condition appkit-condition () ())
+
 (defclass obj ()
   ((ptrs
     :initform (make-hash-table :test 'eq)
@@ -138,6 +140,12 @@ Dev Note:
 
 ;;;; owned-mixin
 
+(define-condition already-destroyed (appkit-condition)
+  ((obj :initarg :obj))
+  (:report (lambda (cond stream)
+             (format stream "~A is already destoryed"
+                     (slot-value cond 'obj)))))
+
 (defclass owned-mixin ()
   ()
   (:documentation
@@ -170,6 +178,12 @@ Initialize Parameters:
 
   The return value of OBJC-INIT should be
   foreign-pointer to ObjC object itself.
+
++ INIT-IN-MAIN-P: if or not the modification of instance
+  should happens in main thread
+
+  if it's non-nil, the object is init and destroyed in
+  main thread
 "))
 
 (defmethod initialize-instance
@@ -189,8 +203,17 @@ Initialize Parameters:
                                  (funcall objc-init ptr))
                                (funcall objc-init ptr))))))))
     (declare (type foreign-pointer ptr))
-    (flet ((finalize () (release ptr)))
-      (tg:finalize obj #'finalize))))
+    (if init-in-main-p
+        (flet ((finalize () (dispatch-main () (release ptr))))
+          (tg:finalize obj #'finalize))
+        (flet ((finalize () (release ptr)))
+          (tg:finalize obj #'finalize)))))
+
+(defmethod objc-ptr ((obj owned-mixin) (ptr (eql :ptr)))
+  (let ((ptr* (gethash :ptr (objc-ptrs obj))))
+    (if (null ptr*)
+        (error 'already-destroyed :obj obj)
+        ptr*)))
 
 (defgeneric destroy (obj)
   (:documentation

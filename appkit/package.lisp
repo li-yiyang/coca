@@ -13,7 +13,13 @@
    #:obj
    #:obj-ptr
    #:find-obj-mixin
-   #:find-obj)
+   #:find-obj
+   #:with-ptr
+   #:with-ptrs
+   #:appkit-condition
+   #:already-destroyed
+   #:owned-mixin
+   #:destroy)
   ;; font.lisp
   (:export
    #:font
@@ -108,11 +114,14 @@
    #:screen-list)
   ;; window.lisp
   (:export
+   #:window-list
    #:window
    #:screen
    #:window-style
    #:window-select
-   #:window-select-event-handler)
+   #:window-select-event-handler
+   #:window-close
+   #:window-close-event-handler)
   ;; modal.lisp
   (:export
    #:alert

@@ -21,15 +21,20 @@ An OBJ with no child should return (). ")
 (defgeneric add-child (parent child)
   (:documentation
    "Add CHILD to PARENT.
+Return `t' if success, otherwise `nil' if fails.
 
 Side Effects:
 + if `parent' of CHILD is not PARENT,
   the CHILD is removed from PARENT first
 ")
-  (:method :before (parent child)
-    (when (and (not (null (parent child)))
-               (not (eq parent (parent child))))
-      (remove-child (parent child) child))))
+  (:method :around (parent child)
+    (let ((child-parent (parent child)))
+      (cond ((null child-parent)
+             (call-next-method))
+            ;; skip if CHILD is already child of PARENT
+            ((not (eq parent child-parent))
+             (remove-child child-parent child)
+             (call-next-method))))))
 
 (defgeneric remove-child (parent child)
   (:documentation

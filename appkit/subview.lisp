@@ -11,7 +11,6 @@
                      framed-mixin
                      hidden-mixin)
   ((parent
-    :initarg  :parent
     :initform nil
     :type     (or base-view window null)
     :reader   parent))
@@ -32,6 +31,13 @@
 (defmethod initialize-instance :after ((view base-view) &key parent)
   (when parent
     (add-child parent view)))
+
+(defmethod destroy ((view base-view))
+  "Before destroy a VIEW, it should be removed from its parent.
+And destroying the view should happen in main thread. "
+  (dispatch-main (:throw-to-toplevel t)
+    (remove-from-parent view)
+    (call-next-method)))
 
 
 ;;;; subview-mixin
@@ -72,7 +78,8 @@ Typically, this should be different than :ptr (default). "))
       (dispatch-main ()
         (invoke parent-ptr
                 "addSubview:"
-                :object child-ptr)))))
+                :object child-ptr))))
+  t)
 
 (defmethod remove-child ((parent subview-mixin) (child base-view))
   (with-slots (subviews) parent
@@ -83,5 +90,12 @@ Typically, this should be different than :ptr (default). "))
         (dispatch-main ()
           (invoke ptr "removeFromSuperview")))
       (setf parent nil))))
+
+(defmethod destroy :before ((obj subview-mixin))
+  "For `subview-mixin' OBJ, before destroy, destroy its children first. "
+  ;; ignore `already-destroyed' events
+  (dispatch-main (:throw-to-toplevel t)
+    (dolist (child (children obj))
+      (destroy child))))
 
 ;;;; subview.lisp ends here

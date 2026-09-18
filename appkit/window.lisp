@@ -53,6 +53,7 @@ order. "
     ;; :reader   parent
     )
    (content-view-ptr
+    :type (or null foreign-pointer)
     :documentation
     "Foreign pointer to [NSWindow contentView]. "))
   (:default-initargs
@@ -132,10 +133,61 @@ Dev Note:
     (declare (ignore max-height))
     (set-max-size window)))
 
-(defmethod destroy :after ((window window))
-  (setf *%window-list* (delete-if (alx:curry #'eq window)
-                                  *%window-list*
-                                  :key  #'tg:weak-pointer-value)))
+(defgeneric window-close (window)
+  (:documentation
+   "Close the WINDOW.
+Return the WINDOW itself.
+
+Dev Note:
++ the closed WINDOW is not destroyed,
+  so you can use `window-select', `show' methods to
+  make it reappear
+")
+  (:method ((window window))
+    (with-ptr window ptr
+      (dispatch-main ()
+        (invoke ptr "close")))))
+
+(defgeneric window-close-event-handler (window)
+  (:documentation
+   "Called when the WINDOW will be closed. ")
+  (:method ((window window))))
+
+(define-objc-method ("CocaWindowDelegate" "windowWillClose:")
+                    :void ((notification :object))
+  (alx:when-let ((window (ns-notification-window notification)))
+    (window-close-event-handler window)))
+
+(defgeneric window-should-close (window)
+  (:documentation
+   "Called when the WINDOW needs to be closed,
+typically when a user clicks the close button of the WINDOW.
+
+If the return value is non-nil, the window would be closed;
+otherwise if the return value is `nil', the window would
+not be closed. ")
+  (:method ((window window)) t))
+
+(define-objc-method ("CocaWindowDelegate" "windowShouldClose:")
+                    :bool ((ns-window :object))
+  (let ((window (find-obj ns-window)))
+    (if window
+        (and (window-should-close window) t)
+        t)))
+
+(defmethod destroy ((window window))
+  (with-ptr window ptr
+    (dispatch-main ()
+      (invoke ptr "close")
+      (call-next-method)))
+
+  ;; clean up window object
+  (setf (slot-value window 'content-view-ptr) nil)
+  ;; clean up window-list
+  (setf *%window-list*
+        (delete-if (alx:curry #'eq window)
+                   *%window-list*
+                   :key  #'tg:weak-pointer-value)))
 
 (defmethod objc-ptr ((window window) (name (eql :container-view)))
   (slot-value window 'content-view-ptr))
