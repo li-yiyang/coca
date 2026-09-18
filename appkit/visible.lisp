@@ -43,17 +43,17 @@
     vis))
 
 (defun show (obj)
-  "Show OBJ. 
+  "Show OBJ.
 
-This is equal to (setf (visible OBJ) t). 
+This is equal to (setf (visible OBJ) t).
 "
   (setf (visible obj) t))
 
 (defun hide (obj)
-  "Hide OBJ. 
+  "Hide OBJ.
 
-This is equal to (setf (visible OBJ) nil). 
+This is equal to (setf (visible OBJ) nil).
 "
-  (setf (visible obj) t))
+  (setf (visible obj) nil))
 
 ;;;; visible.lisp ends here

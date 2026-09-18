@@ -87,7 +87,8 @@ Possible Values:
   (with-ptr text ptr
     (let ((alignment* (as-ns-text-alignment alignment)))
       (dispatch-main ()
-        (invoke ptr "setAlignment:" :unsigned-long alignment*)))))
+        (invoke ptr "setAlignment:" :unsigned-long alignment*)))
+    (setf (slot-value text 'text-alignment) alignment)))
 
 (defmethod (setf editable) (value* (text base-text-field)
                             &aux (value (and value* t)))

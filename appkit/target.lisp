@@ -30,7 +30,7 @@
    "Whether or not OBJ is enabled. ")
   (:method ((obj target-mixin))
     (with-ptr obj ptr
-      (invoke ptr "enabled" :bool))))
+      (invoke ptr "isEnabled" :bool))))
 
 (defmethod (setf enabledp) (enable (obj target-mixin)
                             &aux (enablep (and enable t)))
@@ -106,7 +106,8 @@ The action could be:
 
 Dev Note:
 + when action is set to be symbol or function,
-  it will use cocaRespondActionInLisp: SEL as target")
+  it will use cocaRespondActionInLisp: SEL as target
+")
   (:method (obj) nil))
 
 (define-objc-method
@@ -137,9 +138,14 @@ Dev Note:
          (declare (type target-mixin obj)
                   (type (or function symbol) function))
          (with-ptr obj ptr
-           (dispatch-main ()
-             (invoke ptr "setAction:" :sel "cocaRespondActionInLisp:"))
-           (setf (slot-value obj 'action) function))))
+           (let ((self-target-p (null (target obj))))
+             (dispatch-main ()
+               (invoke ptr "setAction:" :sel "cocaRespondActionInLisp:")
+               (when self-target-p
+                 (invoke ptr "setTarget:" :object ptr)))
+             (setf (slot-value obj 'action) function)
+             (when self-target-p
+               (setf (slot-value obj 'target) obj))))))
   (defmethod (setf action) ((function symbol) (obj target-mixin))
     (set-target-with-function obj function))
   (defmethod (setf action) ((function function) (obj target-mixin))

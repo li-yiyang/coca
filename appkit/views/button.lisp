@@ -69,7 +69,8 @@ A NSButton is a control that defines an area on the screen
 that a user clicks to trigger an action.
 ")
   (:default-initargs
-   :objc-class "NSButton"))
+   :objc-class "NSButton"
+   :bordered   t))
 
 (defclass button (base-button) ()
   (:documentation
@@ -104,7 +105,7 @@ A help button is round button with question mark within.
 Typically used to open a help dialog. ")
   (:default-initargs
    :button-type :momentary-push-in
-   :bezel-stype :help))
+   :bezel-style :help-action))
 
 (define-objc-enum :ns-bezel-style
   "ObjC NSButton bezel style.
@@ -155,7 +156,7 @@ Typically used to open a help dialog. ")
   (:accessory-bar        13)
   (:accessory-bar-action 12)
   ;; Help
-  (:help-button          9)
+  (:help-action          9)
   (:badge                15)
   (:circular             7)
   (:small-square         10)
@@ -172,16 +173,16 @@ Typically used to open a help dialog. ")
         (invoke ptr "setBezelStyle:"
                 :ns-bezel-style bezel-style)))))
 
-(defmethod bezel-style ((button button))
+(defmethod bezel-style ((button base-button))
   (with-ptr button ptr
     (invoke ptr "bezelStyle" :ns-bezel-style)))
 
-(defmethod (setf bezel-style) (style (button button))
+(defmethod (setf bezel-style) (style (button base-button))
   (declare (type (member :automatic :push :flexible-push
                          :disclosure :push-disclosure
                          :toolbar :accessory-bar
                          :accessory-bar-action
-                         :help-button :badge :circular
+                         :help-action :badge :circular
                          :small-square :glass)
                  style))
   (with-ptr button ptr

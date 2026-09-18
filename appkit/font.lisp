@@ -2,7 +2,7 @@
 
 (in-package :coca.appkit)
 
-(defvar *fonts* (tg:make-weak-hash-table)
+(defvar *fonts* (tg:make-weak-hash-table :weakness :value)
   "Cache of `font'.
 
 Key: pointer address
@@ -123,7 +123,7 @@ Return `font' instance. "
 
 (defun load-font-file (font-file)
   "Load FONT-FILE into current runtime.
-Return a list of new font family string.
+Return updated `font-family-list'.
 
 Parameter:
 + FONT-FILE: pathname to the font name
@@ -135,20 +135,21 @@ Parameter:
         (let ((res (foreign-funcall
                     "CTFontManagerRegisterFontsForURL"
                     :pointer ns-url
-                    :pointer (as-ct-font-manager-scope :process)
+                    :uint32  (as-ct-font-manager-scope :process)
                     :pointer err*
                     :bool)))
           (when (and (not res)
                      (not (null-pointer-p (mem-ref err* :pointer))))
-            (let ((err (mem-ref err* :pointer)))
+            (let* ((err  (mem-ref err* :pointer))
+                   (desc (foreign-funcall
+                          "CFErrorCopyDescription"
+                          :pointer err
+                          :pointer)))
               (unwind-protect
                    (error "Failed to load font ~A:~%~A"
                           font-file
-                          (ns-string-to-string
-                           (foreign-funcall
-                            "CFErrorCopyDescription"
-                            :pointer err
-                            :pointer)))
+                          (ns-string-to-string desc))
+                (release desc)
                 (foreign-funcall "CFRelease" :pointer err))))
           (setf *font-family-list* (%font-family-list)))))))
 

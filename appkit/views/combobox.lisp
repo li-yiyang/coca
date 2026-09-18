@@ -15,7 +15,7 @@
     :initform (make-array 2 :element-type 'double-float
                             :initial-contents '(3d0 2d0)))
    (has-vertical-scroller-p
-    :initarg  :has-vertical-scoller
+    :initarg  :has-vertical-scroller
     :initform t
     :reader   has-vertical-scroller-p
     :type     boolean)
@@ -46,6 +46,14 @@ a custom value.
     (dispatch-main ()
       (invoke ptr "setHasVerticalScroller:" :bool value*)))
   (setf (slot-value combobox 'has-vertical-scroller-p) value*))
+
+(defgeneric intercell-spacing (combobox)
+  (:documentation
+   "Return values of width height for COMBOBOX intercell spacing. ")
+  (:method ((combobox combobox))
+    (with-slots (intercell-spacing*) combobox
+      (values (aref intercell-spacing* 0)
+              (aref intercell-spacing* 1)))))
 
 (defgeneric set-intercell-spacing (widget width height)
   (:documentation
