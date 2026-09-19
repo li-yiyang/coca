@@ -209,7 +209,7 @@ Initialize Parameters:
                        (let ((ptr (alloc objc-class)))
                          (the foreign-pointer
                            (if init-in-main-p
-                               (dispatch-main ()
+                               (dispatch-main (:throw-to-toplevel t)
                                  (funcall objc-init ptr))
                                (funcall objc-init ptr))))))))
     (declare (type foreign-pointer ptr))

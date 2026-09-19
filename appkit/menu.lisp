@@ -248,8 +248,9 @@ before the `help-menu-item'. "
                   :object item-ptr
                   :ns-int idx)))))
   (setf (slot-value item 'menu) menu)
-  (setf (slot-value menu 'menu-items)
-        (cons item (slot-value menu 'menu-items)))
+  (let ((items (slot-value menu 'menu-items)))
+    (setf (slot-value menu 'menu-items)
+          (append (butlast items) (cons item (last items)))))
   item)
 
 (defclass main-menu-mixin ()
