@@ -67,6 +67,33 @@ See `button-type'.
 
 A NSButton is a control that defines an area on the screen
 that a user clicks to trigger an action.
+
+Initialize Parameters:
++ BUTTON-TYPE:
+  should not set manually, only set when creating
+  subclass of `base-button'
+
++ X, Y, LOCATION, WIDTH, HEIGHT, SIZE, ORIGIN, FRAME,
+  MIN-WIDTH, MAX-WIDTH, MIN-HEIGHT, MAX-HEIGHT
+  see `framed-mixin' and `minmax-framed-mixin'
+
++ TITLE: button title
+  see `titled-mixin'
+
++ ALTERNATE-TITLE: alternate title
+  see `alternate-titled-mixin'
+
++ FONT: font for button title
+  see `font-mixin'
+
++ STATE: state of button
+  + `:on'
+  + `:off'
+  + `:mixed'
+  see `state-mixin'
+
++ BORDERED: if or not button is bordered
+  see `bordered-mixin'
 ")
   (:default-initargs
    :objc-class "NSButton"

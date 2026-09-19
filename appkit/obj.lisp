@@ -25,11 +25,12 @@
 
 (defgeneric objc-ptr (obj name)
   (:documentation
-   "Return foreign-pointer to ObjC `obj'.
+   "Return foreign-pointer to ObjC `obj' OBJ with NAME.
 
-Dev Note:
-+ the subclass of `obj' should always define method
-  `objc-ptr' with NAME as nil")
+Parameters:
++ OBJ: ObjC object instance
++ NAME: keyword for the ObjC pointer name
+")
   (:method (obj name)
     (or (gethash name (objc-ptrs obj))
         (error "Unknow ObjC pointer of ~S for ~A. " name obj))))
@@ -39,7 +40,16 @@ Dev Note:
   (setf (gethash name (objc-ptrs obj)) ptr))
 
 (defmacro obj-ptr (obj &optional (name :ptr))
-  "Return foreign-pointer to ObjC OBJ of NAME. "
+  "Return foreign-pointer to ObjC OBJ of NAME.
+
+Syntax:
+
+    (obj-ptr OBJ &optional NAME)
+
++ OBJ: ObjC object in lisp
++ NAME: pointer name (default `:ptr')
+
+See also `objc-ptr'. "
   `(the foreign-pointer
      (objc-ptr ,obj ,name)))
 
@@ -208,6 +218,12 @@ Initialize Parameters:
           (tg:finalize obj #'finalize))
         (flet ((finalize () (release ptr)))
           (tg:finalize obj #'finalize)))))
+
+(defmethod initialize-instance :around ((obj owned-mixin) &key)
+  (handler-case (call-next-method)
+    (error (err)
+      (destroy obj)
+      (error err))))
 
 (defmethod objc-ptr ((obj owned-mixin) (ptr (eql :ptr)))
   (let ((ptr* (gethash :ptr (objc-ptrs obj))))

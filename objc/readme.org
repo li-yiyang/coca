@@ -170,7 +170,6 @@ flags depending on macOS version.
   + PAIRS: like CFFI `define-foreign-library' PAIRS,
     normally this should be (:darwin (:framework ...))
   #+end_example
-
 + =(invoke CLASS-OR-OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
   #+name: doc:invoke
@@ -282,7 +281,23 @@ flags depending on macOS version.
 
 + =sel= *[Struct]*
 
+  #+name: doc:sel
+  #+begin_src lisp :exports results
+    (documentation 'sel 'type)
+  #+end_src
+
+  #+RESULTS: doc:sel
+  : Wrapper of ObjC SEL.
+
 + =objc-class= *[Struct]*
+
+  #+name: doc:objc-class
+  #+begin_src lisp :exports result
+    (documentation 'objc-class 'type)
+  #+end_src
+
+  #+RESULTS: doc:objc-class
+  : Wrapper of ObjC Class.
 
 + =(coerce-to-selector sel)= *[Function]*
 
@@ -327,7 +342,6 @@ flags depending on macOS version.
   + PROTOCOLS:
     strings of ObjC Protocols
   #+end_example
-
 + =(define-objc-method (class sel &key encoding callback) return-type lambda-list &body)= *[Macro]*
 
   #+name: doc:define-objc-method
@@ -369,7 +383,6 @@ flags depending on macOS version.
     method body,
     within the BODY, self is bound to foreign-pointer of ObjC object
   #+end_example
-
 + =(define-objc-global-variable reader initial-form &optional documentation)= *[Macro]*
 
   #+name: doc:define-objc-global-variable
@@ -400,7 +413,6 @@ flags depending on macOS version.
     is defined already (and non-nil), it's INITIALIZE-FORM should
     only run once.
   #+end_example
-
 + =*on-objc-initialization*= *[Variable]*
 
   #+name: doc:*on-objc-initialization*
@@ -449,7 +461,6 @@ flags depending on macOS version.
 
   4. call hooks in `*on-objc-initialization*'
   #+end_example
-
 + =(define-objc-typing name &key alias result arg)= *[Macro]*
 
   #+name: doc:define-objc-typing
@@ -488,7 +499,6 @@ flags depending on macOS version.
 
           (,@REWRITE (invoke ...))
   #+end_example
-
 + =(define-objc-mask typing* &body binding)= *[Macro]*
 
   #+name: doc:define-objc-mask
@@ -529,7 +539,6 @@ flags depending on macOS version.
 
   See also `define-objc-enum'.
   #+end_example
-
 + =(define-objc-enum typing* &body binding)= *[Macro]*
 
   #+name: doc:define-objc-enum
@@ -739,7 +748,6 @@ flags depending on macOS version.
       TYPE:
       + :ns-string => (string-to-ns-string VALUE)
   #+end_example
-
 + =(get-ns-dictionary dictionary key)= *[Function]*
 
   #+name: doc:get-ns-dictionary
@@ -776,7 +784,6 @@ flags depending on macOS version.
     + string: treat as NSString
     + number: converted using `ns-number'
   #+end_example
-
 + =(ns-number number)= *[Function]*
 
   #+name: doc:ns-number
@@ -797,7 +804,6 @@ flags depending on macOS version.
     + integer
     + float
   #+end_example
-
 + =(ns-number-value ns-number type)= *[Function]*
 
   #+name: doc:ns-number-value
@@ -821,7 +827,6 @@ flags depending on macOS version.
     + `:int'
     + `:string'
   #+end_example
-
 ** Block
 Load =coca/objc/block= to have Block supports setted up:
 + =(define-objc-block block-type lambda-list)= *[Macro]*
@@ -849,7 +854,6 @@ Load =coca/objc/block= to have Block supports setted up:
     within macro, use (BLOCK-TYPE lambda-list &body body)
     as callback
   #+end_example
-
 ** OSX-Version
 Load =coca/objc/osx-version= to have macOS version support:
 + =(osx-version)= *[Function]*
@@ -903,6 +907,7 @@ development usage (not recommanded to use in production environemnt).
 
   #+RESULTS: doc:objc-class-superclass
   : Return the superclass of OBJC-CLASS.
+  :
   : If the OBJC-CLASS is the root class, its superclass is `t',
   : otherwise, return `objc-class'.
 
@@ -984,7 +989,6 @@ development usage (not recommanded to use in production environemnt).
   see also:
   https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
   #+end_example
-
 + =(encode-objc-type-encoding objc-encoding-list)= *[Function]*
 
   #+name: doc:encode-objc-type-encoding
@@ -1022,7 +1026,6 @@ development usage (not recommanded to use in production environemnt).
   + OBJC-CLASS-P:
     if non-nil, assume OBJC-CLASS-OR-OBJECT is pointer to ObjC class
   #+end_example
-
 + =(objc-class-class-method-encoding objc-class sel &optional errorp)= *[Function]*
 
   #+name: doc:objc-class-class-method-encoding

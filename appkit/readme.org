@@ -1,0 +1,1400 @@
+#+title: Coca.AppKit
+#+subtitle: Lispy AppKit wrapper
+#+author: 凉凉
+* Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.appkit :results verbatim
+:END:
+
+** Basic Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.example.appkit.basic-usage :results verbatim :tangle ../examples/appkit/basic-usage.lisp :mkdirp yes
+:END:
+
+*** Using =Coca.AppKit= package
+#+name: example:defpackage-coca.example.appkit
+#+begin_src lisp
+  ;;;; basic-usage.lisp --- Basic examples using Coca.AppKit
+
+  (uiop:define-package :coca.example.appkit.basic-usage
+    (:use :common-lisp :coca.appkit))
+
+  (in-package :coca.example.appkit.basic-usage)
+#+end_src
+
+#+RESULTS: example:defpackage-coca.example.appkit
+: #<package "COCA.EXAMPLE.APPKIT.BASIC-USAGE">
+
+*** Creating a Window
+To create a [[doc:window][=window=]] ([[https://developer.apple.com/documentation/appkit/nswindow?language=objc][=NSWindow=]]) instance:
+
+#+name: example:create-window
+#+begin_src lisp
+  (defvar win
+    (make-instance 'window
+                   :title "My Window"
+                   :width 400 :height 400))
+#+end_src
+
+#+RESULTS: example:create-window
+: win
+
+*Explain*:
++ this creates a [[doc:window][=window=]] instance with [[doc:default-frame][=default-frame=]]
+
++ the [[doc:window][=window=]] is [[doc:framed-mixin][=framed-mixin=]], which provides abilities to
+  initialize with handy frame description keywords,
+  for example, the =:width=, =:height= initarg could be
+  replaced with syntax sugar like:
+
+  #+name: example:create-window-with-size
+  #+begin_src lisp :eval no :exports code
+    (make-instance 'window :size #(400 400))
+  #+end_src
+
+  also, it is possible to specify =:location=, =:x=, =:y=, =:origin=,
+  or directly setting the initial frame with =:frame= key.
+
+To create widgets ([[doc:base-view][=base-view=]]) instances, for example,
+a [[doc:button][=button=]]:
+
+#+name: example:create-button
+#+begin_src lisp :exports code
+  (defvar but
+    (make-instance 'button
+                   :title  "Button"
+                   :frame  #(20 20 350 30)
+                   :parent win
+                   :font   (make-font :family :fix)
+                   :action (lambda (self sender)
+                             (alert (format nil "Clicked ~A (sender=~A)"
+                                            self sender)))))
+#+end_src
+
+#+RESULTS: example:create-button
+: but
+
+#+attr_html: :width 80%
+#+attr_org: :width 400px
+#+name: img:create-button
+#+caption: =button= triggered with =action=
+[[file:../examples/appkit/imgs/but-alert.jpg]]
+
+*Explain*
++ [[doc:button][=button=]] use [[doc:target-mixin][=target-mixin=]],
+  the =:action= could be a =function=, [[file:~/common-lisp/coca/objc/readme.org::doc:sel][=sel=]] (or =string= of [[file:~/common-lisp/coca/objc/readme.org::doc:sel][=sel=]]),
+  by default the =:target= would be set to be =but= itself
+
++ use [[doc:make-font][=make-font=]] to create a [[doc:font][=font=]]
+
++ [[doc:alert][=alert=]] popup a [[https://developer.apple.com/documentation/appkit/nsalert?language=objc][=NSAlert=]]
+
+*** Getting and updating Cocoa widgets properties
+
+** Layout
+** Menus
+** Dialog and modal windows
+
+* API
+:PROPERTIES:
+:header-args:lisp: :package coca.appkit :results verbatim
+:END:
+
+** Object and Lifecycle
++ =obj= *[Class]*
+
+  #+name: doc:obj
+  #+begin_src lisp :exports results
+    (documentation (find-class 'obj) t)
+  #+end_src
+
+  #+RESULTS: doc:obj
+  : A ObjC object pointer wrapper.
+
++ =(obj-ptr obj &optional name)= *[Macro]*
+
+  #+name: doc:obj-ptr
+  #+begin_src lisp :exports results
+    (documentation (macro-function 'obj-ptr) t)
+  #+end_src
+
+  #+RESULTS: doc:obj-ptr
+  #+begin_example
+  Return foreign-pointer to ObjC OBJ of NAME.
+
+  Syntax:
+
+      (obj-ptr OBJ &optional NAME)
+
+  + OBJ: ObjC object in lisp
+  + NAME: pointer name (default `:ptr')
+
+  See also `objc-ptr'.
+  #+end_example
++ =(objc-ptr obj name)= *[Generic Function]*
+
+  #+name: doc:objc-ptr
+  #+begin_src lisp :exports results
+    (documentation #'objc-ptr t)
+  #+end_src
+
+  #+RESULTS: doc:objc-ptr
+  : Return foreign-pointer to ObjC `obj' OBJ with NAME.
+  :
+  : Parameters:
+  : + OBJ: ObjC object instance
+  : + NAME: keyword for the ObjC pointer name
+
++ =(with-ptr obj ptr &body body)= *[Macro]*
+
+  #+name: doc:with-ptr
+  #+begin_src lisp :exports results
+    (documentation (macro-function 'with-ptr) t)
+  #+end_src
+
+  #+RESULTS: doc:with-ptr
+  #+begin_example
+  Binds PTR of OBJ within BODY.
+
+  Syntax:
+
+      (with-ptr OBJ [PTR|(PTR NAME)]
+        &body)
+
+  + OBJ: the ObjC object expression
+  + PTR: symbol of binded foreign-pointer
+  + NAME: keyword refering the foreign-pointer
+  #+end_example
++ =(with-ptrs obj bindings &body body)= *[Macro]*
+
+  #+name: doc:with-ptrs
+  #+begin_src lisp :exports results
+    (documentation (macro-function 'with-ptrs) t)
+  #+end_src
+
+  #+RESULTS: doc:with-ptrs
+  #+begin_example
+  Binds PTRS of OBJ within BODY.
+
+  Syntax:
+
+      (with-ptrs OBJ ([PTR|(PTR NAME)]*)
+        &body)
+
+  + OBJ: the ObjC object expression
+  + PTR: symbol of binded foreign-pointer
+  + NAME: keyword refering the foreign-pointer
+  #+end_example
+** Window
++ =window= *[Class]*
+
+  #+name: doc:window
+  #+begin_src lisp :exports results
+    (documentation (find-class 'window) t)
+  #+end_src
+
+  #+RESULTS: doc:window
+  #+begin_example
+  Wrapper of NSWindow
+
+  Initialize Parameters:
+  + SCREEN: specify which `screen' the window should be displayed on
+    by default, the `screen' would be the `main-screen'
+
+  + TITLE: window title (default \"\")
+    see `titled-mixin'
+
+  + X, Y, LOCATION, WIDTH, HEIGHT, SIZE, ORIGIN, FRAME,
+    MIN-WIDTH, MAX-WIDTH, MIN-HEIGHT, MAX-HEIGHT
+    see `framed-mixin' and `minmax-framed-mixin'
+
+  + VISIBLE: visible or not (default `t')
+    see `visible-mixin'
+
+  Dev Note:
+  + objc-ptr mapping:
+    + :ptr      -> NSWindow
+    + :frame    -> :ptr
+    + :delegate -> (window-delegate)
+  #+end_example
++ =(window-close window)= *[Generic Function]*
+
+  #+name: doc:window-close
+  #+begin_src lisp :exports results
+    (documentation #'window-close t)
+  #+end_src
+
+  #+RESULTS: doc:window-close
+  : Close the WINDOW.
+  : Return the WINDOW itself.
+  :
+  : Dev Note:
+  : + the closed WINDOW is not destroyed,
+  :   so you can use `window-select', `show' methods to
+  :   make it reappear
+
++ =(window-close-event-handler window)= *[Generic Function]*
+
+  #+name: doc:window-close-event-handler
+  #+begin_src lisp :exports results
+    (documentation #'window-close-event-handler t)
+  #+end_src
+
+  #+RESULTS: doc:window-close-event-handler
+  : Called when the WINDOW will be closed.
+
++ =(window-should-close window)= *[Generic Function]*
+
+  #+name: doc:window-should-close
+  #+begin_src lisp :exports results
+    (documentation #'window-should-close t)
+  #+end_src
+
+  #+RESULTS: doc:window-should-close
+  : Called when the WINDOW needs to be closed,
+  : typically when a user clicks the close button of the WINDOW.
+  :
+  : If the return value is non-nil, the window would be closed;
+  : otherwise if the return value is `nil', the window would
+  : not be closed.
+
++ =(window-style window)= *[Generic Function]*
+
+  #+name: doc:window-style
+  #+begin_src lisp :exports results
+    (documentation #'window-style t)
+  #+end_src
+
+  #+RESULTS: doc:window-style
+  #+begin_example
+  Get/Set window style of WINDOW.
+
+  Possible Values:
+  the `window-style' could be keyword or a list of keyword,
+  each could be:
+
+  + `:borderless'
+  + `:titled'
+  + `:closable'
+  + `:miniaturizable'
+  + `:resizable'
+  + `:textured-background'
+  + `:unified-title-and-toolbar'
+  + `:full-screen'
+  + `:full-size-content-view'
+  #+end_example
+
++ =(window-select window)= *[Generic Function]*
+
+  #+name: doc:window-select
+  #+begin_src lisp :exports results
+    (documentation #'window-select t)
+  #+end_src
+
+  #+RESULTS: doc:window-select
+  : Brings WINDOW to the front, activates it,
+  : and shows it if it is hidden.
+  : Return the WINDOW itself.
+  :
+  : Note: The previously active window is deactivated.
+  :
+  : Parameter:
+  : + WINDOW: a `window'
+
++ =(window-select-event-handler window)= *[Generic Function]*
+
+  #+name: doc:window-select-event-handler
+  #+begin_src lisp :exports results
+    (documentation #'window-select-event-handler t)
+  #+end_src
+
+  #+RESULTS: doc:window-select-event-handler
+  : The generic function `window-select-event-handler' is called
+  : whenever the user clicks an inactive WINDOW.
+  :
+  : The `window-select-event-handler' function maybe specialized,
+  : for example, to make a window unselectable.
+  :
+  : Parameter:
+  : + WINDOW: a `window'.
+
+** Widgets
+All the widgets should be subclass of [[doc:base-view][=base-view=]].
+
++ =base-view= *[Class]*
+
+  #+name: doc:base-view
+  #+begin_src lisp :exports results
+    (documentation (find-class 'base-view) t)
+  #+end_src
+
+  #+RESULTS: doc:base-view
+  : Base class for wrapping NSView instance.
+
+*** Buttons
++ =base-button= *[Class]*
+
+  #+name: doc:base-button
+  #+begin_src lisp :exports results
+    (documentation (find-class 'base-button) t)
+  #+end_src
+
+  #+RESULTS: doc:base-button
+  #+begin_example
+  Wrapper of NSButton.
+
+  A NSButton is a control that defines an area on the screen
+  that a user clicks to trigger an action.
+
+  Initialize Parameters:
+  + BUTTON-TYPE:
+    should not set manually, only set when creating
+    subclass of `base-button'
+
+  + X, Y, LOCATION, WIDTH, HEIGHT, SIZE, ORIGIN, FRAME,
+    MIN-WIDTH, MAX-WIDTH, MIN-HEIGHT, MAX-HEIGHT
+    see `framed-mixin' and `minmax-framed-mixin'
+
+  + TITLE: button title
+    see `titled-mixin'
+
+  + ALTERNATE-TITLE: alternate title
+    see `alternate-titled-mixin'
+
+  + FONT: font for button title
+    see `font-mixin'
+
+  + STATE: state of button
+    + `:on'
+    + `:off'
+    + `:mixed'
+    see `state-mixin'
+
+  + BORDERED: if or not button is bordered
+    see `bordered-mixin'
+  #+end_example
++ =button= *[Class]*
+
+  #+name: doc:button
+  #+begin_src lisp :exports results
+    (documentation (find-class 'button) t)
+  #+end_src
+
+  #+RESULTS: doc:button
+  : A default push button.
+  :
+  : Dev Note:
+  : + different than AppKit default push button,
+  :   the button height can be modified
+  :   (NOTE: maybe changed in the future)
+
++ =checkbox= *[Class]*
+
+  #+name: doc:checkbox
+  #+begin_src lisp :exports results
+    (documentation (find-class 'checkbox) t)
+  #+end_src
+
+  #+RESULTS: doc:checkbox
+  : Default checkbox button.
+
++ =radio-button= *[Class]*
+
+  #+name: doc:radio-button
+  #+begin_src lisp :exports results
+    (documentation (find-class 'radio-button) t)
+  #+end_src
+
+  #+RESULTS: doc:radio-button
+  : Default radio button.
+
++ =help-button= *[Class]*
+
+  #+name: doc:help-button
+  #+begin_src lisp :exports results
+    (documentation (find-class 'help-button) t)
+  #+end_src
+
+  #+RESULTS: doc:help-button
+  : Default help button.
+  :
+  : A help button is round button with question mark within.
+  : Typically used to open a help dialog.
+
++ =(bezel-style widget)= *[Generic Function]*
+
+  #+name: doc:bezel-style
+  #+begin_src lisp :exports results
+    (documentation #'bezel-style t)
+  #+end_src
+
+  #+RESULTS: doc:bezel-style
+  : nil
+
+*** Text Filed
++ =base-text-field= *[Class]*
+
+  #+name: doc:base-text-field
+  #+begin_src lisp :exports results
+    (documentation 'base-text-field 'type)
+  #+end_src
+
+  #+RESULTS: doc:base-text-field
+  #+begin_example
+  Base class for NSTextField.
+
+  Initialize Parameters:
+  + VALUE: text of `base-text-field' object
+
+  + TEXT-ALIGNMENT
+    + `:left'
+    + `:center'
+    + `:right'
+    + `:justified'
+    + `:natural'
+
+  + EDITABLE: if the text is editable
+    if EDITABLE is non-nil,
+    the SELECTABLE will be enabled (overwrite)
+
+  + SELECTABLE: if the text is selectable
+
+  + DRAWS-BACKGROUND: if draws background
+
+  + BORDERED: if bordered
+  #+end_example
++ =label= *[Class]*
+
+  #+name: doc:label
+  #+begin_src lisp :exports results
+    (documentation 'label 'type)
+  #+end_src
+
+  #+RESULTS: doc:label
+  : Static text label.
+
++ =placeholder-mixin= *[Class]*
+
+  #+name: doc:placeholder-mixin
+  #+begin_src lisp :exports results
+    (documentation 'placeholder-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:placeholder-mixin
+  : Mixin class providing a placeholder.
+
+
++ =text-input= *[Class]*
+
+  #+name: doc:text-input
+  #+begin_src lisp :exports results
+    (documentation 'text-input 'type)
+  #+end_src
+
+  #+RESULTS: doc:text-input
+  : One line text input.
+
+
++ =(text-alignment widget)= *[Generic Function]*
+
+  #+name: doc:text-alignment
+  #+begin_src lisp :exports results
+    (documentation #'text-alignment t)
+  #+end_src
+
+  #+RESULTS: doc:text-alignment
+  : Text alignment of WIDGET.
+  :
+  : Possible Values:
+  : + `:left'
+  : + `:center'
+  : + `:right'
+  : + `:justified'
+  : + `:natural'
+
++ =(editable widget)= *[Generic Function]*
+
+  #+name: doc:editable
+  #+begin_src lisp :exports results
+    (documentation #'editable t)
+  #+end_src
+
+  #+RESULTS: doc:editable
+  : Get/Set if WIDGET is editable.
+
++ =(selectable widget)= *[Generic Function]*
+
+  #+name: doc:selectable
+  #+begin_src lisp :exports results
+    (documentation #'selectable t)
+  #+end_src
+
+  #+RESULTS: doc:selectable
+  : Get/Set if WIDGET is selectable.
+
++ =(draws-background-p widget)= *[Generic Function]*
+
+  #+name: doc:draws-background-p
+  #+begin_src lisp :exports results
+    (documentation #'draws-background-p t)
+  #+end_src
+
+  #+RESULTS: doc:draws-background-p
+  : Get/Set if WIDGET draws background.
+
++ =(borderedp widget)= *[Generic Function]*
+
+  #+name: doc:borderedp
+  #+begin_src lisp :exports results
+    (documentation #'borderedp t)
+  #+end_src
+
+  #+RESULTS: doc:borderedp
+  : Get/Set if BORDERED-MIXIN is bordered or not.
+
+*** Combobox
++ =combobox= *[Class]*
+
+  #+name: doc:combobox
+  #+begin_src lisp :exports results
+    (documentation 'combobox 'type)
+  #+end_src
+
+  #+RESULTS: doc:combobox
+  #+begin_example
+  A combobox.
+
+  A NSComboBox is a view that displays a list of values in
+  a pop-up menu where the user selects a value or types in
+  a custom value.
+
+  Initialize Parameters:
+  + ITEMS: a list of initial item values
+
+  + INTERCELL-SPACING
+    + (WIDTH HEIGHT)
+    + #(WIDTH HEIGHT)
+
+  + HAS-VERTICAL-SCROLLER:
+    if or not has vertical scroller for item drop menu
+
+  + BUTTON-BORDERED:
+    if or not the drop down button is bordered
+
+  + ITEM-HEIGHT:
+    height of items
+  #+end_example
+
++ =(intercell-spacing combobox)= *[Generic Function]*
+
+  #+name: doc:intercell-spacing
+  #+begin_src lisp :exports results
+    (documentation #'intercell-spacing t)
+  #+end_src
+
+  #+RESULTS: doc:intercell-spacing
+  : Return values of width height for COMBOBOX intercell spacing.
+
++ =(set-intercell-spacing widget width height)= *[Generic Function]*
+
+  #+name: doc:set-intercell-spacing
+  #+begin_src lisp :exports results
+    (documentation #'set-intercell-spacing t)
+  #+end_src
+
+  #+RESULTS: doc:set-intercell-spacing
+  : Set `intercell-spacing' of WIDGET with WIDTH and HEIGHT.
+  : Return WIDGET itself.
+
++ =(button-bordered-p combobox)= *[Generic Function]*
+
+  #+name: doc:button-bordered-p
+  #+begin_src lisp :exports results
+    (documentation #'button-bordered-p t)
+  #+end_src
+
+  #+RESULTS: doc:button-bordered-p
+  : nil
+
+** Modal
++ =(alert message &key title style choices icon window)= *[Function]*
+
+  #+name: doc:alert
+  #+begin_src lisp :exports result
+    (documentation #'alert t)
+  #+end_src
+
+  #+RESULTS: doc:alert
+  #+begin_example
+  Popup NSAlert window with MESSAGE and TITLE.
+  Return selected CHOICES as return value.
+
+  Parameters:
+  + MESSAGE: a string for informativeText
+  + TITLE:   a string for messageText (default as \"Coca\")
+  + CHOICES: a list of element(s), which could be like:
+
+      RETURN-VALUE
+      (RETURN-VALUE &optional BUTTON-TEXT)
+
+    + RETURN-VALUE: the value returned as result
+    + BUTTON-TEXT:  string used to display as button title
+
+    Note: if STYLE is `:question', the CHOICES will be ignored
+  + STYLE:
+    + `:inform'   Tell the user something
+    + `:warning'  Warn the user
+    + `:error'    Tell the user about an error
+    + `:question' Question the user (e.g. Delete this file y-or-n?)
+  + WINDOW:  a `window' or `nil'
+    + if given `window', the alert will run as window model
+      (sheet model)
+    + if given `nil', the alert will run as global model
+  + ICON:    (to be implemented)
+  #+end_example
+
+** Font
++ =font= *[Struct]*
+
+  #+name: doc:font
+  #+begin_src lisp :exports results
+    (documentation 'font 'type)
+  #+end_src
+
+  #+RESULTS: doc:font
+  #+begin_example
+  Wrap of NSFont.
+
+  Slot Variables:
+  + PTR: foreign-pointer to NSFont
+  + CG-PTR: foreign-pointer to CGFont
+  + NAME: font name
+  + FAMILY: font family name
+  + DISPLAY-NAME: font display name
+  + SIZE: font point size
+  + WEIGHT: font weight [-1, 1]
+  + SLANT: font slant [-1, 1]
+  + PROPERTIES: an alist of font properties
+    use `font-property' to get property of `font'
+  #+end_example
++ =(font-property font property)= *[Function]*
+
+  #+name: doc:font-property
+  #+begin_src lisp :exports results
+    (documentation #'font-property t)
+  #+end_src
+
+  #+RESULTS: doc:font-property
+  #+begin_example
+  Get PROPERTY of FONT.
+  Return font property or nil if not found.
+
+  Parameters:
+  + FONT: `font'
+  + PROPERTY: keyword of font property name
+    + `:size'
+    + `:weight'
+    + `:slant'
+    + `:ascender'
+    + `:descender'
+  #+end_example
+
++ =(make-font &key family size weight slant)= *[Function]*
+
+  #+name: doc:make-font
+  #+begin_src lisp :exports results
+    (documentation #'make-font t)
+  #+end_src
+
+  #+RESULTS: doc:make-font
+  #+begin_example
+  Create `font' using FAMILY, SIZE, WEIGHT, SLANT.
+  Return a `font' object.
+
+  Parameters:
+  + FAMILY: keyword or string for font family name
+    + `:system'
+    + `:san-francisco'
+    + `:helvetica'
+    + `:arial'
+    + `:times-new-roman'
+    + `:monaco'
+    + `:ping-fang'
+    + `:ping-fang-sc'
+    + `:ping-fang-tc'
+    + `:ping-fang-hk'
+  + SIZE: keyword or point size of font
+    + `:tiny'
+    + `:very-small'
+    + `:small'
+    + `:normal'
+    + `:regular'
+    + `:large'
+    + `:very-large'
+    + `:huge'
+  + WEIGHT: keyword or [-1, 1] for font weight
+    + `:ultra-light'
+    + `:thin'
+    + `:light'
+    + `:regular'
+    + `:medium'
+    + `:semibold'
+    + `:bold'
+    + `:heavy'
+    + `:black'
+  + SLANT: keyword or [-1, 1] for font slant
+    + `:roman'
+    + `:italic'
+  #+end_example
+
++ =(load-font-file font-file)= *[Function]*
+
+  #+name: doc:load-font-file
+  #+begin_src lisp :exports results
+    (documentation #'load-font-file t)
+  #+end_src
+
+  #+RESULTS: doc:load-font-file
+  : Load FONT-FILE into current runtime.
+  : Return updated `font-family-list'.
+  :
+  : Parameter:
+  : + FONT-FILE: pathname to the font name
+
+** Color
+** Hierarchy
++ =(parent obj)= *[Generic Function]*
+
+  #+name: doc:parent
+  #+begin_src lisp :exports results
+    (documentation #'parent t)
+  #+end_src
+
+  #+RESULTS: doc:parent
+  : Return the parent `obj' of OBJ.
+  : Return nil if OBJ is not not attached to any parent.
+
++ =(children obj)= *[Generic Function]*
+
+  #+name: doc:children
+  #+begin_src lisp :exports results
+    (documentation #'children t)
+  #+end_src
+
+  #+RESULTS: doc:children
+  : Return a list of children `obj' of VIEW.
+  :
+  : An OBJ with no child should return ().
+
++ =(add-child parent child)= *[Generic Function]*
+
+  #+name: doc:add-child
+  #+begin_src lisp :exports results
+    (documentation #'add-child t)
+  #+end_src
+
+  #+RESULTS: doc:add-child
+  : Add CHILD to PARENT.
+  : Return `t' if success, otherwise `nil' if fails.
+  :
+  : Side Effects:
+  : + if `parent' of CHILD is not PARENT,
+  :   the CHILD is removed from PARENT first
+
++ =(remove-child parent child)= *[Generic Function]*
+
+  #+name: doc:remove-child
+  #+begin_src lisp :exports results
+    (documentation #'remove-child t)
+  #+end_src
+
+  #+RESULTS: doc:remove-child
+  : Remove CHILD from PARENT if it's contained by PARENT.
+  : Return `t' if success, or `nil' if not.
+  :
+  : Parameters:
+  : + PARENT:
+  : + CHILD: child should be `children' of PARENT,
+  :   + if PARENT is not `parent' of CHILD, return `nil';
+  :   + otherwise, the CHILD is `remove-from-parent',
+  :     and return `t'
+
++ =(remove-from-parent child)= *[Generic Function]*
+
+  #+name: doc:remove-from-parent
+  #+begin_src lisp :exports results
+    (documentation #'remove-from-parent t)
+  #+end_src
+
+  #+RESULTS: doc:remove-from-parent
+  : Remove CHILD from its `parent' if it's attached.
+  :
+  : Dev Note:
+  : + implement `remove-child' for standard behavior
+
++ =(item-list container)= *[Generic Function]*
+
+  #+name: doc:item-list
+  #+begin_src lisp :exports results
+    (documentation #'item-list t)
+  #+end_src
+
+  #+RESULTS: doc:item-list
+  : Return a list of items in CONTAINER.
+
++ =(add-item container item)= *[Generic Function]*
+
+  #+name: doc:add-item
+  #+begin_src lisp :exports results
+    (documentation #'add-item t)
+  #+end_src
+
+  #+RESULTS: doc:add-item
+  : Add ITEM to CONTAINER.
+
++ =(add-nth-item container nth item)= *[Generic Function]*
+
+  #+name: doc:add-nth-item
+  #+begin_src lisp :exports results
+    (documentation #'add-nth-item t)
+  #+end_src
+
+  #+RESULTS: doc:add-nth-item
+  : Add ITEM to CONTAINER at NTH.
+  :
+  : If NTH >= (length (item-list CONTAINER)),
+  : this generic function would be equal to `add-item'.
+  :
+  : Parameters:
+  : + CONTAINER
+  : + NTH:
+  : + ITEM
+
++ =(nth-item container nth)= *[Generic Function]*
+
+  #+name: doc:nth-item
+  #+begin_src lisp :exports results
+    (documentation #'nth-item t)
+  #+end_src
+
+  #+RESULTS: doc:nth-item
+  : Get NTH item in CONTAINER.
+  :
+  : This is equal to (nth NTH (item-list CONTAINER)).
+
++ =(item-position container item)= *[Generic Function]*
+
+  #+name: doc:item-position
+  #+begin_src lisp :exports results
+    (documentation #'item-position t)
+  #+end_src
+
+  #+RESULTS: doc:item-position
+  : Return ITEM position in CONTAINER list.
+  : Return `nil' if ITEM is not within CONTAINER.
+  :
+  : This is equal to (position ITEM (item-list CONTAINER) :test #'equal).
+
++ =(remove-item container item)= *[Generic Function]*
+
+  #+name: doc:remove-item
+  #+begin_src lisp :exports results
+    (documentation #'remove-item t)
+  #+end_src
+
+  #+RESULTS: doc:remove-item
+  : Remove ITEM in CONTAINER.
+  : Return `t' if success, otherwise, `nil'.
+
++ =(remove-nth-item container nth)= *[Generic Function]*
+
+  #+name: doc:remove-nth-item
+  #+begin_src lisp :exports results
+    (documentation #'remove-nth-item t)
+  #+end_src
+
+  #+RESULTS: doc:remove-nth-item
+  : Remove NTH item in CONTAINER.
+  : Return `t' if success, otherwise, `nil'.
+  :
+  : Parameters:
+  : + CONTAINER:
+  : + NTH:
+  :   + if NTH >= (length (item-list CONTAINER)),
+  :     return `nil'
+
+** Mixins
+*** Named
++ =named-mixin= *[Class]*
+
+  #+name: doc:named-mixin
+  #+begin_src lisp :exports results
+    (documentation (find-class 'named-mixin) t)
+  #+end_src
+
+  #+RESULTS: doc:named-mixin
+  : Mixin class to add autogenerated name.
+
++ =(name obj)= *[Generic Function]*
+
+  #+name: doc:name
+  #+begin_src lisp :exports results
+    (documentation #'name t)
+  #+end_src
+
+  #+RESULTS: doc:name
+  : Get/Set the name of OBJ.
+
+*** Titled
++ =titled-mixin= *[Class]*
+
+  #+name: doc:titled-mixin
+  #+begin_src lisp :exports results
+    (documentation (find-class 'titled-mixin) t)
+  #+end_src
+
+  #+RESULTS: doc:titled-mixin
+  : Title mixin for classes support title and setTitle: method.
+  :
+  : Use `title' to get/set the title of the object's title.
+  :
+  : Initialize Parameter:
+  : + TITLE: set the title of obj
+
++ =(title obj)= *[Function]*
+
+  #+name: doc:title
+  #+begin_src lisp :exports results
+    (documentation #'title t)
+  #+end_src
+
+  #+RESULTS: doc:title
+  : Get/Set the title of the TITLED.
+
+*** Framed
++ =framed-mixin= *[Class]*
+
+  #+name: doc:framed-mixin
+  #+begin_src lisp :exports results
+    (documentation (find-class 'framed-mixin) t)
+  #+end_src
+
+  #+RESULTS: doc:framed-mixin
+  #+begin_example
+  Titled mixin for classes support frame and setFrame: method.
+
+  Use `frame' to get the frame (`ns-rect');
+  Use `set-frame' to set the frame size;
+  The default frame size is `default-frame'.
+
+  ObjC use coordinates where lower-left is origin:
+
+      Y
+      ^ |<- W ->|
+      | +-------+--
+      | |       | ^
+      | |       | H
+      | |       | V
+      | +-------+--
+      ,*-------------> X
+     (0, 0)
+
+  Initialize Parameters:
+  + FRAME: if set to be `nil' will skip frame initalize
+    otherwise, should be like:
+    + a list of (X Y W H)
+    + a vector of #(X Y W H)
+  + SIZE: should be like:
+    + a list of (WIDTH HEIGHT)
+    + a vector of #(WIDTH HEIGHT)
+    + a number setting both WIDTH and HEIGHT
+  + WIDTH, MIN-WIDTH, MAX-WIDTH
+  + HEIGHT, MIN-HEIGHT, MAX-HEIGHT
+  + ORIGIN: should be like:
+    + a list of (X Y)
+    + a vector of #(X Y)
+
+  Only avaliable if `obj' has `parent':
+  + LOCATION:
+  + X, Y: `location'
+
+  Dev Note:
+  + subclass of `framed-mixin' should define their
+    own (objc-ptr framed-mixin :frame) method,
+    to make sure frame and setFrame: use the
+    correct ObjC object pointer
+  #+end_example
++ =framed-size= *[Type]*
+
+  #+name: doc:framed-size
+  #+begin_src lisp :exports results
+    (documentation 'framed-size 'type)
+  #+end_src
+
+  #+RESULTS: doc:framed-size
+  : Range of `size' for `framed' should be limited between 0 and float max.
++ =(frame framed)= *[Generic Function]*
+
+  #+name: doc:frame
+  #+begin_src lisp :exports results
+    (documentation #'frame t)
+  #+end_src
+
+  #+RESULTS: doc:frame
+  : Get the frame of FRAMED.
+  : Return values X, Y, W, H.
++ =(set-frame framed x y w h)= *[Generic Function]*
+
+  #+name: doc:set-frame
+  #+begin_src lisp :exports results
+    (documentation #'set-frame t)
+  #+end_src
+
+  #+RESULTS: doc:set-frame
+  : Set the frame of FRAMED.
+  : Return `framed'.
++ =(visible-frame framed)= *[Generic Function]*
+
+  #+name: doc:visible-frame
+  #+begin_src lisp :exports results
+    (documentation #'visible-frame t)
+  #+end_src
+
+  #+RESULTS: doc:visible-frame
+  : Get the visible frame of FRAMED.
+  : Return values X, Y, W, H.
++ =(set-visible-frame framed x y w h)= *[Generic Function]*
+
+  #+name: doc:set-visible-frame
+  #+begin_src lisp :exports results
+    (documentation #'set-visible-frame t)
+  #+end_src
+
+  #+RESULTS: doc:set-visible-frame
+  : Set the visible frame of FRAMED.
+  : Return `framed'.
++ =(width framed)= *[Generic Function]*
+
+  #+name: doc:width
+  #+begin_src lisp :exports results
+    (documentation #'width t)
+  #+end_src
+
+  #+RESULTS: doc:width
+  : Get/Set FRAMED width.
++ =(height framed)= *[Generic Function]*
+
+  #+name: doc:height
+  #+begin_src lisp :exports results
+    (documentation #'height t)
+  #+end_src
+
+  #+RESULTS: doc:height
+  : Get/Set FRAMED height.
++ =(size framed)= *[Generic Function]*
+
+  #+name: doc:size
+  #+begin_src lisp :exports results
+    (documentation #'size t)
+  #+end_src
+
+  #+RESULTS: doc:size
+  : Get the size of FRAMED.
+  : Return values W, H.
++ =(set-size framed width height)= *[Generic Function]*
+
+  #+name: doc:set-size
+  #+begin_src lisp :exports results
+    (documentation #'set-size t)
+  #+end_src
+
+  #+RESULTS: doc:set-size
+  : Set the size of FRAMED.
+  : Return `framed'.
++ =(origin framed)= *[Generic Function]*
+
+  #+name: doc:origin
+  #+begin_src lisp :exports results
+    (documentation #'origin t)
+  #+end_src
+
+  #+RESULTS: doc:origin
+  #+begin_example
+  Get the origin position of FRAMED.
+  Return values X, Y.
+
+  The ObjC origin of FRAMED is origined bottom-left:
+
+      Y
+      ^
+      |
+      |
+      |
+      ,*---------> X
+  #+end_example
++ =(set-origin framed x y)= *[Generic Function]*
+
+  #+name: doc:set-origin
+  #+begin_src lisp :exports results
+    (documentation #'set-origin t)
+  #+end_src
+
+  #+RESULTS: doc:set-origin
+  : Set the origin position of FRAMED.
+  : Return `framed'.
++ =(location framed)= *[Generic Function]*
+
+  #+name: doc:location
+  #+begin_src lisp :exports results
+    (documentation #'location t)
+  #+end_src
+
+  #+RESULTS: doc:location
+  #+begin_example
+  Get location of FRAMED.
+  Return values X, Y.
+
+  The position of FRAMED is origined upper-left:
+
+     +---------------------+ parent
+     |*---------> X        |
+     ||                    |
+     ||                    |
+     ||        * (X, Y)    |
+     |V Y                  |
+     |                     |
+     +---------------------+
+
+  And the location is relative to its `parent' by default.
+  #+end_example
++ =(set-location framed x y)= *[Generic Function]*
+
+  #+name: doc:set-location
+  #+begin_src lisp :exports results
+    (documentation #'set-location t)
+  #+end_src
+
+  #+RESULTS: doc:set-location
+  : Set `location' of FRAMED.
+  : Return FRAMED.
++ =(default-frame framed)= *[Generic Function]*
+
+  #+name: doc:default-frame
+  #+begin_src lisp :exports results
+    (documentation #'default-frame t)
+  #+end_src
+
+  #+RESULTS: doc:default-frame
+  : Return default frame configuration.
++ =(parent-frame obj)= *[Generic Function]*
+
+  #+name: doc:parent-frame
+  #+begin_src lisp :exports results
+    (documentation #'parent-frame t)
+  #+end_src
+
+  #+RESULTS: doc:parent-frame
+  : Get frame of FRAMED parent.
+  : Return values X, Y, W, H.
++ =(parent-size obj)= *[Generic Function]*
+
+  #+name: doc:parent-size
+  #+begin_src lisp :exports results
+    (documentation #'parent-size t)
+  #+end_src
+
+  #+RESULTS: doc:parent-size
+  : Get size of OBJ parent.
+  : Return values W, H.
++ =(parent-width obj)= *[Generic Function]*
+
+  #+name: doc:parent-width
+  #+begin_src lisp :exports results
+    (documentation #'parent-width t)
+  #+end_src
+
+  #+RESULTS: doc:parent-width
+  : Get the `width' of OBJ.
++ =(parent-height obj)= *[Generic Function]*
+
+  #+name: doc:parent-height
+  #+begin_src lisp :exports results
+    (documentation #'parent-height t)
+  #+end_src
+
+  #+RESULTS: doc:parent-height
+  : Get the `height' of OBJ.
++ =(parent-origin obj)= *[Generic Function]*
+
+  #+name: doc:parent-origin
+  #+begin_src lisp :exports results
+    (documentation #'parent-origin t)
+  #+end_src
+
+  #+RESULTS: doc:parent-origin
+  : Get origin of OBJ parent.
+  : Return values X, Y.
++ =minmax-framed-mixin= *[Class]*
+
+  #+name: doc:minmax-framed-mixin
+  #+begin_src lisp :exports results
+    (documentation 'minmax-framed-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:minmax-framed-mixin
+  : Mixin class add sizing check before modification of size.
+  :
+  : Note: this is only lisp-side sizing check, the ObjC's min/max size
+  : updating may not be synced.
++ =static-framed-mixin= *[Class]*
+
+  #+name: doc:static-framed-mixin
+  #+begin_src lisp :exports results
+    (documentation 'static-framed-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:static-framed-mixin
+  : For those `frame' are not likely to change `obj',
+  : use `static-framed-mixin' to cache frame values.
+
++ =(set-min-size framed min-width min-height)= *[Generic Function]*
+
+  #+name: doc:set-min-size
+  #+begin_src lisp :exports results
+    (documentation #'set-min-size t)
+  #+end_src
+
+  #+RESULTS: doc:set-min-size
+  : Set the minimal size of FRAMED of MIN-WIDTH and MIN-HEIGHT.
+  : Return the FRAMED itself.
+
++ =(set-max-size framed min-width min-height)= *[Generic Function]*
+
+  #+name: doc:set-max-size
+  #+begin_src lisp :exports results
+    (documentation #'set-max-size t)
+  #+end_src
+
+  #+RESULTS: doc:set-max-size
+  : Set the minimal size of FRAMED of MAX-WIDTH and MAX-HEIGHT.
+  : Return the FRAMED itself.
+
++ =(min-width framed)= *[Generic Function]*
+
+  #+name: doc:min-width
+  #+begin_src lisp :exports results
+    (documentation #'min-width t)
+  #+end_src
+
+  #+RESULTS: doc:min-width
+  : Get/Set minimal width of FRAMED.
+
++ =(min-height framed)= *[Generic Function]*
+
+  #+name: doc:min-height
+  #+begin_src lisp :exports results
+    (documentation #'min-height t)
+  #+end_src
+
+  #+RESULTS: doc:min-height
+  : Get/Set minimal height of FRAMED.
+
++ =(max-width framed)= *[Generic Function]*
+
+  #+name: doc:max-width
+  #+begin_src lisp :exports results
+    (documentation #'max-width t)
+  #+end_src
+
+  #+RESULTS: doc:max-width
+  : Get/Set maximal width of FRAMED.
+
++ =(max-height framed)= *[Generic Function]*
+
+  #+name: doc:max-height
+  #+begin_src lisp :exports results
+    (documentation #'max-height t)
+  #+end_src
+
+  #+RESULTS: doc:max-height
+  : Get/Set maximal height of FRAMED.
+
+*** Target
++ =target-mixin= *[Class]*
+
+  #+name: doc:target-mixin
+  #+begin_src lisp :exports results
+    (documentation (find-class 'target-mixin) t)
+  #+end_src
+
+  #+RESULTS: doc:target-mixin
+  : Mixin class for obj with target and action abstraction.
+  :
+  : Initialize Parameters:
+  : + TARGET: target where the ACTION is send to
+  : + ACTION: action called when obj is triggered
+  :
+
++ =(target obj)= *[Generic Function]*
+
+  #+name: doc:target
+  #+begin_src lisp :exports results
+    (documentation #'target t)
+  #+end_src
+
+  #+RESULTS: doc:target
+  : Get/Set the target of TARGET-MIXIN.
+  :
+  : The target could be:
+  : + `nil'
+  : + `:self'
+  : + `obj'
+
++ =(action obj)= *[Generic Function]*
+
+  #+name: doc:action
+  #+begin_src lisp :exports results
+    (documentation #'action t)
+  #+end_src
+
+  #+RESULTS: doc:action
+  #+begin_example
+  Get/Set the action of TARGET-MIXIN.
+
+  The action could be:
+  + `nil'
+  + `string' of `sel' name
+  + `sel'
+  + `function'
+    the function should be like:
+
+        (lambda (self sender)
+          (declare (type obj self)
+                   (type (or foreign-pointer obj) sender))
+          ...)
+
+    Parameters:
+    + SELF: the `target-mixin' object itself;
+    + SENDER: try to `find-obj' of the sender first,
+      if the sender is not findable,
+      it would be the foreign-pointer to sender directly
+
+    the return value of function will be ignored,
+    the action will be invoked in main thread (GUI thread),
+    so it is adviced to switch to background thread if
+    the action contains some heavy computation.
+  + `symbol' symbol to function
+
+  Dev Note:
+  + when action is set to be symbol or function,
+    it will use cocaRespondActionInLisp: SEL as target
+  #+end_example
++ =(enabledp obj)= *[Generic Function]*
+
+  #+name: doc:enabledp
+  #+begin_src lisp :exports results
+    (documentation #'enabledp t)
+  #+end_src
+
+  #+RESULTS: doc:enabledp
+  : Whether or not OBJ is enabled.

@@ -18,7 +18,13 @@
     :documentation
     "Action is internally stored as `sel', `nil' or `function'. "))
   (:documentation
-   "Mixin class for obj with target and action abstraction. "))
+   "Mixin class for obj with target and action abstraction.
+
+Initialize Parameters:
++ TARGET: target where the ACTION is send to
++ ACTION: action called when obj is triggered
+
+"))
 
 (defmethod initialize-instance :after ((obj target-mixin) &key)
   (with-slots (target action) obj

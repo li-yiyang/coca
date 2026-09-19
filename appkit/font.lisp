@@ -9,6 +9,20 @@ Key: pointer address
 Val: `font'")
 
 (defstruct (font (:constructor make-ns-font))
+  "Wrap of NSFont.
+
+Slot Variables:
++ PTR: foreign-pointer to NSFont
++ CG-PTR: foreign-pointer to CGFont
++ NAME: font name
++ FAMILY: font family name
++ DISPLAY-NAME: font display name
++ SIZE: font point size
++ WEIGHT: font weight [-1, 1]
++ SLANT: font slant [-1, 1]
++ PROPERTIES: an alist of font properties
+  use `font-property' to get property of `font'
+"
   (ptr          (null-pointer) :type foreign-pointer)
   (cg-ptr       (null-pointer) :type foreign-pointer)
   (name         ""             :type string :read-only t)
@@ -17,8 +31,38 @@ Val: `font'")
   (size         0.0d0          :type (double-float 0d0)      :read-only t)
   (weight       0.0d0          :type (double-float -1d0 1d0) :read-only t)
   (slant        0.0d0          :type (double-float -1d0 1d0) :read-only t)
-  (ascender     0.0d0          :type double-float            :read-only t)
-  (descender    0.0d0          :type double-float            :read-only t))
+  (properties   ()))
+
+(defun font-property (font property)
+  "Get PROPERTY of FONT.
+Return font property or nil if not found.
+
+Parameters:
++ FONT: `font'
++ PROPERTY: keyword of font property name
+  + `:size'
+  + `:weight'
+  + `:slant'
+  + `:ascender'
+  + `:descender'
+"
+  (declare (type font    font)
+           (type keyword property))
+  (case property
+    (:size     (font-size   font))
+    (:weight   (font-weight font))
+    (:slant    (font-slant  font))
+    (otherwise (getf (font-properties font) property))))
+
+(define-compiler-macro font-property (&whole form font property)
+  (typecase property
+    (keyword
+     (case property
+       (:size     `(font-size   ,font))
+       (:weight   `(font-weight ,font))
+       (:slant    `(font-slant  ,font))
+       (otherwise `(getf (font-properties ,font) ,property))))
+    (t form)))
 
 (defmethod print-object ((font font) stream)
   (print-unreadable-object (font stream :type t)
@@ -76,8 +120,9 @@ Return `font' instance. "
                    :size         size
                    :weight       weight
                    :slant        slant
-                   :ascender     ascender
-                   :descender    descender))))
+                   :properties   (list
+                                  :ascender  ascender
+                                  :descender descender)))))
 
 (define-objc-typing :ns-font
   :alias (:pointer ns-font-to-font)

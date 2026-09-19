@@ -12,10 +12,11 @@
   (:export
    #:obj
    #:obj-ptr
-   #:find-obj-mixin
-   #:find-obj
+   #:objc-ptr
    #:with-ptr
    #:with-ptrs
+   #:find-obj-mixin
+   #:find-obj
    #:appkit-condition
    #:already-destroyed
    #:owned-mixin

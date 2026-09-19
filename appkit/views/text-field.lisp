@@ -42,7 +42,28 @@
     :initform t
     :reader   borderedp))
   (:documentation
-   "Base class for NSTextField. ")
+   "Base class for NSTextField.
+
+Initialize Parameters:
++ VALUE: text of `base-text-field' object
+
++ TEXT-ALIGNMENT
+  + `:left'
+  + `:center'
+  + `:right'
+  + `:justified'
+  + `:natural'
+
++ EDITABLE: if the text is editable
+  if EDITABLE is non-nil,
+  the SELECTABLE will be enabled (overwrite)
+
++ SELECTABLE: if the text is selectable
+
++ DRAWS-BACKGROUND: if draws background
+
++ BORDERED: if bordered
+")
   (:default-initargs
    :objc-class "NSTextField"))
 
@@ -53,6 +74,7 @@
                draws-background-p
                borderedp)
       text
+    (when editable (setf selectable t))
     (dispatch-main ()
       (setf (text-alignment     text) text-alignment
             (editable           text) editable
@@ -134,7 +156,9 @@ Possible Values:
     :initarg  :placeholder
     :initform ""
     :type     string
-    :reader   placeholder)))
+    :reader   placeholder))
+  (:documentation
+   "Mixin class providing a placeholder. "))
 
 (defmethod initialize-instance :after ((obj placeholder-mixin) &key)
   (with-slots (placeholder) obj

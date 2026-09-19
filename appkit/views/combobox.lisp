@@ -11,7 +11,6 @@
     :documentation
     "An alist of (VALUE . DISPLAY-STRING). ")
    (intercell-spacing*
-    :initarg  :intercell-spacing
     :initform (make-array 2 :element-type 'double-float
                             :initial-contents '(3d0 2d0)))
    (has-vertical-scroller-p
@@ -36,6 +35,21 @@ A NSComboBox is a view that displays a list of values in
 a pop-up menu where the user selects a value or types in
 a custom value.
 
+Initialize Parameters:
++ ITEMS: a list of initial item values
+
++ INTERCELL-SPACING
+  + (WIDTH HEIGHT)
+  + #(WIDTH HEIGHT)
+
++ HAS-VERTICAL-SCROLLER:
+  if or not has vertical scroller for item drop menu
+
++ BUTTON-BORDERED:
+  if or not the drop down button is bordered
+
++ ITEM-HEIGHT:
+  height of items
 ")
   (:default-initargs
    :objc-class "NSComboBox"))
@@ -86,7 +100,8 @@ Return WIDGET itself. ")
         (invoke ptr "setItemHeight:" :double height))
       (setf (slot-value combobox 'item-height) height))))
 
-(defmethod initialize-instance :after ((combobox combobox) &key items)
+(defmethod initialize-instance :after
+    ((combobox combobox) &key items intercell-spacing)
   (with-slots (has-vertical-scroller-p
                item-height
                button-bordered-p
@@ -96,9 +111,15 @@ Return WIDGET itself. ")
       (setf (has-vertical-scroller-p combobox) has-vertical-scroller-p
             (item-height             combobox) item-height
             (button-bordered-p       combobox) button-bordered-p)
-      (set-intercell-spacing combobox
-                             (aref intercell-spacing* 0)
-                             (aref intercell-spacing* 1))
+      (m:match intercell-spacing
+        ((vector width height)
+         (set-intercell-spacing combobox width height))
+        ((list width height)
+         (set-intercell-spacing combobox width height))
+        (_
+         (set-intercell-spacing combobox
+                                (aref intercell-spacing* 0)
+                                (aref intercell-spacing* 1))))
       (dolist (item items)
         (add-item combobox item)))))
 

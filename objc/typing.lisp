@@ -27,6 +27,7 @@ Key: string of `sel' name.
 Val: `sel' for ObjC SEL")
 
 (defstruct objc-class
+  "Wrapper of ObjC Class. "
   (ptr   nil :type foreign-pointer)
   (name  ""  :type string))
 
@@ -70,6 +71,7 @@ Val: `sel' for ObjC SEL")
             (pointer-address (objc-class-ptr class)))))
 
 (defstruct sel
+  "Wrapper of ObjC SEL. "
   (ptr   nil :type foreign-pointer)
   (name  ""  :type string))
 

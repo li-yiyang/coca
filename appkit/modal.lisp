@@ -1,4 +1,4 @@
-;;;; modal.lisp --- Opens some dialog window 
+;;;; modal.lisp --- Opens some dialog window
 
 (in-package :coca.appkit)
 
@@ -25,13 +25,13 @@
     resp))
 
 (defun %run-modal (panel &optional window)
-  "Run PANEL and return NSModalResponse. 
+  "Run PANEL and return NSModalResponse.
 
-Parameters: 
-+ PANEL: foreign pointer to panel 
+Parameters:
++ PANEL: foreign pointer to panel
 + WINDOW: `window' or `nil'
-  + when given WINDOW and NOT in main thread, 
-    `run-modal' run as sheet modal and wait for response 
+  + when given WINDOW and NOT in main thread,
+    `run-modal' run as sheet modal and wait for response
   + otherwise, `run-modal' run as runModel:
 "
   (declare (type foreign-pointer panel)
@@ -45,15 +45,15 @@ Parameters:
 ;;;; Alert
 
 (deftype alert-style ()
-  "Style of popuped NSAlert. 
+  "Style of popuped NSAlert.
 
-Definitions: 
+Definitions:
 + `:inform'   Tell the user something
 + `:warning'  Warn the user
 + `:error'    Tell the user about an error
 + `:question' Question the user (e.g. Delete this file y-or-n?)
 
-Dev Note: 
+Dev Note:
 + the `alert-style' design is taken from franz's
   `nofity-user' specification when designing the API
 "
@@ -66,10 +66,10 @@ Dev Note:
                 (choices '((t "OK")) choices?)
                 icon
                 window)
-  "Popup NSAlert window with MESSAGE and TITLE. 
-Return selected CHOICES as return value. 
+  "Popup NSAlert window with MESSAGE and TITLE.
+Return selected CHOICES as return value.
 
-Parameters: 
+Parameters:
 + MESSAGE: a string for informativeText
 + TITLE:   a string for messageText (default as \"Coca\")
 + CHOICES: a list of element(s), which could be like:
@@ -81,11 +81,15 @@ Parameters:
   + BUTTON-TEXT:  string used to display as button title
 
   Note: if STYLE is `:question', the CHOICES will be ignored
-+ STYLE:   see `alert-style'
++ STYLE:
+  + `:inform'   Tell the user something
+  + `:warning'  Warn the user
+  + `:error'    Tell the user about an error
+  + `:question' Question the user (e.g. Delete this file y-or-n?)
 + WINDOW:  a `window' or `nil'
-  + if given `window', the alert will run as window model 
+  + if given `window', the alert will run as window model
     (sheet model)
-  + if given `nil', the alert will run as global model 
+  + if given `nil', the alert will run as global model
 + ICON:    (to be implemented)
 "
   (declare (type string message title)

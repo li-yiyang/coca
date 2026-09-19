@@ -6,7 +6,7 @@
   "FLT_MAX in ObjC side. ")
 
 (deftype framed-size ()
-  "Range of `size' for `framed' should be limited within `+flt-max+'. "
+  "Range of `size' for `framed' should be limited between 0 and float max. "
   `(real 0 ,+flt-max+))
 
 (defclass framed-mixin () ()
@@ -38,8 +38,8 @@ Initialize Parameters:
   + a list of (WIDTH HEIGHT)
   + a vector of #(WIDTH HEIGHT)
   + a number setting both WIDTH and HEIGHT
-+ WIDTH
-+ HEIGHT
++ WIDTH, MIN-WIDTH, MAX-WIDTH
++ HEIGHT, MIN-HEIGHT, MAX-HEIGHT
 + ORIGIN: should be like:
   + a list of (X Y)
   + a vector of #(X Y)
@@ -57,7 +57,14 @@ Dev Note:
 
 (defmethod initialize-instance :after
     ((framed framed-mixin)
-     &key x y location width height size origin (frame nil frame?))
+     &key x y location width height size origin (frame nil frame?)
+       (min-width  0) (max-width  +flt-max+)
+       (min-height 0) (max-height +flt-max+))
+  (declare (type framed-size
+                 min-width min-height
+                 max-width max-height))
+  (assert (<= min-width  max-width))
+  (assert (<= min-height max-height))
   (unless (and frame? (null frame))
     (multiple-value-bind (x* y* w* h*)
         (default-frame framed)
@@ -102,7 +109,12 @@ Dev Note:
                    y* (- ph y h*))))
           (when x (setf x* x))
           (when y (setf y* (- ph y h*)))))
-      (set-frame framed x* y* w* h*))))
+      (flet ((limit (low x high) (min (max low x) high)))
+        (set-frame framed
+                   x*
+                   y*
+                   (limit min-width  w* max-width)
+                   (limit min-height h* max-height))))))
 
 (defmethod objc-ptr ((framed framed-mixin) (name (eql :frame)))
   "By default `objc-ptr' of `framed-mixin' use default ObjC pointer. "
@@ -139,20 +151,24 @@ Return `framed'. ")
   (:method (framed x y w h)
     (set-frame framed x y w h)))
 
-(defmethod width ((framed framed-mixin))
-  (multiple-value-bind (x y w h) (frame framed)
-    (declare (ignore x y h))
-    w))
+(defgeneric width (framed)
+  (:documentation "Get/Set FRAMED width. ")
+  (:method ((framed framed-mixin))
+    (multiple-value-bind (x y w h) (frame framed)
+      (declare (ignore x y h))
+      w)))
 
 (defmethod (setf width) ((width real) (framed framed-mixin))
   (multiple-value-bind (x y w h) (frame framed)
     (declare (ignore w))
     (set-frame framed x y width h)))
 
-(defmethod height ((framed framed-mixin))
-  (multiple-value-bind (x y w h) (frame framed)
-    (declare (ignore x y w))
-    h))
+(defgeneric height (framed)
+  (:documentation "Get/Set FRAMED height. ")
+  (:method ((framed framed-mixin))
+    (multiple-value-bind (x y w h) (frame framed)
+      (declare (ignore x y w))
+      h)))
 
 (defmethod (setf height) ((height real) (framed framed-mixin))
   (multiple-value-bind (x y w h) (frame framed)
@@ -212,34 +228,34 @@ Return values X, Y, W, H. ")
   (:method (framed)
     (frame (parent framed))))
 
-(defgeneric parent-size (framed)
+(defgeneric parent-size (obj)
   (:documentation
-   "Get size of FRAMED parent.
+   "Get size of OBJ parent.
 Return values W, H. ")
-  (:method (framed)
-    (multiple-value-bind (x y w h) (parent-frame framed)
+  (:method (obj)
+    (multiple-value-bind (x y w h) (parent-frame obj)
       (declare (ignore x y))
       (values w h))))
 
-(defgeneric parent-width (framed)
+(defgeneric parent-width (obj)
   (:documentation
-   "Get the `width' of FRAMED. ")
-  (:method (framed)
-    (multiple-value-bind (x y w h) (parent-frame framed)
+   "Get the `width' of OBJ. ")
+  (:method (obj)
+    (multiple-value-bind (x y w h) (parent-frame obj)
       (declare (ignore x y h))
       w)))
 
-(defgeneric parent-height (framed)
+(defgeneric parent-height (obj)
   (:documentation
-   "Get the `height' of FRAMED. ")
+   "Get the `height' of OBJ. ")
   (:method (framed)
     (multiple-value-bind (x y w h) (parent-frame framed)
       (declare (ignore x y w))
       h)))
 
-(defgeneric parent-origin (framed)
+(defgeneric parent-origin (obj)
   (:documentation
-   "Get origin of FRAMED parent.
+   "Get origin of OBJ parent.
 Return values X, Y. ")
   (:method (framed)
     (multiple-value-bind (x y w h) (parent-frame framed)
@@ -342,24 +358,68 @@ updating may not be synced. "))
 
 (defmethod initialize-instance :after ((framed minmax-framed-mixin) &key)
   (with-slots (min-width max-width min-height max-height) framed
-    (assert (<= min-width  max-width))
-    (assert (<= min-height max-height))))
+    (set-min-size framed min-width min-height)
+    (set-max-size framed max-width max-height)))
+
+(defgeneric set-min-size (framed min-width min-height)
+  (:documentation
+   "Set the minimal size of FRAMED of MIN-WIDTH and MIN-HEIGHT.
+Return the FRAMED itself. ")
+  (:method :around (framed w h)
+    (call-next-method)
+    framed)
+  (:method ((framed minmax-framed-mixin) (w real) (h real))
+    (declare (type framed-size w h))
+    (setf (min-width  framed) w
+          (min-height framed) h)))
+
+(defgeneric set-max-size (framed max-width max-height)
+  (:documentation
+   "Set the minimal size of FRAMED of MAX-WIDTH and MAX-HEIGHT.
+Return the FRAMED itself. ")
+  (:method :around (framed w h)
+    (call-next-method)
+    framed)
+  (:method ((framed minmax-framed-mixin) (w real) (h real))
+    (declare (type framed-size w h))
+    (setf (max-width  framed) w
+          (max-height framed) h)))
 
 (defmethod set-frame :before ((framed minmax-framed-mixin) x y (w real) (h real))
   (assert (<= (min-width  framed) w (max-width  framed)))
   (assert (<= (min-height framed) h (max-height framed))))
 
+(defgeneric min-width (framed)
+  (:documentation "Get/Set minimal width of FRAMED. "))
+
+(defgeneric min-height (framed)
+  (:documentation "Get/Set minimal height of FRAMED. "))
+
+(defgeneric max-width (framed)
+  (:documentation "Get/Set maximal width of FRAMED. "))
+
+(defgeneric max-height (framed)
+  (:documentation "Get/Set maximal height of FRAMED. "))
+
 (defmethod (setf min-width) :before ((mw real) (framed minmax-framed-mixin))
-  (assert (<= mw (max-width framed))))
+  (assert (<= mw (max-width framed)))
+  (when (< (width framed) mw)
+    (setf (width framed) mw)))
 
 (defmethod (setf max-width) :before ((mw real) (framed minmax-framed-mixin))
-  (assert (<= (min-width framed) mw)))
+  (assert (<= (min-width framed) mw))
+  (when (< mw (width framed))
+    (setf (width framed) mw)))
 
 (defmethod (setf min-height) :before ((mh real) (framed minmax-framed-mixin))
-  (assert (<= mh (max-height framed))))
+  (assert (<= mh (max-height framed)))
+  (when (< (height framed) mh)
+    (setf (height framed) mh)))
 
 (defmethod (setf max-height) :before ((mh real) (framed minmax-framed-mixin))
-  (assert (<= (min-height framed) mh)))
+  (assert (<= (min-height framed) mh))
+  (when (< mh (height framed))
+    (setf (height framed) mh)))
 
 (defmethod (setf min-width) ((mw null) (framed minmax-framed-mixin))
   (setf (min-width framed) 0))

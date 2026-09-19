@@ -49,9 +49,7 @@ order. "
     :initform (main-screen)
     :initarg  :screen
     :reader   screen
-    ;; TODO: (parent window) should be the screen...
-    ;; :reader   parent
-    )
+    :reader   parent)
    (content-view-ptr
     :type (or null foreign-pointer)
     :documentation
@@ -60,10 +58,23 @@ order. "
    :objc-class     "NSWindow"
    :objc-init      'init-window
    :init-in-main-p t
-   :visible        t
-   :frame          #(0 0 100 100))
+   :visible        t)
   (:documentation
    "Wrapper of NSWindow
+
+Initialize Parameters:
++ SCREEN: specify which `screen' the window should be displayed on
+  by default, the `screen' would be the `main-screen'
+
++ TITLE: window title (default \"\")
+  see `titled-mixin'
+
++ X, Y, LOCATION, WIDTH, HEIGHT, SIZE, ORIGIN, FRAME,
+  MIN-WIDTH, MAX-WIDTH, MIN-HEIGHT, MAX-HEIGHT
+  see `framed-mixin' and `minmax-framed-mixin'
+
++ VISIBLE: visible or not (default `t')
+  see `visible-mixin'
 
 Dev Note:
 + objc-ptr mapping:
@@ -107,6 +118,15 @@ Dev Note:
               :bool    nil)))
   window)
 
+(defmethod set-min-size ((window window) (w real) (h real))
+  (declare (type framed-size w h))
+  (with-slots (min-width min-height) window
+    (with-ptr window ptr
+      (dispatch-main ()
+        (invoke ptr "setMinSize:" :ns-size (w h))))
+    (setf min-width  w
+          min-height h)))
+
 (flet ((set-min-size (window)
          (declare (type window window))
          (with-slots (min-width min-height) window
@@ -119,6 +139,15 @@ Dev Note:
   (defmethod (setf min-height) :after (min-height (window window))
     (declare (ignore min-height))
     (set-min-size window)))
+
+(defmethod set-max-size ((window window) (w real) (h real))
+  (declare (type framed-size w h))
+  (with-slots (max-width max-height) window
+    (with-ptr window ptr
+      (dispatch-main ()
+        (invoke ptr "setMaxSize:" :ns-size (w h))))
+    (setf max-width  w
+          max-height h)))
 
 (flet ((set-max-size (window)
          (declare (type window window))
@@ -194,15 +223,30 @@ not be closed. ")
 
 (defgeneric window-style (window)
   (:documentation
-   "Get/Set window style of WINDOW. ")
+   "Get/Set window style of WINDOW.
+
+Possible Values:
+the `window-style' could be keyword or a list of keyword,
+each could be:
+
++ `:borderless'
++ `:titled'
++ `:closable'
++ `:miniaturizable'
++ `:resizable'
++ `:textured-background'
++ `:unified-title-and-toolbar'
++ `:full-screen'
++ `:full-size-content-view'")
   (:method ((window window))
     (with-ptr window ptr
       (invoke ptr "styleMask" :ns-window-style))))
 
 (defmethod (setf window-style) (style-mask (window window))
   (with-ptr window ptr
-    (dispatch-main ()
-      (invoke ptr "setStyleMask:" :ns-window-style style-mask)))
+    (let ((style (as-ns-window-style style-mask)))
+      (dispatch-main ()
+        (invoke ptr "setStyleMask:" :unsigned-long style))))
   style-mask)
 
 

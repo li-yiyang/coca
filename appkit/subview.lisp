@@ -19,8 +19,7 @@
   (:default-initargs
    :objc-class     "NSView"
    :objc-init      'init-view
-   :init-in-main-p t
-   :frame          #(0 0 100 100)))
+   :init-in-main-p t))
 
 (defun init-view (ptr)
   "Create a NSView. "
