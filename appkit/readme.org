@@ -82,7 +82,7 @@ a [[doc:button][=button=]]:
 
 *Explain*
 + [[doc:button][=button=]] use [[doc:target-mixin][=target-mixin=]],
-  the =:action= could be a =function=, [[file:~/common-lisp/coca/objc/readme.org::doc:sel][=sel=]] (or =string= of [[file:~/common-lisp/coca/objc/readme.org::doc:sel][=sel=]]),
+  the =:action= could be a =function=, [[../objc/readme.org::doc:sel][=sel=]] (or =string= of [[../objc/readme.org::doc:sel][=sel=]]),
   by default the =:target= would be set to be =but= itself
 
 + use [[doc:make-font][=make-font=]] to create a [[doc:font][=font=]]
