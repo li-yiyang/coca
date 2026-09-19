@@ -9,7 +9,7 @@ This is a rewrite of [[https://codeberg.org/li-yiyang/McCLIM/src/commit/96af3f5e
 Currently, this repo should act like a snippet collection.
 You can choose to load the whole library as =coca=.
 Or take subsystems with functionalities you want:
-+ =coca/objc=: A thin wrapper of ObjC runtime
++ [[file:objc/readme.org][=coca/objc=]]: A thin wrapper of ObjC runtime
 
   If you just want to communicate with ObjC runtime,
   you can only load =coca/objc= system.
@@ -18,24 +18,36 @@ Or take subsystems with functionalities you want:
   to restore the ObjC runtime for lisp image if you saved
   your lisp image and want to restore it.
 
-+ =coca/objc/block=: Support ObjC's block
+  *Limits*: =coca/objc= don't have libdispatch supported yet,
+  so if any =NSException= throws, the process terminates
+  by ObjC. It is adviced to check in lisp environment
+  before you =invoke= ObjC methods.
 
-+ =coca/objc/osx-version=: Get/Check macOS version.
+  You might try [[https://github.com/lispnik/objc/][github@lispnik/objc]] for such support.
+
++ [[file:objc/readme.org::*Block][=coca/objc/block=]]: Support ObjC's block
+
++ [[file:objc/readme.org::*macOS version and test][=coca/objc/osx-version=]]: Get/Check macOS version.
+
++ [[file:objc/readme.org::*ObjC Runtime Inspect][=coca/objc/runtime-inspect=]]: (*should* be dev only)
+  provides ObjC runtime inspection functionalities. 
 
 + =coca/app=: A thin wrapper for NSApp
 
   You can only use =coca/app= subsystem to create your
   own NSApplication with raw ObjC pointer manipulation.
 
-  Since Cocoa limits GUI manipulations within main thread,
-  you should use =dispatch-main= macro often.
+  *Limits*: Since Cocoa requires GUI manipulations within
+  main thread, you should leave the main thread for
+  =NSApp= run loop and perform the operations in background
+  threads.
 
 + =coca/appkit=: Wraps Cocoa AppKit
 
   The =coca/appkit= is to group the manipulation codes
-  into CLOS model. For example, a =NSWindow= and =NSView=
-  can both follow the =isVisible= method. So =coca/appkit=
-  will wrap the =visible= generic function using =visible-mixin=.
+  into CLOS model. For example, a =NSWindow= follows the
+  =isVisible= method. So =coca/appkit= will wrap the [[file:appkit/readme.org::doc:visible][=visible=]]
+  generic function using =visible-mixin=.
 
   For the ownership of ObjC objects and Lisp objects,
   the =owned-mixin= holds reference to ObjC objects and
@@ -85,6 +97,10 @@ failed to allocate 1048576 bytes at 0x300100000
 on macOS 27, you may check your SBCL's version, which should be updated.
 If you're using [[https://github.com/li-yiyang/homebrew-sbcl-goodies][github@li-yiyang/hoembrew-sbcl-goodies]],
 you may run =brew reinstall --build-from-source sbcl-goodies=.
+
+* Other Projects
++ [[https://github.com/lispnik/objc/][github@lispnik/objc]] better with safe libdispatch support
+  (NSException capture)
 
 * Footnotes
 [fn:lw-personal] I think I've kept the dependency as minimal

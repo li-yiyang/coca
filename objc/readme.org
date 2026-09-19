@@ -31,6 +31,18 @@ which should print out like:
 Note that ObjC errors are not handled by lisp, which just kills the lisp
 image. Be aware to call ObjC methods correctly or check before calling.
 
+There provides some shortcut functions for some commonly used ObjC methods.
+It is adviced to use these functions instead of writing [[doc:invoke][=invoke=]]
+(the goal is to provide a lispy and simple code).
+
+For example:
++ [[doc:alloc][=alloc=]]
++ [[doc:init][=init=]]
++ [[doc:description][=description=]]
++ [[doc:release][=release=]]
++ [[doc:retain][=retain=]]
++ [[doc:autorelease][=autorelease=]]
+
 ** Typing
 The macro [[doc:invoke][=invoke=]] is just a thin warpper on =cffi:foreign-funcall=.
 
@@ -86,26 +98,49 @@ with result and input args rules:
 #+end_src
 
 the =:arg= parameter can be a list of elements =(PATTERN EXPANSION-RULE)=
-+ =PATTERN=: the pattern use [[https://github.com/m2ym/optima][=optima:match=]] to match patterns
++ =PATTERN=: the pattern use [[https://github.com/guicho271828/trivia/][=trivia:match=]] to match patterns
 + =EXPANSION-RULE=: an expression evaluated
 
   the return value(s) can be arg expansion and invoke rewrite
   + arg expansion: should be like a list of =(:CFFI-TYPE EXPR ...)=
   + invoke rewrite: wrap =invoke= like =`(,@rewrite (invoke ...))=
 
+You can overwrite builtin ObjC type transforming rules to provide
+your own syntax sugar. For example, you can use:
+
+#+begin_src lisp :eval no
+  (invoke obj "selWithNSDictionary:"
+          :object (ns-mutable-dictionary
+                   ("KEY" val)))
+#+end_src
+
+directly to pass in pointer to =NSDictionary= object,
+or you can define [[file:typing.lisp::define-objc-typing :ns-dictionary][=:ns-dictionary=]] so you can use the syntax sugar:
+
+#+begin_src lisp :eval no
+  (invoke obj "selWithNsdictionary:"
+          :ns-dictionary (("KEY1" val)
+                          ("KEY2" (("subNSDictionaryKey1" val)))))
+#+end_src
+
 *** Built-in ObjC typing
 Coca.ObjC provides some built-in ObjC typing:
 
-| ObjC typing | CFFI equivent                  | ~invoke~ as return value |
-|-------------+--------------------------------+------------------------|
-| ~:class~      | ~:pointer~                       | ~coerce-to-objc-class~   |
-| ~:sel~        | ~:pointer~                       | ~coerce-to-selector~     |
-| ~:object~     | ~:pointer~                       |                        |
-| ~:ns-array~   | ~:pointer~ (not implemented yet) | ~ns-array-to-list~       |
-| ~:ns-string~  | ~:pointer~ (~string-to-ns-string~) | ~ns-string-to-string~    |
-| ~:block~      | ~:pointer~ (ObjC's block)        | (not implemented)      |
+| ObjC typing    | CFFI equivent                      | ~invoke~ as return value         |
+|----------------+------------------------------------+--------------------------------|
+| ~:class~         | ~:pointer~                           | [[doc:coerce-to-objc-class][~coerce-to-objc-class~]]         |
+| ~:sel~           | ~:pointer~                           | [[doc:coerce-to-selector][~coerce-to-selector~]]           |
+| ~:object~        | ~:pointer~                           |                                |
+| ~:ns-array~      | ~:pointer~ (not implemented yet)     | [[doc:ns-array-to-list][~ns-array-to-list~]]             |
+| ~:ns-string~     | ~:pointer~ ([[doc:string-to-ns-string][~string-to-ns-string~]])   | [[doc:ns-string-to-string][~ns-string-to-string~]]          |
+| ~:ns-url~        | ~:pointer~ ([[doc:pathname-to-ns-url][~pathname-to-ns-url~]])    | [[doc:ns-url-to-pathname][~ns-url-to-pathname~]]           |
+| ~:ns-uint~       | ~:unsigned-long~                     | ~:unsigned-long~                 |
+| ~:ns-int~        | ~:long~                              | ~:long~                          |
+| ~:ns-number~     | ~:pointer~ ([[doc:ns-number][~ns-number~]])             | ~:pointer~ ([[doc:ns-number-value][~ns-number-value~]])   |
+| ~:ns-dictionary~ | ~:pointer~ ([[doc:ns-mutable-dictionary][~ns-mutable-dictionary~]]) | ~:pointer~ ([[doc:get-ns-dictionary][~get-ns-dictionary~]]) |
+| ~:block~         | ~:pointer~ (ObjC's block)            | (not implemented)              |
 
-Can use =define-objc-typing= macro to define a new ObjC typing.
+Can use [[doc:define-objc-typing][=define-objc-typing=]] macro to define a new ObjC typing.
 
 ** Block
 Some ObjC functions expect blocks as arguments, which can be invoked
@@ -115,7 +150,7 @@ like:
   (invoke obj "methodWithBlock:" :block (BLOCK-TYPE (LAMBDA-LIST) &body ...))
 #+end_src
 
-Use =define-objc-block= to define your own =block-type=.
+Use [[doc:define-objc-block][=define-objc-block=]] to define your own =block-type=.
 
 ** Image Dump
 Since Coca.ObjC is built on ObjC's runtime, every time you terminate
@@ -144,6 +179,13 @@ system version requirements.
 One of the common usage case would be [[doc:define-objc-enum][=define-objc-enum=]] and
 [[doc:define-objc-mask][=define-objc-mask=]] where you could use [[doc:osx-version>=][~osx-version>=~]] to enclude
 flags depending on macOS version.
+
+** ObjC Runtime Inspect
+It is adviced to load =coca/objc/runtime-inspect= subsystem when developping,
+which provides some ObjC runtime functionalities.
+
+The [[Runtime Inspect][API]] provides some MOP-like functions to inspect [[doc:objc-class][=objc-class=]]
+hierarchy relationship, method results and else.
 
 * API
 :PROPERTIES:
@@ -193,12 +235,26 @@ flags depending on macOS version.
   + OBJC-TYPE: extended CFFI type
 
     Built-in ObjC typing:
-    + :object   expecting to be `objc-object'
-    + :class    expecting to be `objc-class'
-    + :sel      expecting to be `sel'
-    + :ns-uint  alias as :unsigned-long
-    + :ns-int   alias as :long
-    + :cg-float alias as :double
+    + :object        expecting to be `objc-object'
+    + :class         expecting to be `objc-class'
+    + :sel           expecting to be `sel'
+    + :ns-string     convert between lisp string and NSString
+    + :ns-url        convert between lisp string/pathname and NSURL
+    + :ns-uint       alias as :unsigned-long
+    + :ns-int        alias as :long
+    + :ns-number     convert lisp values to NSNumber
+                     adviced to use `ns-number-value' to get NSNumber
+                     value back as lisp type
+    + :ns-array      convert NSArray into a list of foreign-pointer
+                     to NSObject
+    + :ns-dictionary input syntax
+
+                         ((KEY VAL)
+                          ;; key with nested NSDictionary
+                          (KEY ((KEY VAL)
+                                (KEY VAL))))
+
+                     creates NSMutableDictionary behind the scene
 
     Built-in ObjC typing in `coca/objc/block' subsystem:
     + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
@@ -219,6 +275,7 @@ flags depending on macOS version.
 
     If not provided, by default as `:void'
 
+  See also `invoke-super'.
   #+end_example
 + =(invoke-super OBJECT SEL [TYPE ARG]* [RETURN-TYPE]?)= *[Macro]*
 
@@ -243,12 +300,26 @@ flags depending on macOS version.
   + OBJC-TYPE: extended CFFI type
 
     Built-in ObjC typing:
-    + :object   expecting to be `objc-object'
-    + :class    expecting to be `objc-class'
-    + :sel      expecting to be `sel'
-    + :ns-uint  alias as :unsigned-long
-    + :ns-int   alias as :long
-    + :cg-float alias as :double
+    + :object        expecting to be `objc-object'
+    + :class         expecting to be `objc-class'
+    + :sel           expecting to be `sel'
+    + :ns-string     convert between lisp string and NSString
+    + :ns-url        convert between lisp string/pathname and NSURL
+    + :ns-uint       alias as :unsigned-long
+    + :ns-int        alias as :long
+    + :ns-number     convert lisp values to NSNumber
+                     adviced to use `ns-number-value' to get NSNumber
+                     value back as lisp type
+    + :ns-array      convert NSArray into a list of foreign-pointer
+                     to NSObject
+    + :ns-dictionary input syntax
+
+                         ((KEY VAL)
+                          ;; key with nested NSDictionary
+                          (KEY ((KEY VAL)
+                                (KEY VAL))))
+
+                     creates NSMutableDictionary behind the scene
 
     Built-in ObjC typing in `coca/objc/block' subsystem:
     + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
@@ -268,6 +339,8 @@ flags depending on macOS version.
     Use `define-objc-typing' to define new ObjC typing.
 
     If not provided, by default as `:void'
+
+  See also `invoke'.
   #+end_example
 + =(with-autorelease-pool &body)= *[Macro]*
 
@@ -705,6 +778,17 @@ flags depending on macOS version.
   : Convert PATHNAME into NSURL.
   : Return foreign-pointer of NSPath for PATHNAME.
 
++ =(ns-url-to-pathname ns-url)= *[Function]*
+
+  #+name: doc:ns-url-to-pathname
+  #+begin_src lisp :exports results
+    (documentation #'ns-url-to-pathname t)
+  #+end_src
+
+  #+RESULTS: doc:ns-url-to-pathname
+  : Convert NS-URL to pathname.
+  : Return a `pathname' instance.
+
 + =(ns-array-to-list ns-array)= *[Function]*
 
   #+name: doc:ns-array-to-list
@@ -827,6 +911,7 @@ flags depending on macOS version.
     + `:int'
     + `:string'
   #+end_example
+
 ** Block
 Load =coca/objc/block= to have Block supports setted up:
 + =(define-objc-block block-type lambda-list)= *[Macro]*
@@ -854,6 +939,7 @@ Load =coca/objc/block= to have Block supports setted up:
     within macro, use (BLOCK-TYPE lambda-list &body body)
     as callback
   #+end_example
+
 ** OSX-Version
 Load =coca/objc/osx-version= to have macOS version support:
 + =(osx-version)= *[Function]*
@@ -931,7 +1017,7 @@ development usage (not recommanded to use in production environemnt).
   #+RESULTS: doc:objc-class-subclasses
   : Return a list of subclasses of OBJC-CLASS.
 
-+ =(decode-objc-type-encoding encoding)=
++ =(decode-objc-type-encoding encoding)= *[Function]*
 
   #+name: doc:decode-objc-type-encoding
   #+begin_src lisp :exports results
@@ -1026,6 +1112,7 @@ development usage (not recommanded to use in production environemnt).
   + OBJC-CLASS-P:
     if non-nil, assume OBJC-CLASS-OR-OBJECT is pointer to ObjC class
   #+end_example
+
 + =(objc-class-class-method-encoding objc-class sel &optional errorp)= *[Function]*
 
   #+name: doc:objc-class-class-method-encoding

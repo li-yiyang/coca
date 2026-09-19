@@ -28,12 +28,26 @@ Parameters:
 + OBJC-TYPE: extended CFFI type
 
   Built-in ObjC typing:
-  + :object   expecting to be `objc-object'
-  + :class    expecting to be `objc-class'
-  + :sel      expecting to be `sel'
-  + :ns-uint  alias as :unsigned-long
-  + :ns-int   alias as :long
-  + :cg-float alias as :double
+  + :object        expecting to be `objc-object'
+  + :class         expecting to be `objc-class'
+  + :sel           expecting to be `sel'
+  + :ns-string     convert between lisp string and NSString
+  + :ns-url        convert between lisp string/pathname and NSURL
+  + :ns-uint       alias as :unsigned-long
+  + :ns-int        alias as :long
+  + :ns-number     convert lisp values to NSNumber
+                   adviced to use `ns-number-value' to get NSNumber
+                   value back as lisp type
+  + :ns-array      convert NSArray into a list of foreign-pointer
+                   to NSObject
+  + :ns-dictionary input syntax
+
+                       ((KEY VAL)
+                        ;; key with nested NSDictionary
+                        (KEY ((KEY VAL)
+                              (KEY VAL))))
+
+                   creates NSMutableDictionary behind the scene
 
   Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
@@ -54,7 +68,7 @@ Parameters:
 
   If not provided, by default as `:void'
 
-"
+See also `invoke-super'. "
   (declare (type list args))
   (let* ((resultp (oddp (length args)))
          (result  (if resultp (car (last args)) :void))
@@ -114,12 +128,26 @@ Parameters:
 + OBJC-TYPE: extended CFFI type
 
   Built-in ObjC typing:
-  + :object   expecting to be `objc-object'
-  + :class    expecting to be `objc-class'
-  + :sel      expecting to be `sel'
-  + :ns-uint  alias as :unsigned-long
-  + :ns-int   alias as :long
-  + :cg-float alias as :double
+  + :object        expecting to be `objc-object'
+  + :class         expecting to be `objc-class'
+  + :sel           expecting to be `sel'
+  + :ns-string     convert between lisp string and NSString
+  + :ns-url        convert between lisp string/pathname and NSURL
+  + :ns-uint       alias as :unsigned-long
+  + :ns-int        alias as :long
+  + :ns-number     convert lisp values to NSNumber
+                   adviced to use `ns-number-value' to get NSNumber
+                   value back as lisp type
+  + :ns-array      convert NSArray into a list of foreign-pointer
+                   to NSObject
+  + :ns-dictionary input syntax
+
+                       ((KEY VAL)
+                        ;; key with nested NSDictionary
+                        (KEY ((KEY VAL)
+                              (KEY VAL))))
+
+                   creates NSMutableDictionary behind the scene
 
   Built-in ObjC typing in `coca/objc/block' subsystem:
   + :block    expecting (BLOCK-TYPE (lambda-list ...) ,@body)
@@ -139,7 +167,8 @@ Parameters:
   Use `define-objc-typing' to define new ObjC typing.
 
   If not provided, by default as `:void'
-"
+
+See also `invoke'. "
   (declare (type list args))
   (let* ((resultp (oddp (length args)))
          (result  (if resultp (car (last args)) :void))

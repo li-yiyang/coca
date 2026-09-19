@@ -33,6 +33,7 @@
    #:string-to-ns-string
    #:ns-string-to-string
    #:pathname-to-ns-url
+   #:ns-url-to-pathname
    #:ns-array-to-list
    #:ns-mutable-dictionary
    #:get-ns-dictionary
