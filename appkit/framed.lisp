@@ -98,17 +98,16 @@ Dev Note:
                y* y)))
       (when width  (setf w* width))
       (when height (setf h* height))
-      (when (parent framed)
-        (let ((ph (parent-height framed)))
-          (m:match location
-            ((list x y)
-             (setf x* x
-                   y* (- ph y h*)))
-            ((vector x y)
-             (setf x* x
-                   y* (- ph y h*))))
-          (when x (setf x* x))
-          (when y (setf y* (- ph y h*)))))
+      (alx:when-let ((ph (parent-height framed)))
+        (m:match location
+          ((list x y)
+           (setf x* x
+                 y* (- ph y h*)))
+          ((vector x y)
+           (setf x* x
+                 y* (- ph y h*))))
+        (when x (setf x* x))
+        (when y (setf y* (- ph y h*))))
       (flet ((limit (low x high) (min (max low x) high)))
         (set-frame framed
                    x*
@@ -224,43 +223,42 @@ Return `framed'. ")
 (defgeneric parent-frame (framed)
   (:documentation
    "Get frame of FRAMED parent.
-Return values X, Y, W, H. ")
+Return values X, Y, W, H or `nil' if OBJ has no parent. ")
   (:method (framed)
-    (frame (parent framed))))
+    (alx:when-let ((parent (parent framed)))
+      (frame parent))))
 
 (defgeneric parent-size (obj)
   (:documentation
    "Get size of OBJ parent.
-Return values W, H. ")
+Return values W, H or `nil' if OBJ has no parent. ")
   (:method (obj)
-    (multiple-value-bind (x y w h) (parent-frame obj)
-      (declare (ignore x y))
-      (values w h))))
+    (alx:when-let ((parent (parent framed)))
+      (size parent))))
 
 (defgeneric parent-width (obj)
   (:documentation
-   "Get the `width' of OBJ. ")
+   "Get the `width' of OBJ.
+Return `nil' if OBJ has no parent or width of OBJ parent. ")
   (:method (obj)
-    (multiple-value-bind (x y w h) (parent-frame obj)
-      (declare (ignore x y h))
-      w)))
+    (alx:when-let ((parent (parent framed)))
+      (width parent))))
 
 (defgeneric parent-height (obj)
   (:documentation
-   "Get the `height' of OBJ. ")
+   "Get the `height' of OBJ.
+Return `nil' if OBJ has no parent or height of OBJ parent. ")
   (:method (framed)
-    (multiple-value-bind (x y w h) (parent-frame framed)
-      (declare (ignore x y w))
-      h)))
+    (alx:when-let ((parent (parent framed)))
+      (height parent))))
 
 (defgeneric parent-origin (obj)
   (:documentation
    "Get origin of OBJ parent.
-Return values X, Y. ")
+Return values X, Y or `nil' if OBJ has no parent. ")
   (:method (framed)
-    (multiple-value-bind (x y w h) (parent-frame framed)
-      (declare (ignore w h))
-      (values x y))))
+    (alx:when-let ((parent (parent framed)))
+      (origin parent))))
 
 (defgeneric location (framed)
   (:documentation

@@ -106,6 +106,9 @@ Dev Note:
             (invoke ptr "contentView" :object))))
   (push (tg:make-weak-pointer window) *%window-list*))
 
+(defgeneric screen (obj)
+  (:documentation "Return the `screen' OBJ is on. "))
+
 (defmethod objc-ptr ((window window) (name (eql :delegate)))
   (window-delegate))
 

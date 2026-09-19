@@ -27,9 +27,9 @@
   (invoke ptr "initWithFrame:" :ns-rect #(0 0 100 100))
   ptr)
 
-(defmethod initialize-instance :after ((view base-view) &key parent)
-  (when parent
-    (add-child parent view)))
+(defmethod initialize-instance ((view base-view) &key parent)
+  (call-next-method)
+  (when parent (add-child parent view)))
 
 (defmethod destroy ((view base-view))
   "Before destroy a VIEW, it should be removed from its parent.
@@ -37,6 +37,16 @@ And destroying the view should happen in main thread. "
   (dispatch-main (:throw-to-toplevel t)
     (remove-from-parent view)
     (call-next-method)))
+
+(defgeneric window (obj)
+  (:documentation
+   "Return the `window' OBJ is in,
+or `nil' if OBJ is not attached to any `window'. ")
+  (:method ((view base-view))
+    (alx:when-let ((parent (parent view)))
+      (if (typep parent 'window)
+          parent
+          (window parent)))))
 
 
 ;;;; subview-mixin

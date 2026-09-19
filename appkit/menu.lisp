@@ -159,7 +159,9 @@ Dev Note:
 ;; Dev Note: should menu-separator use `owned-mixin'?
 (defclass menu-separator (base-menu-item) ()
   (:default-initargs
-   :ptr (invoke "NSMenuItem" "separatorItem" :object)))
+   :ptr (invoke "NSMenuItem" "separatorItem" :object))
+  (:documentation
+   "Wrapper of menu separator. "))
 
 (defclass process-menu-item (menu-item) ()
   (:documentation

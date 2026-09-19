@@ -33,6 +33,10 @@ Slot Variables:
   (slant        0.0d0          :type (double-float -1d0 1d0) :read-only t)
   (properties   ()))
 
+(setf (documentation #'font-name         t) "Get the font name. ")
+(setf (documentation #'font-family       t) "Get the font family name. ")
+(setf (documentation #'font-display-name t) "Get the font display name. ")
+
 (defun font-property (font property)
   "Get PROPERTY of FONT.
 Return font property or nil if not found.

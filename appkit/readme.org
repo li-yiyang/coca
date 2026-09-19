@@ -3,7 +3,7 @@
 #+author: 凉凉
 * Usage
 :PROPERTIES:
-:header-args:lisp: :package coca.appkit :results verbatim
+:header-args:lisp: :package coca.appkit :results verbatim :eval no-export
 :END:
 
 ** Basic Usage
@@ -94,6 +94,8 @@ a [[doc:button][=button=]]:
 ** Layout
 ** Menus
 ** Dialog and modal windows
+** Dev Note
+*** To wrap =NSView= widgets
 
 * API
 :PROPERTIES:
@@ -163,7 +165,7 @@ a [[doc:button][=button=]]:
 
   + OBJ: the ObjC object expression
   + PTR: symbol of binded foreign-pointer
-  + NAME: keyword refering the foreign-pointer
+  + NAME: keyword refering the foreign-...[sly-elided string of length 208]
   #+end_example
 + =(with-ptrs obj bindings &body body)= *[Macro]*
 
@@ -183,7 +185,7 @@ a [[doc:button][=button=]]:
 
   + OBJ: the ObjC object expression
   + PTR: symbol of binded foreign-pointer
-  + NAME: keyword refering the foreign-pointer
+  + NAME: keyword refering the for...[sly-elided string of length 213]
   #+end_example
 ** Window
 + =window= *[Class]*
@@ -217,6 +219,16 @@ a [[doc:button][=button=]]:
     + :frame    -> :ptr
     + :delegate -> (window-delegate)
   #+end_example
++ =(screen obj)= *[Generic Function]*
+
+  #+name: doc:screen:gf
+  #+begin_src lisp :exports results
+    (documentation #'screen t)
+  #+end_src
+
+  #+RESULTS: doc:screen:gf
+  : Return the `screen' OBJ is on.
+
 + =(window-close window)= *[Generic Function]*
 
   #+name: doc:window-close
@@ -283,7 +295,6 @@ a [[doc:button][=button=]]:
   + `:full-screen'
   + `:full-size-content-view'
   #+end_example
-
 + =(window-select window)= *[Generic Function]*
 
   #+name: doc:window-select
@@ -330,6 +341,40 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:base-view
   : Base class for wrapping NSView instance.
+
++ =subview-mixin= *[Class]*
+
+  #+name: doc:subview-mixin
+  #+begin_src lisp :exports results
+    (documentation 'subview-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:subview-mixin
+  #+begin_example
+  Mixin class providing subview functionalities.
+
+  The subview pointer should be accessed via
+
+      (objc-ptr SUBVIEW-MIXIN :container-view)
+
+  Implement this by generic function
+
+      (defmethod objc-ptr (subview-mixin (eql :container-view))
+        )
+
+  Typically, this should be different than :ptr (default).
+  #+end_example
++ =(window obj)= *[Generic Function]*
+
+  #+name: doc:window:gf
+  #+begin_src lisp :exports results
+    (documentation #'window t)
+  #+end_src
+
+  #+RESULTS: doc:window:gf
+  : Return the `window' OBJ is in,
+  : or `nil' if OBJ is not attached to any `window'.
+
 
 *** Buttons
 + =base-button= *[Class]*
@@ -584,7 +629,6 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   + ITEM-HEIGHT:
     height of items
   #+end_example
-
 + =(intercell-spacing combobox)= *[Generic Function]*
 
   #+name: doc:intercell-spacing
@@ -653,6 +697,156 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   + ICON:    (to be implemented)
   #+end_example
 
+** Menu
++ =menu-element= *[Class]*
+
+  #+name: doc:menu-element
+  #+begin_src lisp :exports results
+    (documentation 'menu-element 'type)
+  #+end_src
+
+  #+RESULTS: doc:menu-element
+  : Base class for `menu-item', `menu'.
+
++ =menu= *[Class]*
+
+  #+name: doc:menu
+  #+begin_src lisp :exports results
+    (documentation 'menu 'type)
+  #+end_src
+
+  #+RESULTS: doc:menu
+  : Wrapper of NSMenu.
+
++ =menu-item= *[Class]*
+
+  #+name: doc:menu-item
+  #+begin_src lisp :exports results
+    (documentation 'menu-item 'type)
+  #+end_src
+
+  #+RESULTS: doc:menu-item
+  : Wrapper of NSMenuItem.
+
++ =menu-separator= *[Class]*
+
+  #+name: doc:menu-separator
+  #+begin_src lisp :exports results
+    (documentation 'menu-separator 'type)
+  #+end_src
+
+  #+RESULTS: doc:menu-separator
+  : Wrapper of menu separator.
+
++ =(main-menu-p menu)= *[Function]*
+
+  #+name: doc:main-menu-p
+  #+begin_src lisp :exports results
+    (documentation #'main-menu-p t)
+  #+end_src
+
+  #+RESULTS: doc:main-menu-p
+  : Test if MENU is main menu.
+  : Return `t' if MENU is setted as main menu.
+
++ =main-menu-mixin= *[Class]*
+
+  #+name: doc:main-menu-mixin
+  #+begin_src lisp :exports results
+    (documentation 'main-menu-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:main-menu-mixin
+  : Mixin classes for instances having a `menu' as main menu.
+
++ =(set-main-menu menu &rest initargs)= *[Generic Function]*
+
+  #+name: doc:set-main-menu
+  #+begin_src lisp :exports results
+    (documentation #'set-main-menu t)
+  #+end_src
+
+  #+RESULTS: doc:set-main-menu
+  : Set MENU as main menu.
+  :
+  : Parameters:
+  : + MENU
+  :   If MENU is `main-menu-mixin', the menu of `main-menu-mixin'
+  :   would be setted as App's main menu.
+  : + MAIN-MENU-INITARGS
+  :   additional initargs for `change-class'
+
+** Screen
++ =screen= *[Class]*
+
+  #+name: doc:screen
+  #+begin_src lisp :exports results
+    (documentation 'screen 'type)
+  #+end_src
+
+  #+RESULTS: doc:screen
+  : nil
+
++ =(screen-dpi screen)= *[Generic Function]*
+
+  #+name: doc:screen-dpi
+  #+begin_src lisp :exports results
+    (documentation #'screen-dpi t)
+  #+end_src
+
+  #+RESULTS: doc:screen-dpi
+  : Return values are screen DPI x and DPI y.
+
++ =(screen-dpi-x screen)= *[Generic Function]*
+
+  #+name: doc:screen-dpi-x
+  #+begin_src lisp :exports results
+    (documentation #'screen-dpi-x t)
+  #+end_src
+
+  #+RESULTS: doc:screen-dpi-x
+  : nil
+
++ =(screen-dpi-y screen)= *[Generic Function]*
+
+  #+name: doc:screen-dpi-y
+  #+begin_src lisp :exports results
+    (documentation #'screen-dpi-y t)
+  #+end_src
+
+  #+RESULTS: doc:screen-dpi-y
+  : nil
+
++ =(screen-backing-scale screen)= *[Generic Function]*
+
+  #+name: doc:screen-backing-scale
+  #+begin_src lisp :exports results
+    (documentation #'screen-backing-scale t)
+  #+end_src
+
+  #+RESULTS: doc:screen-backing-scale
+  : nil
+
++ =(main-screen)= *[Function]*
+
+  #+name: doc:main-screen
+  #+begin_src lisp :exports results
+    (documentation #'main-screen t)
+  #+end_src
+
+  #+RESULTS: doc:main-screen
+  : Return the main `screen'.
+
++ =(screen-list)= *[Function]*
+
+  #+name: doc:screen-list
+  #+begin_src lisp :exports results
+    (documentation #'screen-list t)
+  #+end_src
+
+  #+RESULTS: doc:screen-list
+  : Return a list of `screen'.
+
 ** Font
 + =font= *[Struct]*
 
@@ -677,6 +871,27 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   + PROPERTIES: an alist of font properties
     use `font-property' to get property of `font'
   #+end_example
++ =(font-name font)= *[Function]*
+
+  #+name: doc:font-name
+  #+begin_src lisp :exports results
+    (documentation #'font-name t)
+  #+end_src
+
++ =(font-family font)= *[Function]*
+
+  #+name: doc:font-family
+  #+begin_src lisp :exports results
+    (documentation #'font-family t)
+  #+end_src
+
++ =(font-display-name font)= *[Function]*
+
+  #+name: doc:font-display-name
+  #+begin_src lisp :exports results
+    (documentation #'font-display-name t)
+  #+end_src
+
 + =(font-property font property)= *[Function]*
 
   #+name: doc:font-property
@@ -698,7 +913,6 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
     + `:ascender'
     + `:descender'
   #+end_example
-
 + =(make-font &key family size weight slant)= *[Function]*
 
   #+name: doc:make-font
@@ -746,6 +960,13 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
     + `:roman'
     + `:italic'
   #+end_example
+
++ =(font-family-list)= *[Function]*
+
+  #+name: doc:font-family-list
+  #+begin_src lisp :exports results
+    (documentation #'font-family-list t)
+  #+end_src
 
 + =(load-font-file font-file)= *[Function]*
 
@@ -815,9 +1036,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   : Parameters:
   : + PARENT:
   : + CHILD: child should be `children' of PARENT,
-  :   + if PARENT is not `parent' of CHILD, return `nil';
-  :   + otherwise, the CHILD is `remove-from-parent',
-  :     and return `t'
+  :   + if PARENT is not `parent' of CHI...[sly-elided string of length 287]
 
 + =(remove-from-parent child)= *[Generic Function]*
 
@@ -944,6 +1163,61 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:name
   : Get/Set the name of OBJ.
+
+*** Visible
++ =visible-mixin= *[Class]*
+
+  #+name: doc:visible-mixin
+  #+begin_src lisp :exports results
+    (documentation 'visible-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:visible-mixin
+  : Mixin class for obj support isVisible and setVisible: method.
+
++ =hidden-mixin= *[Class]*
+
+  #+name: doc:hidden-mixin
+  #+begin_src lisp :exports results
+    (documentation 'hidden-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:hidden-mixin
+  : Mixin class for obj support isHidden and setHidden: method.
+
++ =(visilbe obj)= *[Class]*
+
+  #+name: doc:visible
+  #+begin_src lisp :exports results
+    (documentation #'visible t)
+  #+end_src
+
+  #+RESULTS: doc:visible
+  : Test if OBJ is visible or not.
+
++ =(show obj)= *[Class]*
+
+  #+name: doc:show
+  #+begin_src lisp :exports results
+    (documentation #'show t)
+  #+end_src
+
+  #+RESULTS: doc:show
+  : Show OBJ.
+  :
+  : This is equal to (setf (visible OBJ) t).
+
++ =(hide obj)= *[Class]*
+
+  #+name: doc:hide
+  #+begin_src lisp :exports results
+    (documentation #'hide t)
+  #+end_src
+
+  #+RESULTS: doc:hide
+  : Hide OBJ.
+  :
+  : This is equal to (setf (visible OBJ) nil).
 
 *** Titled
 + =titled-mixin= *[Class]*
@@ -1150,23 +1424,15 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   #+end_src
 
   #+RESULTS: doc:location
-  #+begin_example
-  Get location of FRAMED.
-  Return values X, Y.
-
-  The position of FRAMED is origined upper-left:
-
-     +---------------------+ parent
-     |*---------> X        |
-     ||                    |
-     ||                    |
-     ||        * (X, Y)    |
-     |V Y                  |
-     |                     |
-     +---------------------+
-
-  And the location is relative to its `parent' by default.
-  #+end_example
+  : Get location of FRAMED.
+  : Return values X, Y.
+  :
+  : The position of FRAMED is origined upper-left:
+  :
+  :    +---------------------+ parent
+  :    |*---------> X        |
+  :    ||                    |
+  :    ||              ...[sly-elided string of length 374]
 + =(set-location framed x y)= *[Generic Function]*
 
   #+name: doc:set-location
@@ -1195,7 +1461,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:parent-frame
   : Get frame of FRAMED parent.
-  : Return values X, Y, W, H.
+  : Return values X, Y, W, H or `nil' if OBJ has no parent.
 + =(parent-size obj)= *[Generic Function]*
 
   #+name: doc:parent-size
@@ -1205,7 +1471,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:parent-size
   : Get size of OBJ parent.
-  : Return values W, H.
+  : Return values W, H or `nil' if OBJ has no parent.
 + =(parent-width obj)= *[Generic Function]*
 
   #+name: doc:parent-width
@@ -1215,6 +1481,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:parent-width
   : Get the `width' of OBJ.
+  : Return `nil' if OBJ has no parent or width of OBJ parent.
 + =(parent-height obj)= *[Generic Function]*
 
   #+name: doc:parent-height
@@ -1224,6 +1491,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:parent-height
   : Get the `height' of OBJ.
+  : Return `nil' if OBJ has no parent or height of OBJ parent.
 + =(parent-origin obj)= *[Generic Function]*
 
   #+name: doc:parent-origin
@@ -1233,7 +1501,7 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:parent-origin
   : Get origin of OBJ parent.
-  : Return values X, Y.
+  : Return values X, Y or `nil' if OBJ has no parent.
 + =minmax-framed-mixin= *[Class]*
 
   #+name: doc:minmax-framed-mixin

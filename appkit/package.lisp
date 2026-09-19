@@ -27,10 +27,7 @@
    #:font-name
    #:font-family
    #:font-display-name
-   #:font-size
-   #:font-weight
-   #:font-ascender
-   #:font-descender
+   #:font-property
    #:font-family-list
    #:load-font-file
    #:make-font)
@@ -98,6 +95,7 @@
    #:max-height)
   ;; menu.lisp
   (:export
+   #:menu-element
    #:menu
    #:menu-item
    #:menu-separator
@@ -125,8 +123,7 @@
    #:window-close-event-handler)
   ;; modal.lisp
   (:export
-   #:alert
-   #:alert-style)
+   #:alert)
   ;; target.lisp
   (:export
    #:target-mixin
