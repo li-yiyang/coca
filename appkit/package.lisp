@@ -49,7 +49,8 @@
   ;; subview.lisp
   (:export
    #:base-view
-   #:subview-mixin)
+   #:subview-mixin
+   #:autoresizing-mask)
   ;; named.lisp
   (:export
    #:name

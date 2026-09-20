@@ -101,6 +101,18 @@
   (:hud-window                8192))
 
 
+;;;; NSView
+
+(define-objc-mask :ns-autoresizing-mask-options
+  (:not-sizable    0)
+  (:min-x-margin   1)
+  (:max-x-margin   4)
+  (:min-y-margin   8)
+  (:max-y-margin   32)
+  (:width-sizable  2)
+  (:height-sizable 16))
+
+
 ;;;; NSEventModifierMask
 
 (define-objc-mask :ns-event-modifier

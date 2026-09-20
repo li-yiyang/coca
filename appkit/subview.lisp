@@ -31,6 +31,10 @@
   (call-next-method)
   (when parent (add-child parent view)))
 
+(defmethod initialize-instance :after
+    ((view base-view) &key (autoresizing-mask :not-sizable))
+  (setf (autoresizing-mask view) autoresizing-mask))
+
 (defmethod destroy ((view base-view))
   "Before destroy a VIEW, it should be removed from its parent.
 And destroying the view should happen in main thread. "
@@ -106,5 +110,42 @@ Typically, this should be different than :ptr (default). "))
   (dispatch-main (:throw-to-toplevel t)
     (dolist (child (children obj))
       (destroy child))))
+
+
+;;;; autoresizing-mask
+
+(defgeneric autoresizing-mask (view)
+  (:documentation
+   "Autoresizing behaviors for VIEW.
+
+Possible Values:
++ `:not-sizable'
+  the VIEW cannot be resized
++ `:min-x-margin'
+  the left margin between the VIEW and its superview is flexiable
++ `:max-x-margin'
+  the right margin between the VIEW and its superview is flexible.
++ `:min-y-margin'
+  the bottom margin between the VIEW and its superview is flexible.
++ `:max-y-margin'
+  the top margin between the VIEW and its superview is flexible.
++ `:width-sizable'
+  the VIEW's width is flexiable
++ `:height-sizable'
+  the VIEW's height is flexiable
+")
+  (:method ((view base-view))
+    (invoke (obj-ptr view)
+            "autoresizingMask"
+            :ns-autoresizing-mask-options)))
+
+(defmethod (setf autoresizing-mask) (mask (view base-view))
+  (let ((mask! (as-ns-autoresizing-mask-options mask)))
+    (with-ptr view ptr
+      (dispatch-main ()
+        (invoke ptr
+                "setAutoresizingMask:"
+                :ns-autoresizing-mask-options mask!)))
+    mask))
 
 ;;;; subview.lisp ends here
