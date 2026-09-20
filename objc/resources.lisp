@@ -101,7 +101,7 @@ This is equal to calling ObjC Code:
   (imp   :pointer)
   (types :pointer))
 
-(defparameter *dynamic-objc-methods* (make-hash-table :test 'equal))
+(defvar *dynamic-objc-methods* (make-hash-table :test 'equal))
 
 (defun %define-objc-method (class sel encoding callback
                             &optional persistance)
