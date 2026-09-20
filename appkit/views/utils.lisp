@@ -59,17 +59,30 @@ Dev Note:
   (:documentation
    "Mixin class for obj support stringValue method. "))
 
+(defclass double-value-mixin (value-mixin) ()
+  (:documentation
+   "Mixin class for obj support doubleValue method. "))
+
 (defgeneric value (widget)
   (:documentation
    "Return value of WIDGET. ")
   (:method ((obj string-value-mixin))
     (with-ptr obj ptr
-      (invoke ptr "stringValue" :ns-string))))
+      (invoke ptr "stringValue" :ns-string)))
+  (:method ((obj double-value-mixin))
+    (with-ptr obj ptr
+      (invoke ptr "doubleValue" :double))))
 
 (defmethod (setf value) ((value string) (obj string-value-mixin))
   (with-ptr obj ptr
     (dispatch-main ()
       (invoke ptr "setStringValue:" :ns-string value))))
+
+(defmethod (setf value) ((value number) (obj double-value-mixin))
+  (with-ptr obj ptr
+    (let ((val (coerce value 'double-float)))
+      (dispatch-main ()
+        (invoke ptr "setDoubleValue:" :double val)))))
 
 (defclass font-mixin ()
   ((font

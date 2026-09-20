@@ -91,8 +91,8 @@
 (defsystem #:coca/appkit
   :author ("凉凉")
   :license "LGPL"
-  :version "0.0.1"
-  :description "Mixins to manipulate AppKit"
+  :version "0.0.2"
+  :description "AppKit wrapper"
   :depends-on (#:coca/objc
                #:coca/objc/block
                #:coca/objc/osx-version
@@ -126,7 +126,8 @@
     ((:file "utils")
      (:file "button"     :depends-on ("utils"))
      (:file "text-field" :depends-on ("utils"))
-     (:file "combobox"   :depends-on ("utils"))))))
+     (:file "combobox"   :depends-on ("utils"))
+     (:file "slider"     :depends-on ("utils"))))))
 
 (defsystem #:coca/metal
   :author ("凉凉")

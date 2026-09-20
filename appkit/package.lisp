@@ -135,7 +135,10 @@
    #:state-mixin
    #:state
    #:bordered-mixin
-   #:borderedp)
+   #:borderedp
+   #:value
+   #:string-value-mixin
+   #:double-value-mixin)
   ;; views/button.lisp
   (:export
    #:base-button

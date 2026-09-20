@@ -8,7 +8,7 @@
 
 ** Basic Usage
 :PROPERTIES:
-:header-args:lisp: :package coca.example.appkit.basic-usage :results verbatim :tangle ../examples/appkit/basic-usage.lisp :mkdirp yes
+:header-args:lisp: :package coca.example.appkit.basic-usage :results verbatim :tangle ../examples/appkit/basic-usage.lisp :mkdirp yes :eval no-export
 :END:
 
 *** Using =Coca.AppKit= package
@@ -55,6 +55,7 @@ To create a [[doc:window][=window=]] ([[https://developer.apple.com/documentatio
   also, it is possible to specify =:location=, =:x=, =:y=, =:origin=,
   or directly setting the initial frame with =:frame= key.
 
+*** Creating widgets
 To create widgets ([[doc:base-view][=base-view=]]) instances, for example,
 a [[doc:button][=button=]]:
 
@@ -89,13 +90,102 @@ a [[doc:button][=button=]]:
 
 + [[doc:alert][=alert=]] popup a [[https://developer.apple.com/documentation/appkit/nsalert?language=objc][=NSAlert=]]
 
-*** Getting and updating Cocoa widgets properties
+For common widgets, you might consider:
++ [[doc:button][=button=]]
++ [[doc:checkbox][=checkbox=]]
++ [[doc:radio-button][=radio-button=]]
++ [[doc:help-button][=help-button=]]
++ [[doc:label][=label=]]
++ [[doc:text-input][=text-input=]]
+
+see *Dev Note* [[To wrap =NSView= widgets]] if you need to use some
+=NSView= but not provided in =Coca.AppKit=.
 
 ** Layout
 ** Menus
 ** Dialog and modal windows
-** Dev Note
-*** To wrap =NSView= widgets
+* Dev Note
+:PROPERTIES:
+:header-args:lisp: :package coca.example.appkit.basic-usage :results verbatim :eval no-export
+:END:
+
+** To wrap =NSView= widgets
+*** Using [[doc:base-view][=base-view=]]
+The [[doc:base-view][=base-view=]] provides the following default initargs:
+
++ =:objc-class= of =NSView=
++ =:objc-init= with [[file:subview.lisp::defun init-view][=coca.appkit::init-view=]],
+  which is basically the [[https://developer.apple.com/documentation/uikit/uistackview/init(frame:)?language=objc][=initWithFrame:=]] method
+
+you might custom the =:objc-class= for =NSView= subclasses,
+and provide a more customized init process with =:objc-init=.
+
+For example, to create a =NSSlider= widget, a minimal
+implementation chould be:
+
+#+name: example:NSSlider
+#+begin_src lisp
+  (defclass ns-slider (base-view) ()
+    (:default-initargs
+     :objc-class "NSSlider"))
+#+end_src
+
+#+RESULTS: example:NSSlider
+: #<standard-class coca.example.appkit.basic-usage::ns-slider>
+
+then you might create some widgets like:
+
+#+name: example:create-NSSlider
+#+begin_src lisp
+  (defvar slider
+    (make-instance 'ns-slider
+                   :parent win
+                   :frame #(20 100 350 30)))
+#+end_src
+
+#+RESULTS: example:create-NSSlider
+: slider
+
+it is adviced to reuse mixins (see [[Mixins]]) to provide more
+lispy interface.
+
+** Getting and updating Cocoa widgets properties
+*** Getter and setter thread
+AppKit requires modifications happens in main thread.
+However, =Coca.AppKit= is designed to modify properties
+in main thread and can read the properties in background
+thread. For example, you may expect a property reader
+defined as:
+
+#+name: example:property-reader
+#+caption: Example of defining a [[doc:visible][=visible=]] reader
+#+caption: (see [[file:visible.lisp::defgeneric visible][=visible.lisp=]])
+#+begin_src lisp :eval no :tangle no
+  (defmethod visible ((obj visible-mixin))
+    (invoke (obj-ptr obj) "isVisible" :bool))
+#+end_src
+
+and a property setter defined as:
+
+#+name: example:property-setter
+#+caption: Example of defining a [[doc:visible][=visible=]] setter
+#+caption: (see [[file:visible.lisp::defmethod (setf visible)][=visible.lisp=]])
+#+begin_src lisp :eval no :tangle no
+  (defmethod (setf visible) (visible (obj visible-mixin))
+    (with-ptr obj ptr
+      (dispatch-main ()
+        (invoke ptr "setisVisible:" :bool visible))))
+#+end_src
+
+*** Cached in Lisp side
+Since AppKit widgets property maybe changed by user interaction,
+it is adviced to not cache them but [[file:~/common-lisp/coca/objc/readme.org::doc:invoke][=invoke=]] ObjC method every time.
+
+However, for thoese may not be modified by user interaction
+(for example, the configuration of [[doc:combobox][=combobox=]], it stores the
+[[doc:intercell-spacing][=intercell-spacing=]], [[doc:has-vertical-scroller-p][=has-vertical-scroller-p=]], etc. in lisp side),
+or hardly changes (for example, the [[doc:screen][=screen=]] size, using
+[[doc:static-framed-mixin][=static-framed-mixin=]] caches the [[doc:frame][=frame=]] results).
 
 * API
 :PROPERTIES:
@@ -650,6 +740,16 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   : Set `intercell-spacing' of WIDGET with WIDTH and HEIGHT.
   : Return WIDGET itself.
 
++ =(has-vertical-scroller-p combobox)= *[Generic Function]*
+
+  #+name: doc:has-vertical-scroller-p
+  #+begin_src lisp :exports results
+    (documentation #'has-vertical-scroller-p t)
+  #+end_src
+
+  #+RESULTS: doc:has-vertical-scroller-p
+  : nil
+
 + =(button-bordered-p combobox)= *[Generic Function]*
 
   #+name: doc:button-bordered-p
@@ -659,6 +759,17 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:button-bordered-p
   : nil
+
++ =(item-height combobox)= *[Generic Function]*
+
+  #+name: doc:item-height
+  #+begin_src lisp :exports results
+    (documentation #'item-height t)
+  #+end_src
+
+  #+RESULTS: doc:item-height
+  : nil
+
 
 ** Modal
 + =(alert message &key title style choices icon window)= *[Function]*
@@ -1666,3 +1777,33 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:enabledp
   : Whether or not OBJ is enabled.
+*** Valued
++ =(value obj)= *[Generic Function]*
+
+  #+name: doc:value
+  #+begin_src lisp :exports results
+    (documentation #'value t)
+  #+end_src
+
+  #+RESULTS: doc:value
+  : Return value of WIDGET.
+
++ =string-value-mixin= *[Class]*
+
+  #+name: doc:string-value-mixin
+  #+begin_src lisp :exports results
+    (documentation 'string-value-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:string-value-mixin
+  : Mixin class for obj support stringValue method.
+
++ =double-value-mixin= *[Class]*
+
+  #+name: doc:double-value-mixin
+  #+begin_src lisp :exports results
+    (documentation 'double-value-mixin 'type)
+  #+end_src
+
+  #+RESULTS: doc:double-value-mixin
+  : Mixin class for obj support doubleValue method.
