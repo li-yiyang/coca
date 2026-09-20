@@ -7,7 +7,6 @@
     :initarg  :target
     :initform nil
     :type     (or null obj (eql :self))
-    :reader   target
     :documentation
     "Target is internally stored as `obj' or `nil'. ")
    (action
@@ -53,7 +52,12 @@ The target could be:
 + `nil'
 + `:self'
 + `obj'
-"))
+")
+  (:method ((obj target-mixin))
+    (with-slots (target) obj
+      (if (eq target :self)
+          obj
+          target))))
 
 ;;; Dev Note: not sure if this is needed.
 ;; (defmethod (setf target) (target (obj target-mixin))
@@ -80,7 +84,8 @@ The target could be:
   (with-ptr obj ptr
     (dispatch-main ()
       (invoke ptr "setTarget:" :object ptr))
-    (setf (slot-value obj 'target) obj)))
+    (setf (slot-value obj 'target) :self)
+    obj))
 
 (defgeneric action (target-mixin)
   (:documentation
@@ -151,7 +156,7 @@ Dev Note:
                  (invoke ptr "setTarget:" :object ptr)))
              (setf (slot-value obj 'action) function)
              (when self-target-p
-               (setf (slot-value obj 'target) obj))))))
+               (setf (slot-value obj 'target) :self))))))
   (defmethod (setf action) ((function symbol) (obj target-mixin))
     (set-target-with-function obj function))
   (defmethod (setf action) ((function function) (obj target-mixin))
