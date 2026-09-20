@@ -48,8 +48,7 @@ order. "
   ((screen
     :initform (main-screen)
     :initarg  :screen
-    :reader   screen
-    :reader   parent)
+    :reader   screen)
    (content-view-ptr
     :type (or null foreign-pointer)
     :documentation
@@ -120,6 +119,18 @@ Dev Note:
               :ns-rect (x y w h)
               :bool    nil)))
   window)
+
+(defmethod parent-frame ((window window))
+  (frame (screen window)))
+
+(defmethod parent-size ((window window))
+  (size (screen window)))
+
+(defmethod parent-width ((window window))
+  (width (screen window)))
+
+(defmethod parent-height ((window window))
+  (height (screen window)))
 
 (defmethod set-min-size ((window window) (w real) (h real))
   (declare (type framed-size w h))
