@@ -149,6 +149,54 @@ then you might create some widgets like:
 it is adviced to reuse mixins (see [[Mixins]]) to provide more
 lispy interface.
 
+*** Using [[doc:define-coca-base-view][=define-coca-base-view=]]
+See section [[Getting and updating Cocoa widgets properties]]
+for how to write widgets property getter and setter
+generic functions.
+
+But it is adviced to use [[doc:define-coca-base-view][=define-coca-base-view=]] macro
+for simple [[doc:base-view][=base-view=]] subclass definition.
+
+For example, the previous [[example:NSSlider][=ns-slider=]] can be defined as:
+
+#+name: example:NSSlider-define-coca-base-view
+#+begin_src lisp
+  (define-coca-base-view (ns-slider "NSSlider"
+                                    double-value-mixin)
+    (:objc-property
+     (vertical-slider-p
+      :bool ("isVertical" :read-only)
+      "If or not SLIDER is vertical. ")))
+#+end_src
+
+[[doc:define-coca-base-view][=define-coca-base-view=]] use =:objc-property= to provide
+generic function wrapper of ObjC SEL like:
+
+#+begin_example
+(ATTR OBJC-TYPE SEL [DOCUMENTATION])
+#+end_example
+
+The =SEL= might be:
+
++ =SEL=: a string for SEL
++ =(GETTER SETTER)=
++ =(GETTER :read-only)=
++ =(INITARG INIT-VALUE SETTER)=
+
+There's some special ObjC typing when defining the property
+wrapper, for examples:
+
+#+begin_example
+(property :ns-point (:property #(X Y) SEL))
+#+end_example
+
+the internal slot would be named as =%property=, which is a
+=(simple-array double-float (2))=.
+
+It is adviced to use [[doc:define-coca-base-view][=define-coca-base-view=]] more in your
+wrapper codes. But anyway, you can always switch back
+and use =(defclass ... (base-view ...) ())= directly.
+
 ** Getting and updating Cocoa widgets properties
 *** Getter and setter thread
 AppKit requires modifications happens in main thread.
@@ -186,6 +234,9 @@ However, for thoese may not be modified by user interaction
 [[doc:intercell-spacing][=intercell-spacing=]], [[doc:has-vertical-scroller-p][=has-vertical-scroller-p=]], etc. in lisp side),
 or hardly changes (for example, the [[doc:screen][=screen=]] size, using
 [[doc:static-framed-mixin][=static-framed-mixin=]] caches the [[doc:frame][=frame=]] results).
+
+*** Simple-wrapper with [[doc:define-coca-base-view][=define-coca-base-view=]]
+
 
 * API
 :PROPERTIES:
@@ -464,8 +515,38 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
   #+RESULTS: doc:window:gf
   : Return the `window' OBJ is in,
   : or `nil' if OBJ is not attached to any `window'.
++ =(define-coca-base-view (name objc-class &rest mixins) direct-slots &rest options)= *[Macro]*
 
+  #+name: doc:define-coca-base-view
+  #+begin_src lisp :exports results
+    (documentation (macro-function 'define-coca-base-view) t)
+  #+end_src
 
+  #+RESULTS: doc:define-coca-base-view
+  #+begin_example
+  Define a `base-view' subclass of NAME.
+
+  Syntax:
+
+      (define-coca-base-view (NAME OBJC-CLASS . MIXINS)
+
+        DIRECT-SLOTS
+
+        (:OBJC-PROPERTY
+          (NAME OBJC-TYPE SEL)
+          ...)
+
+        (:DOCUMENTATION ...)
+
+        (:DEFAULT-INITARGS ...)
+
+        (:AFTER-INITIALIZE LAMBDA-LIST ...))
+
+      SEL be like:
+      + string for SEL name, a setSel will be automatically generated
+      + (SEL :readonly)
+      + (init-value setSel)
+  #+end_example
 *** Buttons
 + =base-button= *[Class]*
 

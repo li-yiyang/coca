@@ -30,9 +30,9 @@ Or take subsystems with functionalities you want:
 + [[file:objc/readme.org::*macOS version and test][=coca/objc/osx-version=]]: Get/Check macOS version.
 
 + [[file:objc/readme.org::*ObjC Runtime Inspect][=coca/objc/runtime-inspect=]]: (*should* be dev only)
-  provides ObjC runtime inspection functionalities. 
+  provides ObjC runtime inspection functionalities.
 
-+ =coca/app=: A thin wrapper for NSApp
++ [[file:app/readme.org][=coca/app=]]: A thin wrapper for NSApp
 
   You can only use =coca/app= subsystem to create your
   own NSApplication with raw ObjC pointer manipulation.
@@ -42,7 +42,7 @@ Or take subsystems with functionalities you want:
   =NSApp= run loop and perform the operations in background
   threads.
 
-+ =coca/appkit=: Wraps Cocoa AppKit
++ [[file:appkit/readme.org][=coca/appkit=]]= Wraps Cocoa AppKit
 
   The =coca/appkit= is to group the manipulation codes
   into CLOS model. For example, a =NSWindow= follows the
@@ -59,7 +59,9 @@ Or take subsystems with functionalities you want:
 
   The API design should follows AppKit's API.
 
-+ =coca/metal=: Wraps Metal API
++ =coca/webkit=: Wraps [[https://developer.apple.com/documentation/webkit?language=objc][WebKit]] for =webview=
+
++ [[file:metal/readme.org][=coca/metal=]]: Wraps Metal API
 
   The =coca/metal= provide interface to invoke with
   Metal API. It is not meant to be a powerful acceleration

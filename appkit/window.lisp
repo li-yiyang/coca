@@ -72,6 +72,9 @@ Initialize Parameters:
   MIN-WIDTH, MAX-WIDTH, MIN-HEIGHT, MAX-HEIGHT
   see `framed-mixin' and `minmax-framed-mixin'
 
+  NOTE: the frame of NSWindow is the frame of its
+  content view.
+
 + VISIBLE: visible or not (default `t')
   see `visible-mixin'
 
@@ -99,25 +102,28 @@ Dev Note:
 
 (defmethod initialize-instance :after ((window window) &key)
   (with-ptr window ptr
-    (dispatch-main ()
-      (invoke ptr "setDelegate:" :object (window-delegate))
-      (setf (slot-value window 'content-view-ptr)
-            (invoke ptr "contentView" :object))))
+    (let ((delegate (window-delegate)))
+      (dispatch-main ()
+        (invoke ptr "setDelegate:" :object delegate)
+        (setf (slot-value window 'content-view-ptr)
+              (invoke ptr "contentView" :object)))
+      (setf (gethash :delegate (objc-ptrs window)) delegate)))
   (push (tg:make-weak-pointer window) *%window-list*))
 
 (defgeneric screen (obj)
   (:documentation "Return the `screen' OBJ is on. "))
 
-(defmethod objc-ptr ((window window) (name (eql :delegate)))
-  (window-delegate))
-
 (defmethod set-frame
     ((window window) (x real) (y real) (w real) (h real))
   (with-ptr window ptr
-    (dispatch-main ()
-      (invoke ptr "setFrame:display:"
-              :ns-rect (x y w h)
-              :bool    nil)))
+    (multiple-value-bind (x y w h)
+        (invoke ptr "frameRectForContentRect:"
+                :ns-rect (x y w h)
+                :ns-rect)
+      (dispatch-main ()
+        (invoke ptr "setFrame:display:"
+                :ns-rect (x y w h)
+                :bool    nil))))
   window)
 
 (defmethod parent-frame ((window window))

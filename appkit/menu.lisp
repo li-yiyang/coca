@@ -257,6 +257,7 @@ before the `help-menu-item'. "
 
 (defclass main-menu-mixin ()
   ((menu
+    :initarg  :menu
     :initform (main-menu)
     :type     menu))
   (:documentation

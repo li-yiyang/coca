@@ -2,32 +2,31 @@
 
 (in-package :coca.appkit)
 
-(defclass combobox (base-view
-                    target-mixin
-                    font-mixin)
-  ((item-list*
+(define-coca-base-view (combobox "NSComboBox"
+                                 target-mixin
+                                 font-mixin)
+  (:direct-slots
+   (%item-list
     :initform ()
     :type     list
     :documentation
-    "An alist of (VALUE . DISPLAY-STRING). ")
-   (intercell-spacing*
-    :initform (make-array 2 :element-type 'double-float
-                            :initial-contents '(3d0 2d0)))
+    "An alist of (VALUE . DISPLAY-STRING). "))
+  (:objc-property
+   (intercell-spacing
+    :ns-point
+    (:intercell-spacing #(3d0 2d0) "setIntercellSpacing:"))
    (has-vertical-scroller-p
-    :initarg  :has-vertical-scroller
-    :initform t
-    :reader   has-vertical-scroller-p
-    :type     boolean)
+    :bool
+    (:has-vertical-scroller t "setHasVerticalScroller:"))
    (button-bordered-p
-    :initarg  :button-bordered
-    :initform t
-    :reader   button-bordered-p
-    :type     boolean)
+    :bool
+    (:button-bordered t "setButtonBordered:"))
    (item-height
-    :initarg  :item-height
-    :initform 16.0d0
-    :reader   item-height
-    :type     (double-float 0d0)))
+    :double
+    (:item-height 16.0d0 "setItemHeight:")))
+  (:after-initialize (items)
+   (dolist (item items)
+     (add-item combobox item)))
   (:documentation
    "A combobox.
 
@@ -50,93 +49,25 @@ Initialize Parameters:
 
 + ITEM-HEIGHT:
   height of items
-")
-  (:default-initargs
-   :objc-class "NSComboBox"))
+"))
 
-(defmethod (setf has-vertical-scroller-p) (value (combobox combobox)
-                                           &aux (value* (and value t)))
-  (with-ptr combobox ptr
-    (dispatch-main ()
-      (invoke ptr "setHasVerticalScroller:" :bool value*)))
-  (setf (slot-value combobox 'has-vertical-scroller-p) value*))
-
-(defgeneric intercell-spacing (combobox)
-  (:documentation
-   "Return values of width height for COMBOBOX intercell spacing. ")
-  (:method ((combobox combobox))
-    (with-slots (intercell-spacing*) combobox
-      (values (aref intercell-spacing* 0)
-              (aref intercell-spacing* 1)))))
-
-(defgeneric set-intercell-spacing (widget width height)
-  (:documentation
-   "Set `intercell-spacing' of WIDGET with WIDTH and HEIGHT.
-Return WIDGET itself. ")
-  (:method ((combobox combobox) (width number) (height number))
-    (declare (type (real 0) width))
-    (with-slots (intercell-spacing*) combobox
-      (let ((width  (coerce width  'double-float))
-            (height (coerce height 'double-float)))
-        (with-ptr combobox ptr
-          (dispatch-main ()
-            (invoke ptr "setIntercellSpacing:" :ns-size (width height))))
-        (setf (aref intercell-spacing* 0) width
-              (aref intercell-spacing* 1) height))
-      combobox)))
-
-(defmethod (setf button-bordered-p) (value (combobox combobox)
-                                     &aux (value* (and value t)))
-  (with-ptr combobox ptr
-    (dispatch-main ()
-      (invoke ptr "setButtonBordered:" :bool value*)))
-  (setf (slot-value combobox 'button-bordered-p) value*))
-
-(defmethod (setf item-height) ((height number) (combobox combobox))
-  (declare (type (real 0) height))
-  (with-ptr combobox ptr
-    (let ((height (coerce height 'double-float)))
-      (dispatch-main ()
-        (invoke ptr "setItemHeight:" :double height))
-      (setf (slot-value combobox 'item-height) height))))
-
-(defmethod initialize-instance :after
-    ((combobox combobox) &key items intercell-spacing)
-  (with-slots (has-vertical-scroller-p
-               item-height
-               button-bordered-p
-               intercell-spacing*)
-      combobox
-    (dispatch-main ()
-      (setf (has-vertical-scroller-p combobox) has-vertical-scroller-p
-            (item-height             combobox) item-height
-            (button-bordered-p       combobox) button-bordered-p)
-      (m:match intercell-spacing
-        ((vector width height)
-         (set-intercell-spacing combobox width height))
-        ((list width height)
-         (set-intercell-spacing combobox width height))
-        (_
-         (set-intercell-spacing combobox
-                                (aref intercell-spacing* 0)
-                                (aref intercell-spacing* 1))))
-      (dolist (item items)
-        (add-item combobox item)))))
+
+;;;; items
 
 (defmethod item-list ((combobox combobox))
-  (with-slots (item-list*) combobox
-    (mapcar #'car item-list*)))
+  (with-slots (%item-list) combobox
+    (mapcar #'car %item-list)))
 
 (defmethod add-item ((combobox combobox) value)
-  (with-slots (item-list*) combobox
+  (with-slots (%item-list) combobox
     (let ((display (princ-to-string value)))
       (with-ptr combobox ptr
         (dispatch-main ()
           (invoke ptr "addItemWithObjectValue:" :ns-string display)))
-      (setf item-list* (append item-list* (list (cons value display)))))))
+      (setf %item-list (append %item-list (list (cons value display)))))))
 
 (defmethod add-nth-item ((combobox combobox) (nth integer) value)
-  (with-slots (item-list*) combobox
+  (with-slots (%item-list) combobox
     (let ((display (princ-to-string value)))
       (with-ptr combobox ptr
         (dispatch-main ()
@@ -144,28 +75,33 @@ Return WIDGET itself. ")
                   "insertItemWithObjectValue:atIndex:"
                   :ns-string display
                   :ns-int    nth)))
-      (setf item-list* (append (subseq item-list* 0 nth)
+      (setf %item-list (append (subseq %item-list 0 nth)
                                (list (cons value display))
-                               (subseq item-list* nth))))))
+                               (subseq %item-list nth))))))
 
 (defmethod item-position ((combobox combobox) item)
-  (with-slots (item-list*) combobox
-    (position item item-list* :key #'car :test #'equal)))
+  (with-slots (%item-list) combobox
+    (position item %item-list :key #'car :test #'equal)))
 
 (defmethod remove-nth-item ((combobox combobox) (nth integer))
-  (with-slots (item-list*) combobox
+  (with-slots (%item-list) combobox
     (with-ptr combobox ptr
       (dispatch-main ()
         (invoke ptr "removeItemAtIndex:" :ns-int nth)))
-    (setf item-list* (append (subseq item-list* 0 nth)
-                             (subseq item-list* (1+ nth))))))
+    (setf %item-list (append (subseq %item-list 0 nth)
+                             (subseq %item-list (1+ nth))))))
+
+
+;;;; value
+
+;; TODO: set the value of combobox
 
 (defmethod value ((combobox combobox))
-  (with-slots (item-list*) combobox
+  (with-slots (%item-list) combobox
     (with-ptr combobox ptr
       (let ((nth (invoke ptr "indexOfSelectedItem" :ns-int)))
         (if (= nth -1)
             (invoke ptr "stringValue" :ns-string)
-            (car (nth nth item-list*)))))))
+            (car (nth nth %item-list)))))))
 
 ;;;; combobox.lisp ends here

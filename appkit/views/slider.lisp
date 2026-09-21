@@ -2,13 +2,14 @@
 
 (in-package :coca.appkit)
 
-(defclass slider (base-view
-                  target-mixin
-                  double-value-mixin)
-  ()
+(define-coca-base-view (slider "NSSlider"
+                               target-mixin
+                               double-value-mixin)
+  (:objc-property
+   (vertical-slider-p
+    :bool ("isVertical" :read-only)
+    "If or not SLIDER is vertical. "))
   (:documentation
-   "A slider. ")
-  (:default-initargs
-   :objc-class "NSSlider"))
+   "A slider. "))
 
 ;;;; slider.lisp ends here

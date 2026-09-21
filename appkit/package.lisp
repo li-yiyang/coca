@@ -68,6 +68,10 @@
    #:title
    #:alternate-titled-mixin
    #:alternate-title)
+  ;; delegate.lisp
+  (:export
+   #:delegate-mixin
+   #:delegate)
   ;; framed.lisp
   (:export
    #:framed-mixin
@@ -139,7 +143,8 @@
    #:borderedp
    #:value
    #:string-value-mixin
-   #:double-value-mixin)
+   #:double-value-mixin
+   #:define-coca-base-view)
   ;; views/button.lisp
   (:export
    #:base-button
@@ -167,7 +172,11 @@
    #:intercell-spacing
    #:set-intercell-spacing
    #:button-bordered-p
-   #:item-height))
+   #:item-height)
+  ;; views/slider.lisp
+  (:export
+   #:slider
+   #:vertical-slider-p))
 
 (in-package :coca.appkit)
 
