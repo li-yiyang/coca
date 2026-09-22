@@ -283,8 +283,8 @@ Parameter:
        (invoke "NSNumber" "numberWithBool:" :bool val :object))
       (character
        (invoke "NSNumber" "numberWithChar:" :char (char-code val) :object))
-      (integer
-       (invoke "NSNumber" "numberWithInt:" :int val :object))
+      ((signed-byte 64)
+       (invoke "NSNumber" "numberWithLongLong:" :long-long val :object))
       (single-float
        (invoke "NSNumber" "numberWithFloat:" :float val :object))
       (double-float
@@ -303,6 +303,7 @@ Parameters:
   + `:double'
   + `:float'
   + `:int'
+  + `:long-long'
   + `:string'
 "
   (declare (type foreign-pointer ns-number)
@@ -313,6 +314,7 @@ Parameters:
     (:float     (invoke ns-number "floatValue"  :float))
     (:double    (invoke ns-number "doubleValue" :double))
     (:int       (invoke ns-number "intValue" :int))
+    (:long-long (invoke ns-number "longLongValue" :long-long))
     (:string    (invoke ns-number "stringValue" :ns-string))))
 
 (defun make-ns-mutable-dictionary ()
@@ -336,9 +338,9 @@ Parameters:
     (string (string-to-ns-string val))
     (number (ns-number val))))
 
-(defun get-ns-dictionary (dictionary key &optional (result :object))
+(defun get-ns-dictionary (dictionary key &optional (result :object) default)
   "Get/Set object in DICTIONARY of KEY.
-Return result specificed by RESULT.
+Return result specificed by RESULT and if foundp.
 
 Parameters:
 + DICTIONARY: foreign-pointer to NSDictionary
@@ -351,8 +353,9 @@ Parameters:
 + RESULT:
   + `:object', `:pointer': return the foreign-pointer
   + `:ns-string': convert NSString as string
-  + `:bool', `:char', `:float', `:double', `:int', `:string'
+  + `:bool', `:char', `:float', `:double', `:int', `:long-long', `:string'
     treat value as NSNumber and decoded with `ns-number-value'
++ DEFAULT: fallback value if failed to `get-ns-dictionary'
 
 Dev Note:
 + when (setf (get-ns-dictionary dictionary key) value)
@@ -370,13 +373,16 @@ Dev Note:
   (let ((val (invoke dictionary "objectForKey:"
                      :pointer (as-ns-dictionary-key key)
                      :object)))
-    (ecase result
-      ((:object :pointer)
-       val)
-      ((:ns-string)
-       (ns-string-to-string val))
-      ((:bool :char :float :double :int :string)
-       (ns-number-value val result)))))
+    (if (null-pointer-p val)
+        (values default nil)
+        (values (ecase result
+                  ((:object :pointer)
+                   val)
+                  ((:ns-string)
+                   (ns-string-to-string val))
+                  ((:bool :char :float :double :int :long-long :string)
+                   (ns-number-value val result)))
+                t))))
 
 (defun (setf get-ns-dictionary) (value dictionary key &optional result)
   (declare (type foreign-pointer dictionary)

@@ -142,6 +142,12 @@ Coca.ObjC provides some built-in ObjC typing:
 
 Can use [[doc:define-objc-typing][=define-objc-typing=]] macro to define a new ObjC typing.
 
+*Dev Note*: some ObjC struct are literally expanded as direct foreign funcall
+arguments, for example =NSRect=, =NSSize= and =NSPoint=. These should work on
+arm64 machine (test with MacBook M1, M2). However, if you encounter any
+issue with literal struct value passing, you might first try using
+struct value passing (=cffi-libffi=) and create an issue or fix PR.
+
 ** Block
 Some ObjC functions expect blocks as arguments, which can be invoked
 like:
@@ -151,6 +157,11 @@ like:
 #+end_src
 
 Use [[doc:define-objc-block][=define-objc-block=]] to define your own =block-type=.
+
+** NSURL with =quri:uri=
+Loading =coca/objc/url= will overwrite =:ns-url= type with result decoded
+as =quri:uri= (or =pathname= if it's a file url), and the input type
+can be a =quri:uri= object.
 
 ** Image Dump
 Since Coca.ObjC is built on ObjC's runtime, every time you terminate
@@ -941,6 +952,37 @@ Load =coca/objc/block= to have Block supports setted up:
     within macro, use (BLOCK-TYPE lambda-list &body body)
     as callback
   #+end_example
+
+** URL
+Load =coca/objc/url= to have better NSURL support:
++ =(ns-url-to-pathname-or-url ns-url)= *[Function]*
+
+  #+name: doc:ns-url-to-pathname-or-url
+  #+begin_src lisp :exports results
+    (documentation #'ns-url-to-pathname-or-url t)
+  #+end_src
+
+  #+RESULTS: doc:ns-url-to-pathname-or-url
+  : Convert NS-URL to pathname or `quri:uri'.
+  : Return a `pathname' or `quri:uri' instance.
+
++ =(url-to-ns-url url)= *[Function]*
+
+  #+name: doc:url-to-ns-url
+  #+begin_src lisp :exports results
+    (documentation #'url-to-ns-url t)
+  #+end_src
+
+  #+RESULTS: doc:url-to-ns-url
+  : Convert URL into NSURL.
+  : Return foreign-pointer of NSURL for URL.
+  :
+  : Parameter:
+  : + URL:
+  :   + pathname => fileURLWithPath
+  :   + string   => literally NSURL
+  :   + quri:uri => rendered NSURL
+
 ** OSX-Version
 Load =coca/objc/osx-version= to have macOS version support:
 + =(osx-version)= *[Function]*
