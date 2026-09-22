@@ -82,17 +82,24 @@ Parameters:
                    :pointer (null-pointer)
                    :pointer))
 
+(defun cf-release (ptr)
+  (declare (type foreign-pointer ptr))
+  (foreign-funcall "CFRelease" :pointer ptr))
+
 (define-on-coca-app-finish-run renew-font-ptr-cg-ptr
   (let ((fonts (alx:hash-table-values *fonts*)))
     (clrhash *fonts*)
     (dolist (font fonts)
-      (let ((ptr (make-ns-font-ptr (font-family font)
-                                   (font-size   font)
-                                   (font-weight font)
-                                   (font-slant  font))))
+      (tg:cancel-finalization font)
+      (let* ((ptr    (make-ns-font-ptr (font-family font)
+                                       (font-size   font)
+                                       (font-weight font)
+                                       (font-slant  font)))
+             (cg-ptr (ct-font-copy-graphics-font ptr)))
         (setf (font-ptr    font) ptr
-              (font-cg-ptr font) (ct-font-copy-graphics-font ptr)
-              (gethash (pointer-address ptr) *fonts*) font)))))
+              (font-cg-ptr font) cg-ptr
+              (gethash (pointer-address ptr) *fonts*) font)
+        (tg:finalize font (alx:curry #'cf-release cg-ptr))))))
 
 (defun ns-font-to-font (ptr &key weight slant)
   "Make `font' fron NSFont pointer PTR.
@@ -116,17 +123,19 @@ Return `font' instance. "
            (setf weight (get-ns-dictionary traits "NSFontWeightTrait" :double)))
          (unless slant
            (setf slant  (get-ns-dictionary traits "NSFontSlantTrait"  :double)))))
-     (make-ns-font :ptr          ptr
-                   :cg-ptr       cg-ptr
-                   :name         name
-                   :family       family
-                   :display-name display
-                   :size         size
-                   :weight       weight
-                   :slant        slant
-                   :properties   (list
-                                  :ascender  ascender
-                                  :descender descender)))))
+     (let ((font (make-ns-font :ptr          ptr
+                               :cg-ptr       cg-ptr
+                               :name         name
+                               :family       family
+                               :display-name display
+                               :size         size
+                               :weight       weight
+                               :slant        slant
+                               :properties   (list
+                                              :ascender  ascender
+                                              :descender descender))))
+       (tg:finalize font (alx:curry #'cf-release cg-ptr))
+       font))))
 
 (define-objc-typing :ns-font
   :alias (:pointer ns-font-to-font)

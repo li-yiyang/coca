@@ -45,19 +45,25 @@
   (alx:ensure-gethash
    (pointer-address ns-color)
    *colors*
-   (let ((cg-ptr (invoke ns-color "CGColor" :pointer)))
+   (let ((cg-ptr (invoke ns-color "CGColor" :pointer))
+         (color! (invoke ns-color "colorUsingColorSpace:"
+                         :object (ns-color-space-srgb)
+                         :object)))
+     (when (null-pointer-p color!)
+       (setf color! ns-color))
      (with-foreign-objects ((red*   :double)
                             (green* :double)
                             (blue*  :double)
                             (alpha* :double))
-       (invoke (invoke ns-color "colorUsingColorSpace:"
-                       :object (ns-color-space-srgb)
-                       :object)
-               "getRed:green:blue:alpha:"
-               :pointer red*
-               :pointer green*
-               :pointer blue*
-               :pointer alpha*)
+       (unless (invoke color!
+                       "getRed:green:blue:alpha:"
+                       :pointer red*
+                       :pointer green*
+                       :pointer blue*
+                       :pointer alpha*
+                       :bool)
+         (error "NSColor ~A cannot be converted into `color' with sRGB colorspace. "
+                (description ns-color)))
        (make-ns-color :ptr    ns-color
                       :cg-ptr cg-ptr
                       :red    (mem-ref red*   :double)
