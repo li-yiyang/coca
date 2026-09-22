@@ -249,10 +249,14 @@ Return foreign-pointer of NSPath for PATHNAME. "
   "Convert NS-URL to pathname.
 Return a `pathname' instance. "
   (declare (type foreign-pointer ns-url))
-  (the pathname
-    (pathname
-     (ns-string-to-string
-      (invoke ns-url "absoluteString" :object)))))
+  (if (invoke ns-url "isFileURL" :bool)
+      (the pathname
+        (pathname
+         (invoke ns-url "fileSystemRepresentation" :string)))
+      (error "NSURL ~A is not a file URL.
+Load `coca/objc/url' and use `coca.objc::ns-url-to-pathname-or-url'
+to get NSURL support with `quri'. "
+             (description ns-url))))
 
 (defun ns-array-to-list (ns-array)
   "Convert NS-ARRAY into list.

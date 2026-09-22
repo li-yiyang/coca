@@ -45,6 +45,10 @@
    #:release
    #:retain
    #:autorelease)
+  ;; url.lisp
+  (:export
+   #:url-to-ns-url
+   #:ns-url-to-pathname-or-url)
   ;; osx-version.lisp
   (:export
    #:osx-version

@@ -7,6 +7,7 @@
   :description "Toolbox for programming ObjC Cocoa in Lisp"
   :depends-on (#:coca/objc
                #:coca/objc/block
+               #:coca/objc/url
                #:coca/objc/osx-version
                #:coca/objc/runtime-inspect
                #:coca/app
@@ -38,6 +39,17 @@
   :pathname "objc"
   :components
   ((:file "block")))
+
+(defsystem #:coca/objc/url
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.1"
+  :description "ObjC NSURL decoded and encoded as quri:uri"
+  :depends-on (#:coca/objc
+               #:quri)
+  :pathname "objc"
+  :components
+  ((:file "url")))
 
 (defsystem #:coca/objc/osx-version
   :author ("凉凉")
