@@ -207,8 +207,8 @@ Parameter:
                    (error "Failed to load font ~A:~%~A"
                           font-file
                           (ns-string-to-string desc))
-                (release desc)
-                (foreign-funcall "CFRelease" :pointer err))))
+                (cf-release desc)
+                (cf-release err))))
           (setf *font-family-list* (%font-family-list)))))))
 
 (defvar *font-family-name-map*

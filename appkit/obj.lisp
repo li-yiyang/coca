@@ -11,10 +11,11 @@
   (:documentation
    "A ObjC object pointer wrapper. "))
 
-(defmethod initialize-instance :after ((obj obj) &key ptr)
+(defmethod initialize-instance ((obj obj) &key ptr)
   (when ptr
     (setf (gethash :ptr (objc-ptrs obj))
-          (the foreign-pointer ptr))))
+          (the foreign-pointer ptr)))
+  (call-next-method))
 
 (defmethod print-object ((obj obj) stream)
   (print-unreadable-object (obj stream :type t)
@@ -209,8 +210,9 @@ Initialize Parameters:
 
 (defmethod initialize-instance
     ((obj owned-mixin)
-     &key ptr
-       (objc-class (alx:required-argument :objc-class))
+     &key
+       ptr
+       (objc-class (or ptr (alx:required-argument :objc-class)))
        (objc-init #'init)
        init-in-main-p)
   (call-next-method)
@@ -238,7 +240,8 @@ Initialize Parameters:
 If any error throws, the OBJ should be destoryed. "
   (handler-case (call-next-method)
     (error (err)
-      (when (gethash :ptr (objc-ptrs obj))
+      (when (and (slot-boundp obj 'ptrs)
+                 (gethash :ptr (objc-ptrs obj)))
         (destroy obj))
       (error err))))
 

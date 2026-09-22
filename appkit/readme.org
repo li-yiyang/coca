@@ -25,6 +25,20 @@
 #+RESULTS: example:defpackage-coca.example.appkit
 : #<package "COCA.EXAMPLE.APPKIT.BASIC-USAGE">
 
+*Before continuing*: since Cocoa requires GUI manipulation
+happens in main thread, and =[NSApp run]= ([[file:~/common-lisp/coca/app/readme.org::doc:coca-app-run][=coca.app:coca-app-run=]])
+will take control of the main thread.
+So it is adviced to use =Coca.AppKit= in background thread.
+
+For example, you might connect to your app with SLIME or SLY.
+Or you might write some scripts like [fn:future-plan]:
+
+#+begin_src lisp :eval no
+  (bt:make-thread (lambda ()
+                    #|do something|#))
+  (loop :while t) ;; keep the main thread not quit too early
+#+end_src
+
 *** Creating a Window
 To create a [[doc:window][=window=]] ([[https://developer.apple.com/documentation/appkit/nswindow?language=objc][=NSWindow=]]) instance:
 
@@ -1888,3 +1902,8 @@ All the widgets should be subclass of [[doc:base-view][=base-view=]].
 
   #+RESULTS: doc:double-value-mixin
   : Mixin class for obj support doubleValue method.
+
+* Footnotes
+
+[fn:future-plan] *TODO*: use subsystem =coca/deploy= to deliver application,
+use =coca/ide= for a IDE developping environment. 

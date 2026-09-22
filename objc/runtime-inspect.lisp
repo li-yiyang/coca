@@ -291,17 +291,11 @@ Example:
   (declare (type foreign-pointer method))
   (multiple-value-bind (list encoding)
       (decode-objc-type-encoding
-       (foreign-funcall "method_getTypeEncoding" :pointer method :string))
+       (foreign-string-to-lisp
+        (objc-method-get-encoding* method)))
     (values (rest list) (first list) encoding)))
 
-(defun objc-class-instance-method (objc-class sel)
-  (declare (type objc-class objc-class)
-           (type sel sel))
-  (foreign-funcall "class_getInstanceMethod"
-                   :pointer (objc-class-ptr objc-class)
-                   :pointer (sel-ptr sel)
-                   :pointer))
-
+;; NOTE: objc-class-instance-method is in resources.lisp
 (defun objc-class-class-method (objc-class sel)
   (declare (type objc-class objc-class)
            (type sel sel))

@@ -203,7 +203,8 @@ Dev Note:
    "Called when the WINDOW will be closed. ")
   (:method ((window window))))
 
-(define-objc-method ("CocaWindowDelegate" "windowWillClose:")
+(define-objc-method ("CocaWindowDelegate" "windowWillClose:"
+                     :encoding "v@:@")
                     :void ((notification :object))
   (alx:when-let ((window (ns-notification-window notification)))
     (window-close-event-handler window)))
@@ -218,7 +219,8 @@ otherwise if the return value is `nil', the window would
 not be closed. ")
   (:method ((window window)) t))
 
-(define-objc-method ("CocaWindowDelegate" "windowShouldClose:")
+(define-objc-method ("CocaWindowDelegate" "windowShouldClose:"
+                     :encoding "B@:@")
                     :bool ((ns-window :object))
   (let ((window (find-obj ns-window)))
     (if window
@@ -304,7 +306,8 @@ Parameter:
   (:method :before ((obj main-menu-mixin))
     (set-main-menu (slot-value obj 'menu))))
 
-(define-objc-method ("CocaWindowDelegate" "windowDidBecomeKey:")
+(define-objc-method ("CocaWindowDelegate" "windowDidBecomeKey:"
+                     :encoding "v@:@")
                     :void ((notification :object))
   (alx:when-let ((window (ns-notification-window notification)))
     (window-select-event-handler window)))

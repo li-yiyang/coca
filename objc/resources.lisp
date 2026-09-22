@@ -103,6 +103,18 @@ This is equal to calling ObjC Code:
 
 (defvar *dynamic-objc-methods* (make-hash-table :test 'equal))
 
+(defun objc-class-instance-method (objc-class sel)
+  (declare (type objc-class objc-class)
+           (type sel sel))
+  (foreign-funcall "class_getInstanceMethod"
+                   :pointer (objc-class-ptr objc-class)
+                   :pointer (sel-ptr sel)
+                   :pointer))
+
+(defun objc-method-get-encoding* (method)
+  (declare (type foreign-pointer method))
+  (foreign-funcall "method_getTypeEncoding" :pointer method :pointer))
+
 (defun %define-objc-method (class sel encoding callback
                             &optional persistance)
   (declare (type objc-class       class)
@@ -116,11 +128,17 @@ This is equal to calling ObjC Code:
          (sel-ptr        sel)
          (get-callback   callback)
          type))
-      (class_replaceMethod
-       (objc-class-ptr class)
-       (sel-ptr        sel)
-       (get-callback   callback)
-       (null-pointer)))
+      (let ((method (objc-class-instance-method class sel)))
+        (when (null-pointer-p method)
+          (error "New method ~A with no :encoding infomation for ~A. "
+                 sel class))
+        (let ((encoding* (objc-method-get-encoding* method)))
+          (class_replaceMethod
+           (objc-class-ptr class)
+           (sel-ptr        sel)
+           (get-callback   callback)
+           encoding*)
+          (setf encoding (foreign-string-to-lisp encoding*)))))
   (when persistance
     (setf (gethash (list class sel) *dynamic-objc-methods*)
           (list class sel encoding callback)))
@@ -163,7 +181,7 @@ Syntax:
   within the BODY, SELF is bound to foreign-pointer of ObjC object
 
   NOTE: the symbol `self' is always interned,
-  so it is not required to use `coca.objc:self'. 
+  so it is not required to use `coca.objc:self'.
 "
   (declare (type string class sel)
            (type (or null string) encoding)
