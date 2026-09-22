@@ -12,10 +12,10 @@
    "A ObjC object pointer wrapper. "))
 
 (defmethod initialize-instance ((obj obj) &key ptr)
+  (call-next-method)
   (when ptr
     (setf (gethash :ptr (objc-ptrs obj))
-          (the foreign-pointer ptr)))
-  (call-next-method))
+          (the foreign-pointer ptr))))
 
 (defmethod print-object ((obj obj) stream)
   (print-unreadable-object (obj stream :type t)
