@@ -160,7 +160,10 @@ Syntax:
   same as `cffi:defcallback', or defined in `define-objc-typing'
 + BODY
   method body,
-  within the BODY, self is bound to foreign-pointer of ObjC object
+  within the BODY, SELF is bound to foreign-pointer of ObjC object
+
+  NOTE: the symbol `self' is always interned,
+  so it is not required to use `coca.objc:self'. 
 "
   (declare (type string class sel)
            (type (or null string) encoding)
@@ -172,6 +175,7 @@ Syntax:
                                            (string class)
                                            "-"
                                            (string sel)))))
+        (self        (symbol-concat "SELF"))
         (declaration ())
         (progn       ()))
     (loop :for (decl . rest) :on body
@@ -183,7 +187,7 @@ Syntax:
        (defcallback ,callback ,(case return-type
                                  ((:object :class :sel) :pointer)
                                  (otherwise return-type))
-           ((self  :pointer)
+           ((,self :pointer)
             (,sel* :pointer)
             ,@(loop :for (arg* type*) :in lambda-list
                     :for expanded := (expand-invoke-arg type* arg*)
@@ -191,7 +195,7 @@ Syntax:
                                  :for var :in (alx:ensure-list arg*)
                                  :collect (list var type))))
          (declare (ignore ,sel*)
-                  (ignorable self))
+                  (ignorable ,self))
          ,@declaration
          (with-autorelease-pool
            ,(case return-type

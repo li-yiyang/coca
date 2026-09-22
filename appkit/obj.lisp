@@ -153,7 +153,7 @@ Dev Note:
 (define-condition already-destroyed (appkit-condition)
   ((obj :initarg :obj))
   (:report (lambda (cond stream)
-             (format stream "~A is already destoryed"
+             (format stream "~A is already destroyed"
                      (slot-value cond 'obj)))))
 
 (defclass owned-mixin ()
@@ -205,13 +205,13 @@ Initialize Parameters:
   (call-next-method)
   (let ((ptr (if ptr
                  (retain ptr)
-                 (setf (gethash :ptr (objc-ptrs obj))
-                       (let ((ptr (alloc objc-class)))
-                         (the foreign-pointer
-                           (if init-in-main-p
-                               (dispatch-main (:throw-to-toplevel t)
-                                 (funcall objc-init ptr))
-                               (funcall objc-init ptr))))))))
+                 (let ((ptr (setf (gethash :ptr (objc-ptrs obj))
+                                  (alloc objc-class))))
+                   (the foreign-pointer
+                     (if init-in-main-p
+                         (dispatch-main (:throw-to-toplevel t)
+                           (funcall objc-init ptr))
+                         (funcall objc-init ptr)))))))
     (declare (type foreign-pointer ptr))
     (if init-in-main-p
         (flet ((finalize () (dispatch-main () (release ptr))))
@@ -219,10 +219,14 @@ Initialize Parameters:
         (flet ((finalize () (release ptr)))
           (tg:finalize obj #'finalize)))))
 
+;; IDEAS: maybe using restart-case to support reinitialization?
 (defmethod initialize-instance :around ((obj owned-mixin) &key)
+  "Captures all the issues happened when initializing OBJ.
+If any error throws, the OBJ should be destoryed. "
   (handler-case (call-next-method)
     (error (err)
-      (destroy obj)
+      (when (gethash :ptr (objc-ptrs obj))
+        (destroy obj))
       (error err))))
 
 (defmethod objc-ptr ((obj owned-mixin) (ptr (eql :ptr)))
@@ -233,7 +237,7 @@ Initialize Parameters:
 
 (defgeneric destroy (obj)
   (:documentation
-   "Destory OBJ, deowned in lisp. ")
+   "Destroy OBJ, deowned in lisp. ")
   (:method (obj) ())
   (:method ((obj owned-mixin))
     (alx:maphash-values (lambda (ptr)

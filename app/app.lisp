@@ -158,7 +158,7 @@ starts -- this ensures CFFI environment correct after image restarts. ")
 Return values of FUNCTION return values.
 
 If FUNCTION throw error, the error would be captured and
-throwed within calling thread. This may lost error calling
+thrown within calling thread. This may lose error calling
 stack infomation.
 "
   (declare (type (or symbol function) function))

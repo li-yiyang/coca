@@ -43,7 +43,7 @@ Return `t' if pass.
 Parameters:
 + MAJOR: major version number
   or keyword like `:sequoia', `:tahoe', `:golden-gate'
-+ MINOR: minor version number 
++ MINOR: minor version number
 + PATCH: patch version number
 "
   (macrolet ((cmp (a b &optional (else t))
@@ -53,7 +53,7 @@ Parameters:
     (flet ((major! (major)
              (etypecase major
                (keyword
-                (or (car (assoc major +osx-version-names+))
+                (or (cdr (assoc major +osx-version-names+))
                     (error "Unknown macOS version `~S'. " major)))
                (integer
                 major))))

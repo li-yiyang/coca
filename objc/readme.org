@@ -454,7 +454,10 @@ hierarchy relationship, method results and else.
     same as `cffi:defcallback', or defined in `define-objc-typing'
   + BODY
     method body,
-    within the BODY, self is bound to foreign-pointer of ObjC object
+    within the BODY, SELF is bound to foreign-pointer of ObjC object
+
+    NOTE: the symbol `self' is always interned,
+    so it is not required to use `coca.objc:self'.
   #+end_example
 + =(define-objc-global-variable reader initial-form &optional documentation)= *[Macro]*
 
@@ -911,7 +914,6 @@ hierarchy relationship, method results and else.
     + `:int'
     + `:string'
   #+end_example
-
 ** Block
 Load =coca/objc/block= to have Block supports setted up:
 + =(define-objc-block block-type lambda-list)= *[Macro]*
@@ -939,7 +941,6 @@ Load =coca/objc/block= to have Block supports setted up:
     within macro, use (BLOCK-TYPE lambda-list &body body)
     as callback
   #+end_example
-
 ** OSX-Version
 Load =coca/objc/osx-version= to have macOS version support:
 + =(osx-version)= *[Function]*
@@ -1112,7 +1113,6 @@ development usage (not recommanded to use in production environemnt).
   + OBJC-CLASS-P:
     if non-nil, assume OBJC-CLASS-OR-OBJECT is pointer to ObjC class
   #+end_example
-
 + =(objc-class-class-method-encoding objc-class sel &optional errorp)= *[Function]*
 
   #+name: doc:objc-class-class-method-encoding
