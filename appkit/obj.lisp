@@ -187,7 +187,18 @@ Initialize Parameters:
   ObjC pointer
 
   The return value of OBJC-INIT should be
-  foreign-pointer to ObjC object itself.
+  foreign-pointer to ObjC object itself,
+  which will be used as (objc-ptr OBJ :ptr).
+
+  Hack Note: it is possible to write something like
+
+    (lambda (ptr)
+      (dealloc ptr)
+      (let ((ptr (alloc-init)))
+        ...
+        ptr))
+
+  of course, it is not so that recommanded;
 
 + INIT-IN-MAIN-P: if or not the modification of instance
   should happens in main thread
@@ -205,13 +216,15 @@ Initialize Parameters:
   (call-next-method)
   (let ((ptr (if ptr
                  (retain ptr)
-                 (let ((ptr (setf (gethash :ptr (objc-ptrs obj))
-                                  (alloc objc-class))))
-                   (the foreign-pointer
-                     (if init-in-main-p
-                         (dispatch-main (:throw-to-toplevel t)
-                           (funcall objc-init ptr))
-                         (funcall objc-init ptr)))))))
+                 (let* ((ptrs (objc-ptrs obj))
+                        (ptr  (setf (gethash :ptr ptrs)
+                                    (alloc objc-class))))
+                   (setf (gethash :ptr (objc-ptrs obj))
+                         (the foreign-pointer
+                           (if init-in-main-p
+                               (dispatch-main (:throw-to-toplevel t)
+                                 (funcall objc-init ptr))
+                               (funcall objc-init ptr))))))))
     (declare (type foreign-pointer ptr))
     (if init-in-main-p
         (flet ((finalize () (dispatch-main () (release ptr))))

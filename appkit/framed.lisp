@@ -233,7 +233,7 @@ Return values X, Y, W, H or `nil' if OBJ has no parent. ")
    "Get size of OBJ parent.
 Return values W, H or `nil' if OBJ has no parent. ")
   (:method (obj)
-    (alx:when-let ((parent (parent framed)))
+    (alx:when-let ((parent (parent obj)))
       (size parent))))
 
 (defgeneric parent-width (obj)
@@ -241,7 +241,7 @@ Return values W, H or `nil' if OBJ has no parent. ")
    "Get the `width' of OBJ.
 Return `nil' if OBJ has no parent or width of OBJ parent. ")
   (:method (obj)
-    (alx:when-let ((parent (parent framed)))
+    (alx:when-let ((parent (parent obj)))
       (width parent))))
 
 (defgeneric parent-height (obj)

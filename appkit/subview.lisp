@@ -24,8 +24,7 @@
 (defun init-view (ptr)
   "Create a NSView. "
   (declare (type foreign-pointer ptr))
-  (invoke ptr "initWithFrame:" :ns-rect #(0 0 100 100))
-  ptr)
+  (invoke ptr "initWithFrame:" :ns-rect #(0 0 100 100) :object))
 
 (defmethod initialize-instance ((view base-view) &key parent)
   (call-next-method)

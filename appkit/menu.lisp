@@ -48,10 +48,10 @@
    :title          (alx:required-argument :title)))
 
 (defmethod add-item ((container menu-element) (item menu-element))
-  (and (add-item container item) t))
+  (and (add-child container item) t))
 
 (defmethod remove-item ((container menu-element) (item menu-element))
-  (remove-item container item))
+  (remove-child container item))
 
 (defmethod add-child ((item menu-item) (child base-menu-item))
   (with-slots (submenu) item
@@ -156,8 +156,9 @@ Dev Note:
     (make-instance 'services-menu-item)
   "[NSApp servicesMenu]")
 
-;; Dev Note: should menu-separator use `owned-mixin'?
-(defclass menu-separator (base-menu-item) ()
+(defclass menu-separator (base-menu-item
+                          owned-mixin)
+  ()
   (:default-initargs
    :ptr (invoke "NSMenuItem" "separatorItem" :object))
   (:documentation

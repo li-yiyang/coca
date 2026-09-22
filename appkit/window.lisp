@@ -88,17 +88,18 @@ Dev Note:
 (defun init-window (ptr)
   "Create a NSWindow. "
   (declare (type foreign-pointer ptr))
-  (invoke ptr
-          "initWithContentRect:styleMask:backing:defer:"
-          :ns-rect        #(0 0 100 100)
-          :ns-window-style (:titled
-                            :closable
-                            :resizable
-                            :miniaturizable)
-          :unsigned-long   2
-          :bool            t)
-  (invoke ptr "setReleasedWhenClosed:" :bool nil)
-  ptr)
+  (let ((ptr (invoke ptr
+                     "initWithContentRect:styleMask:backing:defer:"
+                     :ns-rect        #(0 0 100 100)
+                     :ns-window-style (:titled
+                                       :closable
+                                       :resizable
+                                       :miniaturizable)
+                     :unsigned-long   2
+                     :bool            t
+                     :object)))
+    (invoke ptr "setReleasedWhenClosed:" :bool nil)
+    ptr))
 
 (defmethod initialize-instance :after ((window window) &key)
   (with-ptr window ptr
