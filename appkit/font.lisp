@@ -96,10 +96,12 @@ Parameters:
                                        (font-weight font)
                                        (font-slant  font)))
              (cg-ptr (ct-font-copy-graphics-font ptr)))
-        (setf (font-ptr    font) ptr
+        (setf (font-ptr    font) (retain ptr)
               (font-cg-ptr font) cg-ptr
               (gethash (pointer-address ptr) *fonts*) font)
-        (tg:finalize font (alx:curry #'cf-release cg-ptr))))))
+        (tg:finalize font (lambda ()
+                            (cf-release cg-ptr)
+                            (release ptr)))))))
 
 (defun ns-font-to-font (ptr &key weight slant)
   "Make `font' fron NSFont pointer PTR.
@@ -123,7 +125,7 @@ Return `font' instance. "
            (setf weight (get-ns-dictionary traits "NSFontWeightTrait" :double)))
          (unless slant
            (setf slant  (get-ns-dictionary traits "NSFontSlantTrait"  :double)))))
-     (let ((font (make-ns-font :ptr          ptr
+     (let ((font (make-ns-font :ptr          (retain ptr)
                                :cg-ptr       cg-ptr
                                :name         name
                                :family       family
@@ -134,7 +136,9 @@ Return `font' instance. "
                                :properties   (list
                                               :ascender  ascender
                                               :descender descender))))
-       (tg:finalize font (alx:curry #'cf-release cg-ptr))
+       (tg:finalize font (lambda ()
+                           (cf-release cg-ptr)
+                           (release    ptr)))
        font))))
 
 (define-objc-typing :ns-font
