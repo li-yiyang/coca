@@ -1,0 +1,40 @@
+#+title: Coca.WebKit
+#+subtitle: Webview in =Coca.AppKit=
+#+author: 凉凉
+* Usage
+:PROPERTIES:
+:header-args:lisp: :package coca.webkit :results verbatim :eval no-export
+:END:
+
+* API
+:PROPERTIES:
+:header-args:lisp: :package coca.webkit :results verbatim
+:END:
+
++ =webview= *[Class]*
+
+  #+name: doc:webview
+  #+begin_src lisp :exports results
+    (documentation 'webview 'type)
+  #+end_src
+
+  #+RESULTS: doc:webview
+  : Wrapper of WKWebView.
+  :
+  : Dev Note:
+  : + objc-ptr mapping
+  :   + :ptr
+  :   + :delegate
+
+** Property
+
+** Navigation
+
+** JavaScripts
+
+** Events
+
+* TODO
++ [[https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/DisplayWebContent/DisplayWebContent.html#//apple_ref/doc/uid/10000164-SW1][Introduction to WebKit Objective-C Programming Guide]]
++ [[https://developer.apple.com/documentation/webkit/wkwebview?language=objc][WKWebView]]
++

@@ -12,7 +12,8 @@
                #:coca/objc/runtime-inspect
                #:coca/app
                #:coca/appkit
-               #:coca/metal))
+               #:coca/metal
+               #:coca/webkit))
 
 (defsystem #:coca/objc
   :author ("凉凉")
@@ -165,5 +166,17 @@
    (:file "resources" :depends-on ("device"))
    (:file "command"   :depends-on ("device"))
    (:file "pipeline"  :depends-on ("device" "command" "typing"))))
+
+(defsystem #:coca/webkit
+  :author ("凉凉")
+  :license "LGPL"
+  :version "0.0.0"
+  :description "Webkit for Webview in Coca."
+  :depends-on (#:coca/appkit
+               #:coca/objc/url)
+  :pathname "webkit"
+  :components
+  ((:file "package")
+   (:file "webview")))
 
 ;;;; coca.asd ends here
