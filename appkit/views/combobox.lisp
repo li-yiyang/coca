@@ -13,7 +13,7 @@
     "An alist of (VALUE . DISPLAY-STRING). "))
   (:objc-property
    (intercell-spacing
-    :ns-point
+    :ns-size
     (:intercell-spacing #(3d0 2d0) "setIntercellSpacing:"))
    (has-vertical-scroller-p
     :bool
@@ -24,7 +24,8 @@
    (item-height
     :double
     (:item-height 16.0d0 "setItemHeight:")))
-  (:after-initialize (items)
+  (:init-keys items)
+  (:init
    (dolist (item items)
      (add-item combobox item)))
   (:documentation
